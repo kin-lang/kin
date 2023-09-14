@@ -1,13 +1,46 @@
-*.tar
-*.tar.*
-*.jar
+# Build Artifacts
+*.S
+*.o
 *.exe
-*.msi
-*.zip
-*.tgz
-*.log
-*.log.*
-*.sig
+*.ll
+# CCache
+.cache
+# CMake
+**/bld
+**/bld-*
+**/build
+**/win
+**/win-*
+**/winbld
+**/winbuild
+**/mswin*
+**/lnx
+**/lin
+**/lin-*
+**/linbld
+**/linbuild
+**/lnx
+**/lnxbld
+**/lnxbuild
+**/linux
+**/linuxbld
+**/linuxbuild
+**/dbg
+**/debug
+**/rls
+**/release
+/out
+/.idea
+/tst/out.txt
+*.dot
 
-pkg/
-src/
+# Language Server
+**/compile_commands.json
+.Random.seed
+.clang-format
+
+# Disallow files starting with some symbols
+**/_*
+
+# Testing
+Testing/
