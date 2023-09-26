@@ -3,14 +3,7 @@
 #   LICENSE file in the root directory of this source tree.
 
 
-
-porogaramu_ntoya multiply_by_2(num) {
-    tanga num * 2;
-}
-
-
-umubare1 = 10;
-
-ibisubizo = multiply_by_2(umubare1);
-
-tangaza_amakuru(ibisubizo);
+y = 100.12;
+z=10;
+umubare = umubare(y); # casting from float to integer
+x = umubare_wibice(z);
