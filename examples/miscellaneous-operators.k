@@ -4,7 +4,9 @@
 
 
 
+# pointers in klang
+
 izina = "MURANGWA Pacifique";
 *aho_izina_ribitse = &izina;
 
-tangaza_amakuru(`Aho izina ribitse kuri mudasobwa: ${aho_izina_ribitse});
+tangaza_amakuru `Aho izina ribitse kuri mudasobwa: ${aho_izina_ribitse}`;

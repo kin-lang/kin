@@ -3,14 +3,16 @@
 #   LICENSE file in the root directory of this source tree.
 
 
-i = injiza_amakuru("Duhe umubare: ");
+#if-statements in klang
+
+i = injiza_amakuru `Duhe umubare: `;
 
 niba ((i%3 == 0) && (i%5 == 0)) {
-    tangaza_amakuru("FizzBuzz");
+    tangaza_amakuru `FizzBuzz`;
 }nanone_niba (i%3 == 0) {
-    tangaza_amakuru("Buzz");
+    tangaza_amakuru `Buzz`;
 }nanone_niba (i%5 == 0) {
-    tangaza_amakuru("Fizz");
+    tangaza_amakuru `Fizz`;
 }niba_ataribyo {
-    tangaza_amakuru(i);
+    tangaza_amakuru `${i}`;
 }

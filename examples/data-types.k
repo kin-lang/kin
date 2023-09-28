@@ -3,6 +3,8 @@
 #   LICENSE file in the root directory of this source tree.
 
 
+#data-types in klang
+
 
 umubare = 10;
 umubare_wibice = 10.1;
@@ -17,11 +19,11 @@ umuntu = {
     indeshyo: 187
 };
 
-tangaza_amakuru(`--
+tangaza_amakuru `--
     ${ubwoko(umubare)}
     ${ubwoko(umubare_wibice)}
     ${ubwoko(ukuri)};
     ${ubwoko(urutonde)}
     ${ubwoko(ijambo)}
     ${ubwoko(amafaranga)}
-`);
+`;

@@ -3,6 +3,9 @@
 #   LICENSE file in the root directory of this source tree.
 
 
+
+#arthimetic operators in klang
+
 num1 = 100;
 num2 = 200;
 
@@ -12,4 +15,4 @@ sum = num2 + num1;
 quotient = num1 / num2;
 reminder = num2 % num1;
 
-tangaza_amakuru(` product: ${product}, difference: ${difference}, sum: ${sum}, quotient: ${quotient}, reminder: ${reminder}`);
+tangaza_amakuru ` product: ${product}, difference: ${difference}, sum: ${sum}, quotient: ${quotient}, reminder: ${reminder}`;

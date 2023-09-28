@@ -4,6 +4,9 @@
 
 
 
+#demonstrating recursion in klang
+
+
 porogaramu_ntoya factorial(umubare) {
     niba (umubare == 1 || umubare == 0) {
         tanga 1;
@@ -17,4 +20,4 @@ umubare1 = 10;
 
 ibisubizo = factorial(umubare1);
 
-tangaza_amakuru(ibisubizo);
+tangaza_amakuru `${ibisubizo}`;

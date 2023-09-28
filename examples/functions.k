@@ -2,7 +2,7 @@
 #   This source code is licensed under the Apache License 2.0 found in the
 #   LICENSE file in the root directory of this source tree.
 
-
+# functions in klang
 
 porogaramu_ntoya multiply_by_2(num) {
     tanga num * 2;
@@ -13,4 +13,4 @@ umubare1 = 10;
 
 ibisubizo = multiply_by_2(umubare1);
 
-tangaza_amakuru(ibisubizo);
+tangaza_amakuru `${ibisubizo}`;

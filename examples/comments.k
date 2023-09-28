@@ -6,4 +6,4 @@
 
 # this is comment in klang
 
-tangaza_amakuru("comments are ignored while parsing");
+tangaza_amakuru `comments are ignored while parsing`;
