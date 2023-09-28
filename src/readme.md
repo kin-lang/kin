@@ -17,4 +17,4 @@ Please refer to [Contributing.md](../contributing.md).
 Licese
 ------
 
-[MIT License](../LICENSE);
+This project is under [Apache License 2.0 LICENSE](https://github.com/pacifiquem/klang/blob/main/LICENSE).

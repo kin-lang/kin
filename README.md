@@ -12,8 +12,8 @@ This language is still under development and it's being written by [@pacifiquem]
 
 ## Contributing
 
-Contributions are welcomed, refer to [Contiributing.md](contributing.md) for futher info.
+Contributions are welcomed, refer to [Contiributing.md](https://github.com/pacifiquem/klang/blob/main/contributing.md) for futher info.
 
 ## License
 
-This project is under [Apache License 2.0 LICENSE](LICENSE).
+This project is under [Apache License 2.0 LICENSE](https://github.com/pacifiquem/klang/blob/main/LICENSE).
