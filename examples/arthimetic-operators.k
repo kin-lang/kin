@@ -15,4 +15,5 @@ sum = num2 + num1;
 quotient = num1 / num2;
 reminder = num2 % num1;
 
+
 tangaza_amakuru ` product: ${product}, difference: ${difference}, sum: ${sum}, quotient: ${quotient}, reminder: ${reminder}`;
