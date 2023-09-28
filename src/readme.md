@@ -1,8 +1,8 @@
 Klang - Interpreter
 ===================
 
-Here is where You'll find implementation of our ```Klang's``` ```Tree-Walk Interpreter```.
-*.h* files contains our self-defined headers which contains utility functions, enums, structures ...
+Here is where You'll find implementation of our ```Klang's``` ```Tree-Walk Interpreter```
+``.h`` files contains our self-defined headers which contains utility functions, enums, structures ...
 
 How it Works
 ------------

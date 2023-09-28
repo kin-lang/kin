@@ -46,3 +46,33 @@
 Testing/
 
 .vscode
+
+
+# CMake build artifacts
+/build/
+/CMakeFiles/
+/CMakeScripts/
+/CMakeCache.txt
+/CMakeSettings.json
+
+# Visual Studio Code specific files (if using VSCode)
+.vscode/
+
+# CMake-generated files
+compile_commands.json
+
+# Generated Makefiles or project files (if using Make or other build systems)
+Makefile
+*.make
+*.cbp
+*.workspace
+*.project
+*.sln
+
+# Ignore CMake user-specific files (optional)
+CMakeUserPresets.json
+CMakeUserPresets.json.backup
+
+
+/bin
+*.cmake
