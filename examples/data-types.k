@@ -9,8 +9,9 @@
 umubare = 10;
 umubare_wibice = 10.1;
 ukuri = nibyo;
-urutonde = ["Ibigori", "Umuceri", "Ibindi"];
-ijambo = "ijambo";
+# urutonde_amagambo = ['Ibigori', 'Umuceri', 'Ibindi'];
+urutonde_imibare = [100, 133, 1, 0, 4.6];
+ijambo ="umuntu";
 amafaranga = ubusa;
 
 umuntu = {

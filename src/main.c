@@ -3,7 +3,8 @@
 #include <stdbool.h>
 
 // .h files imports
-#include "exit-codes.h"
+#include "headers/exit-codes.h"
+#include "headers/lexer.h"
 
 
 // constants
@@ -28,7 +29,7 @@ static void repl() {
 }
 
 // readFile Content
-static char* readFile(char* const fileLocation) {
+static char* readFile(char const *fileLocation) {
     FILE *source_file = fopen (fileLocation,"r+b" );
     
     // < no file
@@ -69,10 +70,14 @@ static char* readFile(char* const fileLocation) {
     return buffer;
 }
 
-
 static void runFile(char const *file_location) {
     char* buffer = readFile(file_location);
-    printf("%s", buffer);
+    initSource(buffer);
+    while (1) {
+        Token token = scanToken();
+        printf("Token type: %d, Lexeme: %s, Line: %d\n", token.type, token.lexeme, token.line);        if (token.type == TOKEN_EOF) break;
+
+    }
 }
 
 int main(int argc, char const *argv[]){

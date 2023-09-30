@@ -21,7 +21,7 @@ elseif (MSVC)
     target_compile_options(klang PRIVATE /W4)
 endif()
 
-# Specify output directory for the executable (optional)
+# Specify output directory for the executable
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
 # Optional: Generate compile_commands.json for better IDE integration
