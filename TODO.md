@@ -1,0 +1,2 @@
+- Handle double char TOKENS
+- RETURN a valid LEXEME with a valid data-structure
