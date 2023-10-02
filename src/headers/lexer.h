@@ -1,6 +1,6 @@
 //> Scanning on Demand scanner-h
-#ifndef klang_lexer_h
-#define klang_lexer_h
+#ifndef KIN_LEXER_H
+#define KIN_LEXER_H
 
 //< token-types
 typedef enum {

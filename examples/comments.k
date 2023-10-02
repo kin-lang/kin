@@ -4,6 +4,6 @@
 
 
 
-# this is comment in klang
+# this is comment in kin-lang
 
 tangaza_amakuru `comments are ignored while parsing`;

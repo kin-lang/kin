@@ -3,7 +3,7 @@
 #   LICENSE file in the root directory of this source tree.
 
 
-#loops control statements in klang
+#loops control statements in kin-lang
 
 i = 0;
 

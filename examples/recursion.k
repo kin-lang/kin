@@ -4,7 +4,7 @@
 
 
 
-#demonstrating recursion in klang
+#demonstrating recursion in kin-lang
 
 
 porogaramu_ntoya factorial(umubare) {

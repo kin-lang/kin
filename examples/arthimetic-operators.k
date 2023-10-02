@@ -4,7 +4,7 @@
 
 
 
-#arthimetic operators in klang
+#arthimetic operators in kin-lang
 
 num1 = 100;
 num2 = 200;

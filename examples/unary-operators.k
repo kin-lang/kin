@@ -3,7 +3,7 @@
 #   LICENSE file in the root directory of this source tree.
 
 
-# demonstrating unary operators
+# demonstrating unary operators in kin
 
 num1 = 10;
 num2 = 2;

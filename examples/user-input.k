@@ -3,7 +3,7 @@
 #   LICENSE file in the root directory of this source tree.
 
 
-# getting user's input from keyboard
+# getting user's input from keyboard - kin-lang
 
 num1 = injiza_amakuru `Enter num1:`;
 num2 = injiza_amakuru `Enter num2:`;

@@ -1,11 +1,11 @@
-# Klang
+# kin-lang
 
-Klang relies on many contributors who help us to maintain or track issues, we continously `thank them` for their great work.
+Kin relies on many contributors who help us to maintain or track issues, we continously `thank them` for their great work.
 
 
 ## Issue tracking
 
-Klang team tracks issues by using Github, if you face any issue or you want to request changes please submit a new Issue and respect those templates because we will not tolerate those who violates them since they make our work too dificult. `If you don't respect Issue templates and use them unaccordingly your issue will be closed Immediately.`
+Kin team tracks issues by using Github, if you face any issue or you want to request changes please submit a new Issue and respect those templates because we will not tolerate those who violates them since they make our work too dificult. `If you don't respect Issue templates and use them unaccordingly your issue will be closed Immediately.`
 
 ## Pull Request
 
@@ -22,6 +22,6 @@ If you fix any issue or add new feature, feel free to open a pull request. It wi
 
 ## Discussions
 
-Klang uses `Github Discussions` to bring it's users together and create an engageable community.
+Kin uses `Github Discussions` to bring it's users together and create an engageable community.
 
 If you have anything to ask community please use `Github Discussion` for our main repo, there will be engineers to answer your questions.
