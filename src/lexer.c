@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #include "headers/lexer.h"
 #include "headers/exit-codes.h"
@@ -42,24 +43,6 @@ char consume() {
   return c;
 }
 
-// Function to scan a string literal
-Token scanStringLiteral() {
-    int start = currentPos ; // get position where we have delimeter
-    char delimiter = consume(); // Single or double quote
-
-    while (getCurrentChar() == delimiter) {
-        if (getCurrentChar() == '\0' || getCurrentChar() == '\n') {
-            printf("Error: Unterminated string literal on line %d\n", line);
-            exit(EXIT_FAILURE);
-        }
-        printf("%c -", getCurrentChar());
-        advance();
-    }
-
-    char* lexeme = strndup(&source[start], currentPos - start);
-    return makeTokenWithLexeme(TOKEN_STRING, lexeme);
-}
-
 // Function to scan an identifier or keyword
 Token scanIdentifierOrKeyword() {
     int start = currentPos;
@@ -89,10 +72,30 @@ Token scanIdentifierOrKeyword() {
     if (strcmp(lexeme, "hagarara") == 0) return makeTokenWithLexeme(TOKEN_HAGARARA, "hagarara");
     if (strcmp(lexeme, "ubwoko") == 0) return makeTokenWithLexeme(TOKEN_UBWOKO, "ubwoko");
     if (strcmp(lexeme, "ntahinduka") == 0) return makeTokenWithLexeme(TOKEN_NTAHINDUKA, "ntahinduka");
+    if (strcmp(lexeme, "kin_hagarara") == 0) return makeTokenWithLexeme(TOKEN_KIN_HAGARARA, "kin_hagarara");
 
     // Not a keyword, it's an identifier
     return makeTokenWithLexeme(TOKEN_IDENTIFIER, lexeme);
 }
+
+// Function to scan a string literal
+Token scanStringLiteral() {
+    char delimiter = consume(); // Single or double quote
+    int start = currentPos ; // get position where we have delimeter
+
+    while (getCurrentChar() != delimiter) {
+        if (getCurrentChar() == '\0' || getCurrentChar() == '\n') {
+            printf("Error: Unterminated string literal on line %d\n", line);
+            exit(EXIT_FAILURE);
+        }
+        advance();
+    }
+
+    char* lexeme = strndup(&source[start], currentPos - start);
+    advance(); //escape closing delimiter for string litelar.
+    return makeTokenWithLexeme(TOKEN_STRING, lexeme);
+}
+
 
 // Function to scan a number
 Token scanNumber() {
@@ -198,10 +201,8 @@ Token scanToken() {
             advance();
             return makeTokenWithLexeme(TOKEN_CLOSE_CURLY_BRACES, "close-curly-braces");
         case '\'':
-            // advance();  in order to get the delimeter we have to pass this current position not the next character
             return scanStringLiteral();
         case '"':
-            // advance(); in order to get the delimeter we have to pass this current position not the next character
             return scanStringLiteral();
         case ':':
             advance();
