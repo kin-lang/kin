@@ -13,8 +13,8 @@ int currentPos = 0; // Current position in source
 int line = 1; // Current line number
 
 // Function to initialize the source code
-void initSource(char* src) {
-  source = src;
+void initLexersSource(char *source_code_buffer) {
+  source = source_code_buffer;
 }
 
 // Function to create a new token with a lexeme

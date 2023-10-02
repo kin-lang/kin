@@ -39,7 +39,7 @@ typedef struct {
     int line;
 } Token;
 
-void initSource(char *src);
+void initLexersSource();
 Token scanToken();
 
 #endif
