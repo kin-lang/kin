@@ -9,22 +9,21 @@
 umubare = 10;
 umubare_wibice = 10.1;
 ukuri = nibyo;
-# urutonde_amagambo = ['Ibigori', 'Umuceri', 'Ibindi'];
+urutonde_amagambo = ['Ibigori', 'Umuceri', 'Ibindi'];
 urutonde_imibare = [100, 133, 1, 0, 4.6];
-ijambo ="umuntu";
+ijambo = "umuntu";
 amafaranga = ubusa;
-
 umuntu = {
-    amazina: "MURANGWA Pacifique",
-    imyaka: 19,
-    indeshyo: 187
+   amazina: "MURANGWA Pacifique",
+   imyaka: 19,
+   indeshyo: 187
 };
 
-tangaza_amakuru `--
-    ${ubwoko(umubare)}
-    ${ubwoko(umubare_wibice)}
-    ${ubwoko(ukuri)};
-    ${ubwoko(urutonde)}
-    ${ubwoko(ijambo)}
-    ${ubwoko(amafaranga)}
+tangaza_amakuru `
+   ${ubwoko(umubare)}
+   ${ubwoko(umubare_wibice)}
+   ${ubwoko(ukuri)};
+   ${ubwoko(urutonde)}
+   ${ubwoko(ijambo)}
+   ${ubwoko(amafaranga)}
 `;

@@ -75,7 +75,8 @@ static void runFile(char const *file_location) {
     initSource(buffer);
     while (1) {
         Token token = scanToken();
-        printf("Token type: %d, Lexeme: %s, Line: %d\n", token.type, token.lexeme, token.line);        if (token.type == TOKEN_EOF) break;
+        printf("Token type: %d, Lexeme: %s, Line: %d\n", token.type, token.lexeme, token.line);
+        if (token.type == TOKEN_EOF) break;
 
     }
 }
