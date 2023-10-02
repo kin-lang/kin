@@ -181,7 +181,7 @@ Token scanToken() {
             return makeTokenWithLexeme(TOKEN_NEGATION, "negation");
         case ';':
             advance();
-            return makeTokenWithLexeme(TOKEN_SEMI_COLON, "semi-colon");
+            return makeTokenWithLexeme(TOKEN_END_OF_LINE, "end-of-line");
         case ']':
             advance();
             return makeTokenWithLexeme(TOKEN_CLOSE_BRACKET, "close-bracket");

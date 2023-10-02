@@ -11,7 +11,7 @@ users_number = injiza_amakuru `Umubare: `;
 
 niba (users_number > number) {
     tangaza_amakuru `Uratsinzwe wanditse umubare muto`;
-    kin_hagarara(1); // here we have one but 0 is also supported. it's used to indicate that program exited but there was no error.
+    kin_hagarara(1); # here we have one but 0 is also supported. it's used to indicate that program exited but there was no error.
 }
 
 tangaza_amakuru `Uratsinzzzeeeee wanditse umubare uruta uwacu.`;
