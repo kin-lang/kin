@@ -3,7 +3,7 @@
 #   LICENSE file in the root directory of this source tree.
 
 
-#data-types in klang
+#data-types in kin-lang
 
 
 umubare = 10;

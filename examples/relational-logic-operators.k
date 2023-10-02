@@ -25,8 +25,8 @@ niba (umubare2 < 30) {
     tangaza_amakuru `umubare2 is LESS THAN 20 `;
 }
 
-this_is_klang = sibyo;
+this_is_kin = sibyo;
 
-if(!this_is_klang) {
-    tangaza_amakuru `this language is NOT klang `;
+if(!this_is_kin) {
+    tangaza_amakuru `this language is NOT kin-lang `;
 }

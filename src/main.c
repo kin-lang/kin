@@ -12,11 +12,11 @@
 
 
 
-// Our Klang REPL.
+// Our Kin-lang REPL.
 static void repl() {
   char line[1024]; // storing megabyte -> 1024 characters
   while (true) {
-    printf("klang >> ");
+    printf("kin >> ");
 
     if (!fgets(line, sizeof(line), stdin)) {
       printf("\n");

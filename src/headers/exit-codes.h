@@ -1,7 +1,7 @@
-#ifndef KLANG_INTERPRETER_EXIT_CODES_H
-#define KLANG_INTERPRETER_EXIT_CODES_H
+#ifndef KIN_INTERPRETER_EXIT_CODES_H
+#define KIN_INTERPRETER_EXIT_CODES_H
 
-// Exit codes for the klang interpreter
+// Exit codes for the kin interpreter
 #define EXIT_SUCCESS 0                  // Successful execution
 #define EXIT_FAILURE 1                 // program exited with an error
 #define EXIT_SYNTAX_ERROR 2             // Syntax error

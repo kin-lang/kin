@@ -1,7 +1,7 @@
-Klang - Interpreter
+Kin-lang - Interpreter
 ===================
 
-Here is where You'll find implementation of our ```Klang's``` ```Tree-Walk Interpreter```
+Here is where You'll find implementation of our ```Kin-lang's``` ```Tree-Walk Interpreter```
 ``.h`` files contains our self-defined headers which contains utility functions, enums, structures ...
 
 How it Works
@@ -17,4 +17,4 @@ Please refer to [Contributing.md](../contributing.md).
 Licese
 ------
 
-This project is under [Apache License 2.0 LICENSE](https://github.com/pacifiquem/klang/blob/main/LICENSE).
+This project is under [Apache License 2.0 LICENSE](https://github.com/kin-lang/kin/blob/main/LICENSE).

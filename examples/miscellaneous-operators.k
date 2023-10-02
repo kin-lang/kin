@@ -4,7 +4,7 @@
 
 
 
-# pointers in klang
+# pointers in kin-lang
 
 izina = "MURANGWA Pacifique";
 *aho_izina_ribitse = &izina;

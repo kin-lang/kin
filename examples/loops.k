@@ -2,7 +2,7 @@
 #   This source code is licensed under the Apache License 2.0 found in the
 #   LICENSE file in the root directory of this source tree.
 
-# simple loop in klang
+# simple loop in kin-lang
 
 i = 0;
 
