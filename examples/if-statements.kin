@@ -13,6 +13,6 @@ niba ((i%3 == 0) && (i%5 == 0)) {
     tangaza_amakuru `Buzz`;
 }nanone_niba (i%5 == 0) {
     tangaza_amakuru `Fizz`;
-}niba_ataribyo {
+}niba_byanze {
     tangaza_amakuru `${i}`;
 }

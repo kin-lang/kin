@@ -15,7 +15,7 @@ niba (i<100) subiramo {
         tangaza_amakuru `${i}`;
     }nanone_niba ((i%5 == 0) && (i>90)) {
         hagarara;
-    }niba_ataribyo {
+    }niba_byanze {
         tangaza_amakuru `${i}`;
     }
 

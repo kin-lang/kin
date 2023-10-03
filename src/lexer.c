@@ -62,7 +62,7 @@ Token scanIdentifierOrKeyword() {
     if (strcmp(lexeme, "imiterere") == 0) return makeTokenWithLexeme(TOKEN_IMITERERE, "imiterere");
     if (strcmp(lexeme, "umubare") == 0) return makeTokenWithLexeme(TOKEN_UMUBARE, "umubare");
     if (strcmp(lexeme, "ibice") == 0) return makeTokenWithLexeme(TOKEN_IBICE, "ibice");
-    if (strcmp(lexeme, "ataribyo") == 0) return makeTokenWithLexeme(TOKEN_ATARIBYO, "ataribyo");
+    if (strcmp(lexeme, "niba_byanze") == 0) return makeTokenWithLexeme(TOKEN_NIBA_BYANZE, "niba_byanze");
     if (strcmp(lexeme, "subiramo") == 0) return makeTokenWithLexeme(TOKEN_SUBIRAMO, "subiramo");
     if (strcmp(lexeme, "tanga") == 0) return makeTokenWithLexeme(TOKEN_TANGA, "tanga");
     if (strcmp(lexeme, "porogaramu_ntoya") == 0) return makeTokenWithLexeme(TOKEN_POROGARAMU_NTOYA, "porogaramu_ntoya");
