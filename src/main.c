@@ -5,6 +5,7 @@
 // .h files imports
 #include "headers/exit-codes.h"
 #include "headers/lexer.h"
+#include "headers/parser.h"
 
 
 // constants
@@ -71,14 +72,8 @@ static char* readFile(char const *fileLocation) {
 }
 
 static void runFile(char const *file_location) {
-    char* buffer = readFile(file_location);
-    initSource(buffer);
-    while (1) {
-        Token token = scanToken();
-        printf("Token type: %d, Lexeme: %s, Line: %d\n", token.type, token.lexeme, token.line);
-        if (token.type == TOKEN_EOF) break;
-
-    }
+    char *source_code_buffer = readFile(file_location); // defined in common
+    parser(source_code_buffer);
 }
 
 int main(int argc, char const *argv[]){
