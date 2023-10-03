@@ -1,4 +1,4 @@
-`Kin` `Under Development` `Contributions are welcomed` `Sponsor this project`
+`Kin` `Under Development` `Contributions are welcomed`
 
 # Kin
 
