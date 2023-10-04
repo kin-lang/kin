@@ -6,6 +6,9 @@
 
 #include "headers/lexer.h"
 #include "headers/exit-codes.h"
+#include "headers/errors.h"
+#include "headers/error-codes.h"
+
 
 // Global variables
 char* source; // Source code
@@ -85,8 +88,7 @@ Token scanStringLiteral() {
 
     while (getCurrentChar() != delimiter) {
         if (getCurrentChar() == '\0' || getCurrentChar() == '\n') {
-            printf("Error: Unterminated string literal on line %d\n", line);
-            exit(EXIT_FAILURE);
+            syntaxError(ERROR_UNTERMINATED_STRING_LITERAL, '\n', line);
         }
         advance();
     }
@@ -239,8 +241,7 @@ Token scanToken() {
             } else if (isalpha(c) || c == '_') {
                 return scanIdentifierOrKeyword();
             } else {
-                printf("Error: Unexpected character '%c' on line %d\n", c, line);
-                exit(EXIT_FAILURE);
+                syntaxError(ERROR_UNEXPECTED_CHARACTER, c, line);
             }
     }
 }

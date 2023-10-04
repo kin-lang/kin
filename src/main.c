@@ -6,10 +6,12 @@
 #include "headers/exit-codes.h"
 #include "headers/lexer.h"
 #include "headers/parser.h"
+#include "headers/error-codes.h"
+#include "headers/errors.h"
 
 
 // constants
-#define OL 0
+#define OL 0 // file reading
 
 
 
@@ -35,8 +37,7 @@ static char* readFile(char const *fileLocation) {
     
     // < no file
     if(source_file == NULL) {
-        printf ("Error opening the file\n");
-        exit(EXIT_FILE_NOT_FOUND);
+        fileOperationError(ERROR_FILE_NOT_FOUND, fileLocation);
     }
     // > no file
 
@@ -50,8 +51,7 @@ static char* readFile(char const *fileLocation) {
 
     //< no buffer
     if( buffer == NULL) {
-        fprintf(stderr, "No enough memory to read \'%s\' \n", fileLocation);
-        exit(EXIT_UNABLE_TO_READ_FILE);
+        fileOperationError(ERROR_NO_ENOUGH_MEMORY_TO_RUN_A_FILE, fileLocation);
     }
     //>
 
@@ -59,8 +59,7 @@ static char* readFile(char const *fileLocation) {
 
     //< failed to read file
     if( bytes_read < file_size ){
-        fprintf(stderr, "Unable to read file \'%s\' \n", fileLocation);
-        exit(EXIT_UNABLE_TO_READ_FILE);
+        fileOperationError(ERROR_FAILED_TO_READ_FILE, fileLocation);
     }
     //> failed to read file
 
@@ -84,8 +83,7 @@ int main(int argc, char const *argv[]){
     }else if(argc == 2) {
         runFile(argv[1]); // run codes that are in provided file location
     }else {
-        printf("please enter reply or provide a file \n");
-        exit(EXIT_INVALID_ARGUMENTS);
+        argumentsError(ERROR_INVALID_TERMINAL_ARGUMENTS);
     }
 
     return 0;

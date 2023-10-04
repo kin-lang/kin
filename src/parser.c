@@ -6,6 +6,7 @@
 #include "headers/lexer.h"
 
 
+// entry point of Kin's parser.
 void parser(char *source_code_buffer) {
     initLexersSource(source_code_buffer); // initialize lexer's source codes.
     while (1) {
