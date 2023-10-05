@@ -3,6 +3,14 @@
 Kin relies on many contributors who help us to maintain or track issues, we continously `thank them` for their great work.
 
 
+# Building project locally
+
+Run this command it it will generate build folder with *kin* binary inside.
+```CMake
+    cmake --build .
+```
+Remember to run it in the root directory.
+
 ## Issue tracking
 
 Kin team tracks issues by using Github, if you face any issue or you want to request changes please submit a new Issue and respect those templates because we will not tolerate those who violates them since they make our work too dificult. `If you don't respect Issue templates and use them unaccordingly your issue will be closed Immediately.`

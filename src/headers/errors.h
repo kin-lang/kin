@@ -5,8 +5,8 @@
 
 
 
-void syntaxError(ErrorCodes reason, char character , int line); // reporting Sytax Error
-void fileOperationError(ErrorCodes reason, const char* fileLocation); // report File Operation Errror
-void argumentsError(ErrorCodes reason); // report Invalid Arguments Error
+void syntaxError(ErrorCodes reason, char character , int line);
+void fileOperationError(ErrorCodes reason, const char* fileLocation);
+void argumentsError(ErrorCodes reason);
 
 #endif

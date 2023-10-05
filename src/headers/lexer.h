@@ -1,10 +1,8 @@
-//> Scanning on Demand scanner-h
 #ifndef KIN_LEXER_H
 #define KIN_LEXER_H
 
-//< token-types
 typedef enum {
-    // One-character tokens
+    /* One-character tokens */ 
     TOKEN_MINUS, TOKEN_PLUS, TOKEN_STAR, 
     TOKEN_DIVISION, TOKEN_POWER, TOKEN_MODULO, TOKEN_AMPERSAND,
     TOKEN_NEGATION, TOKEN_END_OF_LINE, TOKEN_CLOSE_BRACKET, TOKEN_OPEN_BRACKET,
@@ -15,14 +13,14 @@ typedef enum {
     TOKEN_GREATER_THAN, TOKEN_LESS_THAN, TOKEN_PERIOD, TOKEN_COMMA,
     TOKEN_DOLLA_SIGN,
 
-    // Literals
+    /* Literals */
     TOKEN_IDENTIFIER, TOKEN_STRING, TOKEN_NUMBER, TOKEN_FLOAT,
 
-    // Two or more characters tokens
+    /* Two or more characters tokens */
     TOKEN_NOT_EQUAL, TOKEN_EQUALITY, TOKEN_INCREMENT, TOKEN_DECREMENT,
     TOKEN_AND, TOKEN_OR, TOKEN_GREATER_THAN_OR_EQUAL, TOKEN_LESS_THAN_OR_EQUAL,
 
-    // Keywords
+    /* Keywords */
     TOKEN_UBUSA, TOKEN_NIBA, TOKEN_NIBYO, TOKEN_SIBYO,
     TOKEN_NANONE_NIBA, TOKEN_IMITERERE, TOKEN_UMUBARE, TOKEN_IBICE,
     TOKEN_NIBA_BYANZE, TOKEN_SUBIRAMO, TOKEN_TANGA, TOKEN_POROGARAMU_NTOYA,
@@ -30,9 +28,9 @@ typedef enum {
     TOKEN_UBWOKO, TOKEN_NTAHINDUKA, TOKEN_ERROR, TOKEN_KIN_HAGARARA,
     TOKEN_EOF 
 } TokenType;
-//>token-types
 
-// Token structure
+
+/* Token structure */
 typedef struct {
     TokenType type;
     char* lexeme;
