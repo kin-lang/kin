@@ -10,17 +10,17 @@
 #include "headers/error-codes.h"
 
 
-// Global variables
-char* source; // Source code
-int currentPos = 0; // Current position in source
-int line = 1; // Current line number
 
-// Function to initialize the source code
+char* source; /* Source code */
+int currentPos = 0; /* Current position in source */
+int line = 1; /* Current line number */ 
+
+/* Function to initialize the source code */
 void initLexersSource(char *source_code_buffer) {
   source = source_code_buffer;
 }
 
-// Function to create a new token with a lexeme
+/* Function to create a new token with a lexeme */
 Token makeTokenWithLexeme(TokenType type, char* lexeme) {
     Token token;
     token.type = type;
@@ -29,24 +29,24 @@ Token makeTokenWithLexeme(TokenType type, char* lexeme) {
     return token;
 }
 
-// Function to advance the current position
+/* Function to advance the current position */
 void advance() {
   currentPos++;
 }
 
-// Function to get the current character
+/* Function to get the current character */
 char getCurrentChar() {
   return source[currentPos];
 }
 
-// Function to get current character and advance
+/*Function to get current character and advance*/
 char consume() {
   char c = getCurrentChar();
   advance();
   return c;
 }
 
-// Function to scan an identifier or keyword
+/* Function to scan an identifier or keyword */
 Token scanIdentifierOrKeyword() {
     int start = currentPos;
 
@@ -56,7 +56,7 @@ Token scanIdentifierOrKeyword() {
 
     char* lexeme = strndup(&source[start], currentPos - start);
 
-    // Check if it's a keyword
+    /* Check if it's a keyword */
     if (strcmp(lexeme, "ubusa") == 0) return makeTokenWithLexeme(TOKEN_UBUSA, "ubusa");
     if (strcmp(lexeme, "niba") == 0) return makeTokenWithLexeme(TOKEN_NIBA, "niba");
     if (strcmp(lexeme, "nibyo") == 0) return makeTokenWithLexeme(TOKEN_NIBYO, "nibyo");
@@ -77,14 +77,14 @@ Token scanIdentifierOrKeyword() {
     if (strcmp(lexeme, "ntahinduka") == 0) return makeTokenWithLexeme(TOKEN_NTAHINDUKA, "ntahinduka");
     if (strcmp(lexeme, "kin_hagarara") == 0) return makeTokenWithLexeme(TOKEN_KIN_HAGARARA, "kin_hagarara");
 
-    // Not a keyword, it's an identifier
+    /* Not a keyword, it's an identifier */
     return makeTokenWithLexeme(TOKEN_IDENTIFIER, lexeme);
 }
 
-// Function to scan a string literal
+/* Function to scan a string literal */
 Token scanStringLiteral() {
-    char delimiter = consume(); // Single or double quote
-    int start = currentPos ; // get position where we have delimeter
+    char delimiter = consume(); /* Single or double quote */
+    int start = currentPos ; /* get position where we have delimeter */
 
     while (getCurrentChar() != delimiter) {
         if (getCurrentChar() == '\0' || getCurrentChar() == '\n') {
@@ -94,12 +94,12 @@ Token scanStringLiteral() {
     }
 
     char* lexeme = strndup(&source[start], currentPos - start);
-    advance(); //escape closing delimiter for string litelar.
+    advance(); /* escape closing delimiter for string litelar. */
     return makeTokenWithLexeme(TOKEN_STRING, lexeme);
 }
 
 
-// Function to scan a number
+/* Function to scan a number */
 Token scanNumber() {
     int start = currentPos;
 
@@ -118,18 +118,18 @@ Token scanNumber() {
     return makeTokenWithLexeme(TOKEN_NUMBER, strndup(&source[start], currentPos - start));
 }
 
-// Function to skip whitespace and comments
+/* Function to skip whitespace and comments */
 void skipWhitespaceAndComments() {
     while (true) {
         char c = getCurrentChar();
         if (c == ' ' || c == '\t' || c == '\r') {
             advance();
         } else if (c == '\n') {
-            // Newline character
+            /* Newline character */
             advance();
             line++;
         } else if (c == '#') {
-            // Comment, skip until the end of the line
+            /* Comment, skip until the end of the line */
             while (getCurrentChar() != '\n' && getCurrentChar() != '\0') {
               advance();
             }
@@ -139,18 +139,18 @@ void skipWhitespaceAndComments() {
     }
 }
 
-// Function to scan the next token
+/* Function to scan the next token */
 Token scanToken() {
     skipWhitespaceAndComments();
     char c = getCurrentChar();
 
     if (c == '\0') {
-        // End of file
+        /* End of file */
         return makeTokenWithLexeme(TOKEN_EOF, "EOF");
     }
 
     switch (c) {
-        // One-character tokens
+        /* One-character tokens */
         case '-':
             advance();
             return makeTokenWithLexeme(TOKEN_MINUS, "minus");

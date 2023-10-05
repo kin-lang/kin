@@ -7,7 +7,7 @@
 #include "headers/error-codes.h"
 
 
-// reporting Sytax Error
+
 void syntaxError(ErrorCodes reason, char character , int line) {
     switch (reason) {
         case ERROR_UNEXPECTED_CHARACTER:
@@ -22,7 +22,7 @@ void syntaxError(ErrorCodes reason, char character , int line) {
     }
 }
 
-//report File Operation Error
+/* report File Operation Error */
 void fileOperationError(ErrorCodes reason, const char* fileLocation) {
     switch (reason) {
         case ERROR_FAILED_TO_READ_FILE:
