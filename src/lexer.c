@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 
+#include "headers/common.h"
 #include "headers/lexer.h"
 #include "headers/exit-codes.h"
 #include "headers/errors.h"
@@ -16,8 +17,8 @@ int currentPos = 0; /* Current position in source */
 int line = 1; /* Current line number */ 
 
 /* Function to initialize the source code */
-void initLexersSource(char *source_code_buffer) {
-  source = source_code_buffer;
+void initLexersSource() {
+    source = source_code_info.buffer;
 }
 
 /* Function to create a new token with a lexeme */
