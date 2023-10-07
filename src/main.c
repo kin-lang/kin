@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 /* .h files imports */
+#include "headers/common.h"
 #include "headers/exit-codes.h"
 #include "headers/lexer.h"
 #include "headers/parser.h"
@@ -13,6 +14,8 @@
 /* constants */
 #define OL 0
 
+/* Global variables */
+SOURCE_CODE_INFO source_code_info;
 
 
 /* Our Kin-lang REPL. */
@@ -64,12 +67,17 @@ static char* readFile(char const *fileLocation) {
 
     fclose(source_file);
 
+    /* Update source code info globally */
+        source_code_info.buffer = buffer;
+        source_code_info.size = file_size;
+    /* Update source code info globally */
+
     return buffer;
 }
 
 static void runFile(char const *file_location) {
     char *source_code_buffer = readFile(file_location); /*defined in common*/
-    parser(source_code_buffer);
+    parser(); /* parser Input */
 }
 
 int main(int argc, char const *argv[]){
