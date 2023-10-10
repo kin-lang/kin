@@ -53,7 +53,7 @@ static char* readFile(char const *fileLocation) {
 
     /* no buffer */
     if( buffer == NULL) {
-        fileOperationError(ERROR_NO_ENOUGH_MEMORY_TO_RUN_A_FILE, fileLocation);
+        fileOperationError(ERROR_INSUFFICIENT_MEMORY, fileLocation);
     }
 
     size_t bytes_read = fread(buffer, sizeof(char), file_size ,source_file);

@@ -31,7 +31,7 @@ void fileOperationError(ErrorCodes reason, const char* fileLocation) {
         case ERROR_FILE_NOT_FOUND:
             fprintf(stderr, "File Operation Error: File \" %s \" not found. \n", fileLocation);
             exit(EXIT_FILE_NOT_FOUND);
-        case ERROR_NO_ENOUGH_MEMORY_TO_RUN_A_FILE:
+        case ERROR_INSUFFICIENT_MEMORY:
             fprintf(stderr, "File Operation Error: no enough memory to read \"%s\" \n", fileLocation);
             exit(EXIT_NO_ENOUGH_MEMORY);
         default:

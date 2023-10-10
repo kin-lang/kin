@@ -37,7 +37,8 @@ typedef struct {
     int line;
 } Token;
 
-void initLexersSource();
-Token scanToken();
+void initLexersSource(); /* initialize lexer's source codes */
+Token scanToken(); /* scan one token per time*/
+int tokensCounter(); /* count number of tokens */
 
 #endif

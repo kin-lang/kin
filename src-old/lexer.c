@@ -21,6 +21,20 @@ void initLexersSource() {
     source = source_code_info.buffer;
 }
 
+/* Function to count number of tokens */
+int tokensCounter() {
+    initLexersSource();
+    int tokensNumber = 0;
+    for (tokensNumber = 0 ; ; tokensNumber++) {
+        Token token = scanToken();
+        if(token.type == TOKEN_EOF) {
+            break;
+        }
+    }
+
+    return tokensNumber;
+}
+
 /* Function to create a new token with a lexeme */
 Token makeTokenWithLexeme(TokenType type, char* lexeme) {
     Token token;
