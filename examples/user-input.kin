@@ -5,10 +5,9 @@
 
 # getting user's input from keyboard - kin-lang
 
-num1 = injiza_amakuru `Enter num1:`;
-num2 = injiza_amakuru `Enter num2:`;
-num3 = injiza_amakuru `Enter num3:`;
-
-average = (num1 + num2 + num3) / 3;
+reka num1 = injiza_amakuru `Enter num1:`;
+reka num2 = injiza_amakuru `Enter num2:`;
+reka num3 = injiza_amakuru `Enter num3:`;
+reka average = (num1 + num2 + num3) / 3;
 
 tangaza_amakuru `average is: ${average}`;

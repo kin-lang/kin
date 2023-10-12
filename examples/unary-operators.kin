@@ -5,14 +5,13 @@
 
 # demonstrating unary operators in kin
 
-num1 = 10;
-num2 = 2;
-ukuri = nibyo;
-
-post_increment = num1++;  # post increment
-post_decrement = num2--;  # post decrement
-
-pre_increment = ++num1; # pre decrement
-pre_decrement = --num2; # pre increment
-ikinyoma = !ukuri; # negation
-
+reka num1 = 10;
+reka num2 = 2;
+reka ukuri = nibyo;
+reka 
+reka post_increment = num1++;  # post increment
+reka post_decrement = num2--;  # post decrement
+reka 
+reka pre_increment = ++num1; # pre decrement
+reka pre_decrement = --num2; # pre increment
+reka ikinyoma = !ukuri; # negation

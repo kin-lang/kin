@@ -5,7 +5,7 @@
 
 #loops control statements in kin-lang
 
-i = 0;
+reka i = 0;
 
 niba (i<100) subiramo {
 

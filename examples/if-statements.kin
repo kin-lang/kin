@@ -3,9 +3,9 @@
 #   LICENSE file in the root directory of this source tree.
 
 
-#if-statements in kin-lang
+# if-statements in kin-lang
 
-i = injiza_amakuru `Duhe umubare: `;
+reka i = injiza_amakuru `Duhe umubare: `;
 
 niba ((i%3 == 0) && (i%5 == 0)) {
     tangaza_amakuru `FizzBuzz`;
