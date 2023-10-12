@@ -16,8 +16,8 @@ porogaramu_ntoya factorial(umubare) {
 }
 
 
-umubare1 = 10;
+reka umubare1 = 10;
 
-ibisubizo = factorial(umubare1);
+reka ibisubizo = factorial(umubare1);
 
 tangaza_amakuru `${ibisubizo}`;

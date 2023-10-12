@@ -8,6 +8,6 @@
 # (<->) means vice-versa
 
 reka y = 100.12;
-reka z=10;
+reka z= 10;
 reka umubare = umubare(y); # casting from float to integer
 reka x = umubare_wibice(z); # casting from integer to float
