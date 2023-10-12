@@ -76,6 +76,7 @@ Token scanIdentifierOrKeyword() {
     if (strcmp(lexeme, "hagarara") == 0) return makeTokenWithLexeme(TOKEN_HAGARARA, "hagarara");
     if (strcmp(lexeme, "ubwoko") == 0) return makeTokenWithLexeme(TOKEN_UBWOKO, "ubwoko");
     if (strcmp(lexeme, "ntahinduka") == 0) return makeTokenWithLexeme(TOKEN_NTAHINDUKA, "ntahinduka");
+    if (strcmp(lexeme, "reka") == 0) return makeTokenWithLexeme(TOKEN_REKA, "reka");
     if (strcmp(lexeme, "kin_hagarara") == 0) return makeTokenWithLexeme(TOKEN_KIN_HAGARARA, "kin_hagarara");
 
     /* Not a keyword, it's an identifier */

@@ -6,8 +6,8 @@
 # demonstrating relational operators
 
 
-umubare1 = 10;
-umubare2 = 20;
+reka umubare1 = 10;
+reka umubare2 = 20;
 
 niba ( umubare1 >= 10 && umubare2 <=20 ) {
     tangaza_amakuru `umubare1 is GREATER THAN OR EQUAL TO 10 AND umubare2 is LESS THAN OR EQUAL TO 20 `;

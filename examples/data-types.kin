@@ -6,14 +6,14 @@
 #data-types in kin-lang
 
 
-umubare = 10;
-umubare_wibice = 10.1;
-ukuri = nibyo;
-urutonde_amagambo = ['Ibigori', 'Umuceri', 'Ibindi'];
-urutonde_imibare = [100, 133, 1, 0, 4.6];
-ijambo = "umuntu";
-amafaranga = ubusa;
-umuntu = {
+reka umubare = 10;
+reka umubare_wibice = 10.1;
+reka ukuri = nibyo;
+reka urutonde_amagambo = ['Ibigori', 'Umuceri', 'Ibindi'];
+reka urutonde_imibare = [100, 133, 1, 0, 4.6];
+reka ijambo = "umuntu";
+reka amafaranga = ubusa;
+reka umuntu = {
    amazina: "MURANGWA Pacifique",
    imyaka: 19,
    indeshyo: 187

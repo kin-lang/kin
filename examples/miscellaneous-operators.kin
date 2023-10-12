@@ -6,7 +6,7 @@
 
 # pointers in kin-lang
 
-izina = "MURANGWA Pacifique";
+reka izina = "MURANGWA Pacifique";
 *aho_izina_ribitse = &izina;
 
 tangaza_amakuru `Aho izina ribitse kuri mudasobwa: ${aho_izina_ribitse}`;

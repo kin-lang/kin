@@ -6,8 +6,8 @@
 # exiting kin program without completing execution.
 
 
-number = 10;
-users_number = injiza_amakuru `Umubare: `;
+reka number = 10;
+reka users_number = injiza_amakuru `Umubare: `;
 
 niba (users_number > number) {
     tangaza_amakuru `Uratsinzwe wanditse umubare muto`;

@@ -4,7 +4,7 @@
 
 # simple loop in kin-lang
 
-i = 0;
+reka i = 0;
 
 niba (i<10) subiramo {
     tangaza_amakuru `${i}`;
