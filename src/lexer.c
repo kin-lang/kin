@@ -63,7 +63,6 @@ Token scanIdentifierOrKeyword() {
     if (strcmp(lexeme, "nibyo") == 0) return makeTokenWithLexeme(TOKEN_NIBYO, "nibyo");
     if (strcmp(lexeme, "sibyo") == 0) return makeTokenWithLexeme(TOKEN_SIBYO, "sibyo");
     if (strcmp(lexeme, "nanone_niba") == 0) return makeTokenWithLexeme(TOKEN_NANONE_NIBA, "nanone-niba");
-    if (strcmp(lexeme, "imiterere") == 0) return makeTokenWithLexeme(TOKEN_IMITERERE, "imiterere");
     if (strcmp(lexeme, "umubare") == 0) return makeTokenWithLexeme(TOKEN_UMUBARE, "umubare");
     if (strcmp(lexeme, "ibice") == 0) return makeTokenWithLexeme(TOKEN_IBICE, "ibice");
     if (strcmp(lexeme, "niba_byanze") == 0) return makeTokenWithLexeme(TOKEN_NIBA_BYANZE, "niba_byanze");
@@ -77,6 +76,9 @@ Token scanIdentifierOrKeyword() {
     if (strcmp(lexeme, "ubwoko") == 0) return makeTokenWithLexeme(TOKEN_UBWOKO, "ubwoko");
     if (strcmp(lexeme, "ntahinduka") == 0) return makeTokenWithLexeme(TOKEN_NTAHINDUKA, "ntahinduka");
     if (strcmp(lexeme, "reka") == 0) return makeTokenWithLexeme(TOKEN_REKA, "reka");
+    if (strcmp(lexeme, "soma_inyandiko") ==0 ) return makeTokenWithLexeme(TOKEN_SOMA_INYANDIKO, lexeme);
+    if (strcmp(lexeme, "andika_inyandiko") == 0) return makeTokenWithLexeme(TOKEN_ANDIKA_INYANDIKO, lexeme);
+    if (strcmp(lexeme, "vugurura_inyandiko") == 0) return makeTokenWithLexeme(TOKEN_KUVUGURURA_INYANDIKO, lexeme);
     if (strcmp(lexeme, "kin_hagarara") == 0) return makeTokenWithLexeme(TOKEN_KIN_HAGARARA, "kin_hagarara");
 
     /* Not a keyword, it's an identifier */
