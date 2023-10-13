@@ -1,0 +1,12 @@
+#   Copyright (c) MURANGWA Pacifique. and affiliates.
+#   This source code is licensed under the Apache License 2.0 found in the
+#   LICENSE file in the root directory of this source tree.
+
+
+# file-operations in Kin
+
+
+reka amakuru_ari_munyandiko = soma_inyandiko `path-to-file`; # reading a file.
+reka amakuru_ajya_munyandiko = injiza_amakuru `Amakuru ushaka gushyira munyandiko:`; # getting user's data that will be written to file.
+andika_inyandiko `path-to-file`; # writing to file
+vugurura_inyandiko `path-to-file , ${amakuru_ajya_munyandiko}`; # updating information in the file
