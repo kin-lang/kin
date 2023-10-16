@@ -80,6 +80,7 @@ Token scanIdentifierOrKeyword() {
     if (strcmp(lexeme, "andika_inyandiko") == 0) return makeTokenWithLexeme(TOKEN_ANDIKA_INYANDIKO, lexeme);
     if (strcmp(lexeme, "vugurura_inyandiko") == 0) return makeTokenWithLexeme(TOKEN_KUVUGURURA_INYANDIKO, lexeme);
     if (strcmp(lexeme, "kin_hagarara") == 0) return makeTokenWithLexeme(TOKEN_KIN_HAGARARA, lexeme);
+    if (strcmp(lexeme, "sisitemu") == 0) return makeTokenWithLexeme(TOKEN_SISITEMU, lexeme);
 
     /* Not a keyword, it's an identifier */
     return makeTokenWithLexeme(TOKEN_IDENTIFIER, lexeme);
