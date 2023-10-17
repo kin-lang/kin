@@ -101,7 +101,7 @@ int main(int argc, char const *argv[]){
     
     if (argc == 1) {
         repl(); /* enter our repl */
-    }else if(arc == 2) {
+    }else if(argc == 2) {
         runFile(argv[1]); /* run codes that are in provided file location */
     } else if(argc == 3) {
         if (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
