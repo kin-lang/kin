@@ -10,5 +10,6 @@
 #define EXIT_UNABLE_TO_READ_FILE 6     
 #define EXIT_NO_ENOUGH_MEMORY 7        
 #define EXIT_GENERIC_ERROR 8           
+#define INVALID_TERMINAL_ARGUMENTS 9
 
 #endif

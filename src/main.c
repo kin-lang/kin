@@ -80,13 +80,35 @@ static void runFile(char const *file_location) {
     parser(); /* parser Input */
 }
 
+
+/* function to display the help to user */
+static void displayUsage() {
+    printf("Usage: kin [options] [file]\n\n");
+    printf("Options:\n");
+    printf("  -h, --help        Display this help message and exit.\n");
+    printf("  -v, --version     Display the interpreter version.\n");
+    printf("\nCommands:\n");
+    printf("  help              Display this help message.\n\n");
+    printf("Examples:\n");
+    printf("  kin script.kin    Run the 'script.kin' file.\n");
+    
+    /* exit after displaying the help to the user */
+    exit(0);
+}
+
 int main(int argc, char const *argv[]){
     /* entry point of our interpreter */
     
     if (argc == 1) {
         repl(); /* enter our repl */
-    }else if(argc == 2) {
+    }else if(arc == 2) {
         runFile(argv[1]); /* run codes that are in provided file location */
+    } else if(argc == 3) {
+        if (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
+            displayUsage();
+        } else {
+            argumentsError(ERROR_UNKNOWN_COMMAND);
+        }
     }else {
         argumentsError(ERROR_INVALID_TERMINAL_ARGUMENTS);
     }

@@ -45,7 +45,13 @@ void argumentsError(ErrorCodes reason) {
             fprintf(stderr, "Invalid Arguments Error: Please enter reply or provide a file \n");
             exit(EXIT_INVALID_ARGUMENTS);
             break;
+
+            case ERROR_UNKNOWN_COMMAND:
+            printf("Error: Command '%s' not found. Run 'kin help' for usage.\n", command);
+            exit(INVALID_TERMINAL_ARGUMENTS)
+            break;
         default:
             break;
     }
 }
+
