@@ -21,6 +21,22 @@ int currentTokensPos;
 int numberOfTokens;
 /* Global variables for parser */
 
+// get the next token
+Token getNextToken(Token **tokens) {
+    return *tokens[currentTokensPos];
+}
+
+Token consumeToken(Token **tokens) {
+    Token token = *tokens[currentTokensPos];
+    currentTokensPos++;
+
+    return token;
+}
+
+void advance() {
+  currentTokensPos++;
+}
+
 /* initialize our tokens */
 Token* initializeTokens() {
     initLexersSource(); /* Initialize our lexer's source */
@@ -47,9 +63,6 @@ Token* initializeTokens() {
 /* entry point of Kin's parser. */
 void parser() {
     Token* tokens = initializeTokens();
-    for( ; currentTokensPos <= numberOfTokens-1; currentTokensPos++) {
-        Token token = tokens[currentTokensPos];
-        printf("Token type: %d, Lexeme: %s, Line: %d\n", token.type, token.lexeme, token.line);
-    }
+    printf("%d", getNextToken(&tokens).type);
     free(tokens);
 }
