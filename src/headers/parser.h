@@ -8,6 +8,9 @@
 #ifndef KIN_PARSER
 #define kIN_PARSER
 
+#include "lexer.h"
+
 void parser();
+Token* initializeTokens();
 
 #endif

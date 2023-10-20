@@ -16,4 +16,6 @@ void syntaxError(ErrorCodes reason, char character , int line);
 void fileOperationError(ErrorCodes reason, const char* fileLocation);
 void argumentsError(ErrorCodes reason);
 
+void memoryError(ErrorCodes reason, char* message);
+
 #endif
