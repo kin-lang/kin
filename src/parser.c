@@ -7,18 +7,49 @@
 
 /* core libraries */
 #include <stdio.h>
+#include <stdlib.h>
 
 /* custom headers */
 #include "headers/parser.h"
 #include "headers/lexer.h"
+#include "headers/common.h"
+#include "headers/errors.h"
+#include "headers/error-codes.h"
+
+/* Global variables for parser */
+int currentTokensPos;
+int numberOfTokens;
+/* Global variables for parser */
+
+/* initialize our tokens */
+Token* initializeTokens() {
+    initLexersSource(); /* Initialize our lexer's source */
+    Token *tokens = (Token *) malloc(sizeof(Token) * (int) source_code_info.size);
+    if (tokens == NULL) {
+        memoryError(ERROR_INSUFFICIENT_MEMORY, "Memory Error: No enough memory to run this program");
+    }
+
+    int i = 0;
+    for (i = 0 ; ; i++) {
+        Token token = scanToken();
+        tokens[i] = token;
+        numberOfTokens++;
+        if (token.type == TOKEN_EOF) { // store EOF token before exiting.
+            tokens[i] = token;
+            break;
+        }
+    }
+
+    return tokens;
+}   
 
 
 /* entry point of Kin's parser. */
 void parser() {
-    initLexersSource(); /* Initialize our lexer's source */
-    while (1) {
-        Token token = scanToken();
+    Token* tokens = initializeTokens();
+    for( ; currentTokensPos <= numberOfTokens-1; currentTokensPos++) {
+        Token token = tokens[currentTokensPos];
         printf("Token type: %d, Lexeme: %s, Line: %d\n", token.type, token.lexeme, token.line);
-        if (token.type == TOKEN_EOF) break;
     }
+    free(tokens);
 }
