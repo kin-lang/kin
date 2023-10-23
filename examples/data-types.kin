@@ -6,11 +6,12 @@
 #data-types in kin-lang
 
 
-reka umubare = 10;
-reka umubare_wibice = 10.1;
-reka ukuri = nibyo;
+reka umubare1 = 10;
+reka umubare_wibice1 = 10.1;
+reka ukuri1 = nibyo;
 reka urutonde_amagambo = ['Ibigori', 'Umuceri', 'Ibindi'];
 reka urutonde_imibare = [100, 133, 1, 0, 4.6];
+reka urutonde_ruvanze = [100, "Ibigori", 1.2];
 reka ijambo = "umuntu";
 reka amafaranga = ubusa;
 reka umuntu = {
