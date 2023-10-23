@@ -160,16 +160,28 @@ Token scanToken() {
         /* One-character tokens */
         case '-':
             advance(&currentPos);
+            if (getCurrentChar() == '-') {
+                advance(&currentPos);
+                return makeTokenWithLexeme(TOKEN_DECREMENT, "decrement");
+            }
             return makeTokenWithLexeme(TOKEN_MINUS, "minus");
         case '+':
             advance(&currentPos);
+            if ( getCurrentChar() == '+') {
+                advance(&currentPos);
+                return makeTokenWithLexeme(TOKEN_INCREMENT, "increment");
+            }
             return makeTokenWithLexeme(TOKEN_PLUS, "plus");
         case '*':
             advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_STAR, "star");
         case '=':
             advance(&currentPos);
-            return makeTokenWithLexeme(TOKEN_EQUALITY, "equal");
+            if(getCurrentChar() == '='){
+                advance(&currentPos);
+                return makeTokenWithLexeme(TOKEN_EQUALITY, "equality");
+            }
+            return makeTokenWithLexeme(TOKEN_ASSIGNMENT, "assignment");
         case '/':
             advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_DIVISION, "division");
@@ -181,12 +193,23 @@ Token scanToken() {
             return makeTokenWithLexeme(TOKEN_MODULO, "modulo");
         case '&':
             advance(&currentPos);
+            if (getCurrentChar() == '&') {
+                advance(&currentPos);
+                return makeTokenWithLexeme(TOKEN_AND, "and");
+            }
             return makeTokenWithLexeme(TOKEN_AMPERSAND, "ampersand");
         case '|':
             advance(&currentPos);
-            return makeTokenWithLexeme(TOKEN_OR, "or");
+            if (getCurrentChar() == '|') {
+                advance(&currentPos);
+                return makeTokenWithLexeme(TOKEN_OR, "or");
+            }
         case '!':
             advance(&currentPos);
+            if (getCurrentChar() == '=') {
+                advance(&currentPos);
+                return makeTokenWithLexeme(TOKEN_NOT_EQUAL, "not_equal");
+            }
             return makeTokenWithLexeme(TOKEN_NEGATION, "negation");
         case ';':
             advance(&currentPos);
