@@ -21,23 +21,20 @@ int currentTokensPos;
 int numberOfTokens;
 /* Global variables for parser */
 
-// get the next token
-Token getNextToken(Token **tokens) {
-    return *tokens[currentTokensPos];
+Token previousToken(Token **tokens) {
+    return *tokens[currentTokensPos -1];
 }
-
-Token consumeToken(Token **tokens) {
+Token nextToken(Token **tokens) {
+    return *tokens[currentTokensPos + 1];
+}
+Token currentToken(Token **tokens) {
     Token token = *tokens[currentTokensPos];
     currentTokensPos++;
 
     return token;
 }
 
-void advance() {
-  currentTokensPos++;
-}
-
-/* initialize our tokens */
+/* get tokens from the lexer (tokenizer) our tokens */
 Token* initializeTokens() {
     initLexersSource(); /* Initialize our lexer's source */
     Token *tokens = (Token *) malloc(sizeof(Token) * (int) source_code_info.size);
@@ -63,6 +60,10 @@ Token* initializeTokens() {
 /* entry point of Kin's parser. */
 void parser() {
     Token* tokens = initializeTokens();
-    printf("%d", getNextToken(&tokens).type);
+    // while (currentToken(&tokens).type != TOKEN_EOF) {
+    //     switch (currentToken(&tokens).type) {
+            
+    //     }
+    // }    
     free(tokens);
 }

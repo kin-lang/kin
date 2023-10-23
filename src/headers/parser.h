@@ -12,8 +12,8 @@
 
 void parser();
 Token* initializeTokens();
-Token getNextToken(Token **tokens);
-Token consumeToken(Token **tokens);
-void advance();
+Token currentToken(Token **tokens);
+Token previousToken(Token **tokens);
+Token nextToken(Token **tokens);
 
 #endif
