@@ -37,11 +37,6 @@ Token makeTokenWithLexeme(TokenType type, char* lexeme) {
     return token;
 }
 
-/* Function to advance the current position */
-void advance() {
-  currentPos++;
-}
-
 /* Function to get the current character */
 char getCurrentChar() {
   return source[currentPos];
@@ -50,7 +45,7 @@ char getCurrentChar() {
 /*Function to get current character and advance*/
 char consume() {
   char c = getCurrentChar();
-  advance();
+  advance(&currentPos);
   return c;
 }
 
@@ -59,7 +54,7 @@ Token scanIdentifierOrKeyword() {
     int start = currentPos;
 
     while (isalnum(getCurrentChar()) || getCurrentChar() == '_') {
-      advance();
+      advance(&currentPos);
     }
 
     char* lexeme = strndup(&source[start], currentPos - start);
@@ -102,11 +97,11 @@ Token scanStringLiteral() {
         if (getCurrentChar() == '\0' || getCurrentChar() == '\n') {
             syntaxError(ERROR_UNTERMINATED_STRING_LITERAL, '\n', line);
         }
-        advance();
+        advance(&currentPos);
     }
 
     char* lexeme = strndup(&source[start], currentPos - start);
-    advance(); /* escape closing delimiter for string litelar. */
+    advance(&currentPos); /* escape closing delimiter for string litelar. */
     return makeTokenWithLexeme(TOKEN_STRING, lexeme);
 }
 
@@ -116,13 +111,13 @@ Token scanNumber() {
     int start = currentPos;
 
     while (isdigit(getCurrentChar())) {
-        advance();
+        advance(&currentPos);
     }
 
     if (getCurrentChar() == '.' && isdigit(source[currentPos + 1])) {
-        advance();
+        advance(&currentPos);
         while (isdigit(getCurrentChar())) {
-            advance();
+            advance(&currentPos);
         }
         return makeTokenWithLexeme(TOKEN_FLOAT, strndup(&source[start], currentPos - start));
     }
@@ -135,15 +130,15 @@ void skipWhitespaceAndComments() {
     while (true) {
         char c = getCurrentChar();
         if (c == ' ' || c == '\t' || c == '\r') {
-            advance();
+            advance(&currentPos);
         } else if (c == '\n') {
             /* Newline character */
-            advance();
+            advance(&currentPos);
             line++;
         } else if (c == '#') {
             /* Comment, skip until the end of the line */
             while (getCurrentChar() != '\n' && getCurrentChar() != '\0') {
-              advance();
+              advance(&currentPos);
             }
         } else {
             break;
@@ -164,88 +159,88 @@ Token scanToken() {
     switch (c) {
         /* One-character tokens */
         case '-':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_MINUS, "minus");
         case '+':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_PLUS, "plus");
         case '*':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_STAR, "star");
         case '=':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_EQUALITY, "equal");
         case '/':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_DIVISION, "division");
         case '^':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_POWER, "power");
         case '%':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_MODULO, "modulo");
         case '&':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_AMPERSAND, "ampersand");
         case '|':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_OR, "or");
         case '!':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_NEGATION, "negation");
         case ';':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_END_OF_LINE, "end-of-line");
         case ']':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_CLOSE_BRACKET, "close-bracket");
         case '[':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_OPEN_BRACKET, "open-bracket");
         case '(':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_OPEN_PARANTHESES, "open-parantheses");
         case ')':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_CLOSE_PARANTHESES, "close-parantheses");
         case '{':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_OPEN_CURLY_BRACES, "open-curly-braces");
         case '}':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_CLOSE_CURLY_BRACES, "close-curly-braces");
         case '\'':
             return scanStringLiteral();
         case '"':
             return scanStringLiteral();
         case ':':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_COLON, "colon");
         case '`':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_BACK_TICKS, "back-ticks");
         case '>':
-            advance();
+            advance(&currentPos);
             if (getCurrentChar() == '=') {
-                advance();
+                advance(&currentPos);
                 return makeTokenWithLexeme(TOKEN_GREATER_THAN_OR_EQUAL, "greater-than-or-equal");
             }
             return makeTokenWithLexeme(TOKEN_GREATER_THAN, "greater-than");
         case '<':
-            advance();
+            advance(&currentPos);
             if (getCurrentChar() == '=') {
-                advance();
+                advance(&currentPos);
                 return makeTokenWithLexeme(TOKEN_LESS_THAN_OR_EQUAL, "less-than-or-equal");
             }
             return makeTokenWithLexeme(TOKEN_LESS_THAN, "less-than");
         case '.':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_PERIOD, "period");
         case ',':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_COMMA, "comma");
         case '$':
-            advance();
+            advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_DOLLA_SIGN, "dolla-sign");
         default:
             if (isdigit(c)) {
