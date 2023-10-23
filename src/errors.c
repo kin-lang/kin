@@ -61,7 +61,7 @@ void argumentsError(ErrorCodes reason) {
 void memoryError(ErrorCodes reason, char* message) {
     switch (reason) {
     case ERROR_INSUFFICIENT_MEMORY:
-        fprintf(stderr, message);
+        fprintf(stderr, "%s", message);
         exit(EXIT_NO_ENOUGH_MEMORY);
         break;
     default:

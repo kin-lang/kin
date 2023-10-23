@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 
+
 typedef struct {
     char* buffer;
     size_t size;
@@ -17,5 +18,7 @@ typedef struct {
 
 extern SOURCE_CODE_INFO source_code_info;
 
+/* Common Functions */
+void advance(int *position);
 
-#endif //_KIN_COMMON_H
+#endif /*_KIN_COMMON_H */
