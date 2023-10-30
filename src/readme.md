@@ -1,8 +1,7 @@
 Kin-lang - Interpreter
 ===================
 
-Here is where You'll find implementation of our ```Kin-lang's``` ```Tree-Walk Interpreter```
-``.h`` files contains our self-defined headers which contains utility functions, enums, structures ...
+Here is where You'll find implementation of our ```Kin-lang's``` ```Tree-Walk Interpreter```.
 
 How it Works
 ------------
