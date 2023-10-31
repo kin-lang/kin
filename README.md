@@ -1,5 +1,3 @@
-`Kin` `Under Development` `Contributions are welcomed`
-
 # Kin
 
 Kin is a DSL (Domain Specific Language), Dynamically Typed and high-level programming language.
