@@ -60,10 +60,10 @@ Token* initializeTokens() {
 /* entry point of Kin's parser. */
 void parser() {
     Token* tokens = initializeTokens();
-    // while (currentToken(&tokens).type != TOKEN_EOF) {
-    //     switch (currentToken(&tokens).type) {
+     while (currentToken(&tokens).type != TOKEN_EOF) {
+         switch (currentToken(&tokens).type) {
             
-    //     }
-    // }    
+         }
+    }    
     free(tokens);
 }
