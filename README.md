@@ -1,8 +1,8 @@
 # Kin
 
-Kin is a DSL (Domain Specific Language), Dynamically Typed and high-level programming language.
-It is designed to allow people `write computer programs in Kinyarwanda (Native language for Rwandans).`
-*`Our language is designed to allow people to be easly get introduced to programming`*.
+Kin is a DSL (Domain Specific Language), Dynamically Typed and high-level programming language.<br>
+`It is designed to allow people write computer programs in Kinyarwanda (Native language for Rwandans).`<br>
+*Our language is designed to allow people to be easly get introduced to programming*.
 
 ## Maintainers
 
