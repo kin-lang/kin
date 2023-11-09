@@ -1,4 +1,4 @@
-# kin-lang
+<!-- # kin-lang
 
 Kin relies on many contributors who help us to maintain or track issues, we continously `thank them` for their great work.
 
@@ -32,4 +32,6 @@ If you fix any issue or add new feature, feel free to open a pull request. It wi
 
 Kin uses `Github Discussions` to bring it's users together and create an engageable community.
 
-If you have anything to ask community please use `Github Discussion` for our main repo, there will be engineers to answer your questions.
+If you have anything to ask community please use `Github Discussion` for our main repo, there will be engineers to answer your questions. -->
+
+To be added later
