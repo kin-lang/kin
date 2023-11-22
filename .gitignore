@@ -62,7 +62,6 @@ Testing/
 compile_commands.json
 
 # Generated Makefiles or project files (if using Make or other build systems)
-Makefile
 *.make
 *.cbp
 *.workspace
@@ -76,3 +75,4 @@ CMakeUserPresets.json.backup
 
 /bin
 *.cmake
+*.out

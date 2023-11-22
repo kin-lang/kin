@@ -47,6 +47,7 @@ Token* initializeTokens() {
         Token token = scanToken();
         tokens[i] = token;
         numberOfTokens++;
+        printf("Line %i: Token = %s \n", token.line, token.lexeme);
         if (token.type == TOKEN_EOF) { // store EOF token before exiting.
             tokens[i] = token;
             break;
@@ -59,11 +60,6 @@ Token* initializeTokens() {
 
 /* entry point of Kin's parser. */
 void parser() {
-    Token* tokens = initializeTokens();
-     while (currentToken(&tokens).type != TOKEN_EOF) {
-         switch (currentToken(&tokens).type) {
-            
-         }
-    }    
+    Token* tokens = initializeTokens();  
     free(tokens);
 }

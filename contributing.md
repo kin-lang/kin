@@ -1,15 +1,21 @@
-<!-- # kin-lang
+# kin-lang
 
 Kin relies on many contributors who help us to maintain or track issues, we continously `thank them` for their great work.
 
+## Building project locally
 
-# Building project locally
+Run this command it it will generate  *kin.out* binary.
 
-Run this command it it will generate build folder with *kin* binary inside.
-```CMake
-    cmake --build .
+```Make
+    make
 ```
+
 Remember to run it in the root directory.
+
+If you're using linux or any other unix like OS
+Run ``make install`` to install *kin* globally.
+
+You can also run ``make clean`` to delete all ``.out, .o`` files.
 
 ## Issue tracking
 
@@ -19,19 +25,16 @@ Kin team tracks issues by using Github, if you face any issue or you want to req
 
 If you fix any issue or add new feature, feel free to open a pull request. It will be reviewed by our engineers and if it meets all requirements we'll merge it.
 
-    `Pull Request - Requirements`
+`Pull Request - Requirements`
 
-        1. A pull-request name must reflect what you've done.
-        2. Add if it's a bug fix or a new feature or typo.
-        3. You've to describe what you've done beriefly.
+1. A pull-request name must reflect what you've done.
+2. Add if it's a bug fix or a new feature or typo.
+3. You've to describe what you've done beriefly.
 
 `We will not merge those pull requests that doesn't have a clear description`
-
 
 ## Discussions
 
 Kin uses `Github Discussions` to bring it's users together and create an engageable community.
 
-If you have anything to ask community please use `Github Discussion` for our main repo, there will be engineers to answer your questions. -->
-
-To be added later
+If you have anything to ask community please use `Github Discussion` for our main repo, there will be engineers to answer your questions.
