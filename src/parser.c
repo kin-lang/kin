@@ -47,7 +47,6 @@ Token* initializeTokens() {
         Token token = scanToken();
         tokens[i] = token;
         numberOfTokens++;
-        printf("Line %i: Token = %s \n", token.line, token.lexeme);
         if (token.type == TOKEN_EOF) { // store EOF token before exiting.
             tokens[i] = token;
             break;
@@ -63,3 +62,4 @@ void parser() {
     Token* tokens = initializeTokens();  
     free(tokens);
 }
+    
