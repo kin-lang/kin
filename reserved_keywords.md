@@ -24,6 +24,6 @@ Kin is a DSL (Domain Specific Language), Dynamically Typed and high-level progra
 - reka (let)
 - soma_inyandiko (open a file)
 - andika_inyandiko (write to a file)
-- vugurura_inyandikoxeme (append data to file)
+- vugurura_inyandiko (append data to file)
 - kin_hagarara (exit)
 - sisitemu  (system : executing system's commands)
