@@ -10,12 +10,12 @@
 #include <stdbool.h>
 
 /* .h files imports */
-#include "headers/common.h"
-#include "headers/exit-codes.h"
-#include "headers/lexer.h"
-#include "headers/parser.h"
-#include "headers/error-codes.h"
-#include "headers/errors.h"
+#include "common.h"
+#include "exit-codes.h"
+#include "lexer.h"
+#include "parser.h"
+#include "error-codes.h"
+#include "errors.h"
 
 
 /* constants */

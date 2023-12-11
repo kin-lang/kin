@@ -11,11 +11,11 @@
 #include <stdbool.h>
 #include <ctype.h>
 
-#include "headers/common.h"
-#include "headers/lexer.h"
-#include "headers/exit-codes.h"
-#include "headers/errors.h"
-#include "headers/error-codes.h"
+#include "common.h"
+#include "lexer.h"
+#include "exit-codes.h"
+#include "errors.h"
+#include "error-codes.h"
 
 
 
