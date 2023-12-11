@@ -3,11 +3,11 @@
 #   LICENSE file in the root directory of this source tree.
 
 
-# getting user's input from keyboard - kin-lang
+# Getting user's input from keyboard in Kin
 
-reka num1 = injiza_amakuru `Enter num1:`;
+reka num1 = injiza_amakuru `Enter num1:`;   # Prompt user to input a number
 reka num2 = injiza_amakuru `Enter num2:`;
 reka num3 = injiza_amakuru `Enter num3:`;
-reka average = (num1 + num2 + num3) / 3;
+reka average = (num1 + num2 + num3) / 3;    # Find the average of added numbers
 
-tangaza_amakuru `average is: ${average}`;
+tangaza_amakuru `average is: ${average}`;   # Log the average to the std

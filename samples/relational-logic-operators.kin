@@ -3,26 +3,26 @@
 #   LICENSE file in the root directory of this source tree.
 
 
-# demonstrating relational operators
+# Demonstrating relational operators in Kin
 
 
-reka umubare1 = 10;
-reka umubare2 = 20;
+reka umubare1 = 10;                                                                                                 # Declare variable umubare1 and assign 10 to it
+reka umubare2 = 20;                                                                                                 # Declare variable umubare2 and assign 20 to it
 
-niba ( umubare1 >= 10 && umubare2 <=20 ) {
-    tangaza_amakuru `umubare1 is GREATER THAN OR EQUAL TO 10 AND umubare2 is LESS THAN OR EQUAL TO 20 `;
-} nanone_niba ( umubare1 >= 10 || umubare2 <=20 ) {
-    tangaza_amakuru `umubare1 is GREATER THAN OR EQUAL TO 10 OR umubare2 is LESS THAN OR EQUAL TO 20 `;
-} nanone_niba (umubare1 > 5) {
-    tangaza_amakuru `umubare1 is GREATER THAN 5 `;
-} nanone_niba (umubare2 < 30) {
-    tangaza_amakuru `umubare2 is LESS THAN 20 `;
-} niba_byanze {
-    tangaza_amakuru `ntanakimwe kiricyo mubyatanzwe.`;
+niba ( umubare1 >= 10 && umubare2 <=20 ) {                                                                          # Check if umubare1 >= 10 && umubare2 <=20 is true
+    tangaza_amakuru `umubare1 is GREATER THAN OR EQUAL TO 10 AND umubare2 is LESS THAN OR EQUAL TO 20 `;            # Log info based on the above command
+} nanone_niba ( umubare1 >= 10 || umubare2 <=20 ) {                                                                 # If the first check has failed re-check again if ( umubare1 >= 10 || umubare2 <=20 )
+    tangaza_amakuru `umubare1 is GREATER THAN OR EQUAL TO 10 OR umubare2 is LESS THAN OR EQUAL TO 20 `;             # Log info based on the above command
+} nanone_niba (umubare1 > 5) {                                                                                      # If the both checks above have failed re-check again if (umubare1 > 5)
+    tangaza_amakuru `umubare1 is GREATER THAN 5 `;                                                                  # Log info based on the above command
+} nanone_niba (umubare2 < 30) {                                                                                     # If the above checks have failed re-check again if (umubare2 < 30)
+    tangaza_amakuru `umubare2 is LESS THAN 20 `;                                                                    # Log info based on the above command
+} niba_byanze {                                                                                                     # If all checks above have failed
+    tangaza_amakuru `ntanakimwe kiricyo mubyatanzwe.`;                                                              # Log info based on the above command
 }
 
-this_is_kin = sibyo;
+this_is_kin = sibyo;                                                                                                # Declare a variable called this_is_kin and assign sibyo(true) to it
 
-niba (!this_is_kin) {
-    tangaza_amakuru `this language is NOT kin-lang `;
+niba (!this_is_kin) {                                                                                               # If this_is_kin kin is not true
+    tangaza_amakuru `this language is NOT kin-lang `;                                                               # Log info to the screen
 }

@@ -67,6 +67,7 @@ Token scanIdentifierOrKeyword() {
     if (strcmp(lexeme, "nanone_niba") == 0) return makeTokenWithLexeme(TOKEN_NANONE_NIBA, lexeme);
     if (strcmp(lexeme, "umubare") == 0) return makeTokenWithLexeme(TOKEN_UMUBARE, lexeme);
     if (strcmp(lexeme, "umubare_wibice") == 0) return makeTokenWithLexeme(TOKEN_UMUBARE_WIBICE, lexeme);
+    if (strcmp(lexeme, "ijambo") == 0) return makeTokenWithLexeme(TOKEN_IJAMBO, lexeme);
     if (strcmp(lexeme, "niba_byanze") == 0) return makeTokenWithLexeme(TOKEN_NIBA_BYANZE, lexeme);
     if (strcmp(lexeme, "subiramo") == 0) return makeTokenWithLexeme(TOKEN_SUBIRAMO, lexeme);
     if (strcmp(lexeme, "tanga") == 0) return makeTokenWithLexeme(TOKEN_TANGA, lexeme);

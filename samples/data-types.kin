@@ -3,22 +3,22 @@
 #   LICENSE file in the root directory of this source tree.
 
 
-#data-types in kin-lang
+#  Datatypes in Kin
 
 
-reka umubare1 = 10;
-reka umubare_wibice1 = 10.1;
-reka ukuri1 = nibyo;
-reka urutonde_amagambo = ['Ibigori', 'Umuceri', 'Ibindi'];
-reka urutonde_imibare = [100, 133, 1, 0, 4.6];
-reka urutonde_ruvanze = [100, "Ibigori", 1.2];
-reka ijambo = "umuntu";
-reka amafaranga = ubusa;
+reka umubare1 = 10;  # variable (number) umubare1 decralation and assigning
+reka umubare_wibice1 = 10.1;  # variable (number) umubare_wibice1 decralation and assigning
+reka ukuri1 = nibyo; # variable (number) ukuri1 decralation and assigning
+reka urutonde_amagambo = ['Ibigori', 'Umuceri', 'Ibindi'];  # variable (list of words) urutonde_amagambo decralation and assigning
+reka urutonde_imibare = [100, 133, 1, 0, 4.6];  # variable (list of numbers) urutonde_imibare decralation and assigning
+reka urutonde_ruvanze = [100, "Ibigori", 1.2];  # variable (list of both numbers and numbers) urutonde_ruvanze  decralation and assigning
+reka ijambo = "umuntu"; # variable (string) ijambo decralation and assigning
+reka amafaranga = ubusa;   # variable (null) amafaranga decralation and assigning
 reka umuntu = {
    amazina: "MURANGWA Pacifique",
    imyaka: 19,
    indeshyo: 187
-};
+}; # variable (structure) umuntu decralation and assigning
 
 tangaza_amakuru `
    ${ubwoko(umubare)}
@@ -27,4 +27,4 @@ tangaza_amakuru `
    ${ubwoko(urutonde)}
    ${ubwoko(ijambo)}
    ${ubwoko(amafaranga)}
-`;
+`; # Logging decralation && assigned variables to the std.
