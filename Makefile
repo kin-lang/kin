@@ -7,7 +7,7 @@ flags = -g
 $(exec): $(objects)
 	gcc $(objects) $(flags) -o $(exec)
 
-%.o: %.c headers/%.h
+%.o: %.c ./%.h
 	gcc -c $(flags) $< -o $@
 
 install:

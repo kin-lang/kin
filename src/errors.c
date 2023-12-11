@@ -9,9 +9,9 @@
 #include <stdlib.h>
 
 
-#include "headers/errors.h"
-#include "headers/exit-codes.h"
-#include "headers/error-codes.h"
+#include "errors.h"
+#include "exit-codes.h"
+#include "error-codes.h"
 
 
 

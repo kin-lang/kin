@@ -10,11 +10,11 @@
 #include <stdlib.h>
 
 /* custom headers */
-#include "headers/parser.h"
-#include "headers/lexer.h"
-#include "headers/common.h"
-#include "headers/errors.h"
-#include "headers/error-codes.h"
+#include "parser.h"
+#include "lexer.h"
+#include "common.h"
+#include "errors.h"
+#include "error-codes.h"
 
 /* Global variables for parser */
 int currentTokensPos;
@@ -47,6 +47,7 @@ Token* initializeTokens() {
         Token token = scanToken();
         tokens[i] = token;
         numberOfTokens++;
+        printf("%d:     \t %s", token.line, token.lexeme);
         if (token.type == TOKEN_EOF) { // store EOF token before exiting.
             tokens[i] = token;
             break;
@@ -59,7 +60,7 @@ Token* initializeTokens() {
 
 /* entry point of Kin's parser. */
 void parser() {
-    Token* tokens = initializeTokens();  
+    Token* tokens = initializeTokens();
     free(tokens);
 }
     

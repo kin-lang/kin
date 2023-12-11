@@ -5,7 +5,7 @@
 */
 
 
-#include "headers/common.h"
+#include "common.h"
 
 void advance(int *position) {
     *position += 1;
