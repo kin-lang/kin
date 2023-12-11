@@ -2,12 +2,16 @@
 #   This source code is licensed under the Apache License 2.0 found in the
 #   LICENSE file in the root directory of this source tree.
 
-#type-casting in kin-lang
+# Type Casting in Kin
 
-# type-casting integer -> float (<->)
-# (<->) means vice-versa
+# Casting from integer to float and vice versa 
 
 reka y = 100.12;
 reka z= 10;
-reka umubare = umubare(y); # casting from float to integer
-reka x = umubare_wibice(z); # casting from integer to float
+reka ijambo1 = "10";
+reka umubare1 = umubare(y);             # casting from float to integer
+reka umubare2 = umubare_wibice(z);      # casting from integer to float
+reka ijambo2 = ijambo(z);               # Casting from a number to string
+reka umubare4 = umubare(ijambo1);       # Casting from a string to integer
+
+# umubare, umubare_wibice, ijambo : will be used as built-in functions to perform type casting between strings, numbers and float

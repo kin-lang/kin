@@ -3,7 +3,7 @@
 #   LICENSE file in the root directory of this source tree.
 
 
-# demonstrating unary operators in kin
+# Demonstrating unary operators in kin
 
 reka num1 = 10;
 reka num2 = 2;
