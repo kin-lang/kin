@@ -14,7 +14,6 @@
 #include "kin.h"
 #include "lexer.h"
 #include "parser.h"
-#include "error-codes.h"
 #include "errors.h"
 
 

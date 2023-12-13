@@ -14,7 +14,6 @@
 #include "lexer.h"
 #include "common.h"
 #include "errors.h"
-#include "error-codes.h"
 
 /* Global variables for parser */
 int currentTokensPos;

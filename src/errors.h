@@ -5,7 +5,7 @@
 */
 
 
-#include "error-codes.h"
+#include "kin.h"
 
 #ifndef KIN_ERRORS
 #define KIN_ERRORS
