@@ -10,7 +10,7 @@
 
 
 #include "errors.h"
-#include "exit-codes.h"
+#include "kin.h"
 #include "error-codes.h"
 
 
