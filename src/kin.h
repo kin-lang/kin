@@ -5,8 +5,8 @@
 */
 
 
-#ifndef KIN_INTERPRETER_EXIT_CODES_H
-#define KIN_INTERPRETER_EXIT_CODES_H
+#ifndef KIN_INTERPRETER_UTILS_H
+#define KIN_INTERPRETER_UTILS_H
 
 #define EXIT_SUCCESS 0                  
 #define EXIT_FAILURE 1                
