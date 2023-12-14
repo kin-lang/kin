@@ -14,7 +14,6 @@
 #include "lexer.h"
 #include "common.h"
 #include "errors.h"
-#include "error-codes.h"
 
 /* Global variables for parser */
 int currentTokensPos;
@@ -47,7 +46,7 @@ Token* initializeTokens() {
         Token token = scanToken();
         tokens[i] = token;
         numberOfTokens++;
-        printf("%d:     \t %s", token.line, token.lexeme);
+        printf("%d:     \t %s \n", token.line, token.lexeme);
         if (token.type == TOKEN_EOF) { // store EOF token before exiting.
             tokens[i] = token;
             break;

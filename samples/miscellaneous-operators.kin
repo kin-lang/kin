@@ -9,5 +9,5 @@
 reka izina = "MURANGWA Pacifique";                                                          # Declare izina variable and assign "MURANGWA Pacifique" to it
 reka *aho_izina_ribitse = &izina;                                                           # Declare a point *aho_izina_ribitse and assign address of izina to it
 
-tangaza_amakuru `Aho izina ribitse kuri mudasobwa: ${aho_izina_ribitse}`;                   # Log where aho_izina_ribitse (address of izina) to the screent
-tangaza_amakuru `Izina riri muri address ${aho_izina_ribitse} ni ${*aho_izina_ribitse}`     # Log where izina is stored on computer and log it's value
+tangaza_amakuru("Aho izina ribitse kuri mudasobwa:" + aho_izina_ribitse);                       # Log where aho_izina_ribitse (address of izina) to the screent
+tangaza_amakuru("Izina riri muri address" + aho_izina_ribitse + "ni" + *aho_izina_ribitse);     # Log where izina is stored on computer and log it's value

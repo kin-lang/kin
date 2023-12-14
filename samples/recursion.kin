@@ -20,4 +20,4 @@ reka umubare1 = 10;                                  # Declare variable umubare1
 
 reka ibisubizo = factorial(umubare1);                # Call factorial function to find the factorial of umubare1
 
-tangaza_amakuru `${ibisubizo}`;                      # Log ibisubizo to the std
+tangaza_amakuru(ibisubizo);                         # Log ibisubizo to the std

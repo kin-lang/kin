@@ -12,4 +12,4 @@ porogaramu_ntoya multiply_by_2(num) {           # multiply_by_2 function decrala
 reka umubare1 = 10;                             # decralation of umubare1 variable to hold initial value of a number
 reka ibisubizo = multiply_by_2(umubare1);       # decralation and call of multiply_by_2 function which returns umubare1 multiplied by 2.
 
-tangaza_amakuru `${ibisubizo}`;                 # Loggin ibisubizo to the screen
+tangaza_amakuru(ibisubizo);                 # Loggin ibisubizo to the screen

@@ -4,15 +4,16 @@
 
 
 
-#   Arthimetic operators in kin-lang
+#   Arthimetic operators in Kin
 
-reka num1 = 100;                # num1 decralation and assigning.
-reka num2 = 200;                # num2 decralation and assigning
+reka num1 = 100;                # num1 declaration and assigning.
+reka num2 = 200;                # num2 declaration and assigning
 
-reka product = num1 * num2;     # product variable decralation and assigning
-reka difference = num2 - num1;  # product variable decralation and assigning
-reka sum = num2 + num1;         # product variable decralation and assigning
-reka quotient = num1 / num2;    # quotient variable decralation and assigning
-reka reminder = num2 % num1;    # reminder variable decralation and assigning
+reka product = num1 * num2;     # product variable declaration and assigning
+reka difference = num2 - num1;  # difference variable declaration and assigning
+reka sum = num2 + num1;         # sum variable declaration and assigning
+reka quotient = num1 / num2;    # quotient variable declaration and assigning
+reka reminder = num2 % num1;    # reminder variable declaration and assigning
 
-tangaza_amakuru ` product: ${product}, difference: ${difference}, sum: ${sum}, quotient: ${quotient}, reminder: ${reminder}`; # Logging data to the std.
+reka resultString = "product: " + umubare_wibice(product) + ", difference: " + umubare_wibice(difference) + ", sum: " + umubare_wibice(sum) + ", quotient: " + umubare_wibice(quotient) + ", reminder: " + umubare_wibice(reminder);
+tangaza_amakuru(resultString);

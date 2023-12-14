@@ -15,7 +15,6 @@
 #include "lexer.h"
 #include "kin.h"
 #include "errors.h"
-#include "error-codes.h"
 
 
 
@@ -239,9 +238,6 @@ Token scanToken() {
         case ':':
             advance(&currentPos);
             return makeTokenWithLexeme(TOKEN_COLON, "colon");
-        case '`':
-            advance(&currentPos);
-            return makeTokenWithLexeme(TOKEN_BACK_TICKS, "back-ticks");
         case '>':
             advance(&currentPos);
             if (getCurrentChar() == '=') {

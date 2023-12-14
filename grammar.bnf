@@ -1,0 +1,113 @@
+;   Copyright (c) MURANGWA Pacifique. and affiliates.
+;   This source code is licensed under the Apache License 2.0 found in the
+;   LICENSE file in the root directory of this source tree.
+
+
+;   Kin Programming Language's Grammar in BNF (Backus-Naur Form)
+
+
+    <program> ::= {<statement> ";"}*
+
+    <statement> ::= <declaration> | <assignment> | <expression> | <conditional> | <loop> | <function> | <file_operation> | <pointers> | <system_command> | <type_casting> | <unary_operation> | <input_statement> | <output_statement>
+
+    <declaration> ::= "reka" <variable> "=" <value>
+
+    <assignment> ::= <variable> "=" <expression>
+
+    <expression> ::= <term> {<binary_operator> <term>}
+
+    <term> ::= <factor> {<binary_operator> <factor>}
+
+    <factor> ::= <number> | <variable> | <string> | <list> | <structure> | "(" <expression> ")" | <function_call>
+
+    <conditional> ::= "niba" "(" <condition> ")" <block> {"nanone_niba" "(" <condition> ")" <block>}* ["niba_byanze" <block>]
+
+    <condition> ::= <logical_condition> | <unary_operation> | nibyo | sibyo
+
+    <logical_condition> ::= <expression> <logical_operator> <expression> | "(" <logical_condition> ")"
+
+    <logical_operator> ::= "&&" | "||" | "==" | "!=" | "<" | "<=" | ">" | ">=" | "!"
+
+    <loop> ::= "niba" "(" <expression> ")" "subiramo" "{" <statement>* "}"
+
+    <loop> ::= "niba" "(" <loop-conditions> ")" "subiramo" "{" <loop_body> "}"
+
+    <loop_body> ::= {<statement> ";"}* ["komeza" | "hagarara"]
+
+    <loop-conditions> ::= <expression> | <unary_operation>
+
+    <function> ::= "porogaramu_ntoya" <function_name> "(" <parameter_list> ")" "{" <block> "}" ["tanga" <expression>]
+
+    <parameter_list> ::= <parameter> {"," <parameter>}
+
+    <parameter> ::= <variable>
+
+    <file_operation> ::= <file_read> | <file_write> | <file_append>
+
+    <file_read> ::= "reka" <variable> "=" "soma_inyandiko" "(" <string> ")"
+
+    <file_write> ::= "andika_inyandiko" "(" <string> "," <variable> ")"
+
+    <file_append> ::= "vugurura_inyandiko" "(" <string> "," <string> ")"
+
+    <pointers> ::= <pointer-decralation> | <accessing-pointer>
+
+    <pointer-decralation> ::= "reka" "*" <pointer> "=" "&" <variable> ";"
+
+    <accessing-pointer> ::= "*" <variable>
+
+    <system_command> ::= "sisitemu" "(" <string> ")"
+
+    <type_casting> ::= <casting_function> "(" <value> ")"
+
+    <casting_function> ::= "umubare" | "umubare_wibice" | "ijambo"
+
+    <unary_operation> ::= <unary_operator> <value>
+
+    <unary_operator> ::= "++" | "--" | "!"
+
+    <input_statement> ::= ["reka"] <variable> "=" "injiza_amakuru" "(" <string> ")"
+    
+    <output_statement> ::= "tangaza_amakuru" "(" <string> ")"
+
+    <ubwoko> ::= "ubwoko" "(" <variable> ")"
+
+    <binary_operator> ::= "+" | "-" | "*" | "/" | "%" | "&&" | "||" | ">" | ">=" | "<" | "<=" | "==" | "!="
+
+    <variable> ::= <identifier>
+
+    <function_call> ::= <function_name> "(" <argument_list> ")"
+
+    <function_name> ::= <identifier>
+
+    <argument_list> ::= <expression> {"," <expression>}
+
+    <block> ::= "{" {<statement> ";"}* "}"
+
+    <number> ::= <integer> | <float>
+
+    <integer> ::= <digit>+
+
+    <float> ::= <digit>+ "." <digit>+
+
+    <digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+    <string> ::= <string_element> | <string> "+" <string_element>
+
+    <string_element> ::= "\"" <characters> "\"" | <variable>
+
+    <list> ::= "[" {<expression> ","}* <expression> "]"
+
+    <structure> ::= "{" {<field> ","}* <field> "}"
+
+    <field> ::= <identifier> ":" <expression>
+
+    <identifier> ::= <letter> {<letter> | <digit> | "_"}
+
+    <letter> ::= "a" | "b" | ... | "z" | "A" | "B" | ... | "Z"
+
+    <characters> ::= <character> {<character>}
+
+    <character> ::= <letter> | <digit> | <symbol>
+
+    <symbol> ::= "~" | "`" | "!" | "@" | "#" | ... | "/"
