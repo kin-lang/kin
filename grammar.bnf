@@ -20,7 +20,7 @@
 
     <factor> ::= <number> | <variable> | <string> | <list> | <structure> | "(" <expression> ")" | <function_call>
 
-    <conditional> ::= "niba" "(" <condition> ")" <block> {"nanone_niba" "(" <condition> ")" <block>}* ["niba_byanze" <block>]
+    <conditional> ::= "niba" "(" <condition> ")" "{" <block> "}" [{"nanone_niba" "(" <condition> ")" <block>}*] ["niba_byanze" <block>]
 
     <condition> ::= <logical_condition> | <unary_operation> | nibyo | sibyo
 
@@ -28,19 +28,17 @@
 
     <logical_operator> ::= "&&" | "||" | "==" | "!=" | "<" | "<=" | ">" | ">=" | "!"
 
-    <loop> ::= "niba" "(" <expression> ")" "subiramo" "{" <statement>* "}"
-
-    <loop> ::= "niba" "(" <loop-conditions> ")" "subiramo" "{" <loop_body> "}"
-
-    <loop_body> ::= {<statement> ";"}* ["komeza" | "hagarara"]
+    <loop> ::= "niba" "(" <loop-conditions> ")" "subiramo" "{" <statement>* "}"
 
     <loop-conditions> ::= <expression> | <unary_operation>
 
-    <function> ::= "porogaramu_ntoya" <function_name> "(" <parameter_list> ")" "{" <block> "}" ["tanga" <expression>]
+    <function> ::= "porogaramu_ntoya" <function_name> "(" <parameter_list> ")" <function-block>
 
     <parameter_list> ::= <parameter> {"," <parameter>}
 
     <parameter> ::= <variable>
+
+    <function-block> :: = "{" <block> ["tanga" <expression>]  "}"
 
     <file_operation> ::= <file_read> | <file_write> | <file_append>
 
@@ -82,7 +80,7 @@
 
     <argument_list> ::= <expression> {"," <expression>}
 
-    <block> ::= "{" {<statement> ";"}* "}"
+    <block> ::= {<statement> ";"}*
 
     <number> ::= <integer> | <float>
 
