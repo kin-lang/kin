@@ -2,9 +2,9 @@
 #   This source code is licensed under the Apache License 2.0 found in the
 #   LICENSE file in the root directory of this source tree.
 
-# Type Casting in Kin
+#   Type Casting in Kin
 
-# Casting from integer to float and vice versa 
+#   Casting from integer to float and vice versa 
 
 reka y = 100.12;
 reka z= 10;

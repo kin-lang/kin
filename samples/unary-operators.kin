@@ -12,6 +12,6 @@ reka ukuri = nibyo;
 reka post_increment = num1++;  # post increment
 reka post_decrement = num2--;  # post decrement
 
-reka pre_increment = ++num1; # pre decrement
-reka pre_decrement = --num2; # pre increment
-reka ikinyoma = !ukuri; # negation
+reka pre_increment = ++num1;    # pre decrement
+reka pre_decrement = --num2;    # pre increment
+reka ikinyoma = !ukuri;         # negation

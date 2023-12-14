@@ -7,11 +7,11 @@
 
 
 reka number = 10;                                                   # variable (number) number decralation and assigining.
-reka users_number = injiza_amakuru `Umubare: `;                     # variable (users_number) users_number decralation and assigining.
+reka users_number = injiza_amakuru("Umubare: ");                     # variable (users_number) users_number decralation and assigining.
 
 niba (users_number > number) {                                      # Check if the users_number is greater than number
-    tangaza_amakuru `Uratsinzwe wanditse umubare muto`;             # Loggin' information to the screen
+    tangaza_amakuru (Uratsinzwe wanditse umubare muto);             # Loggin' information to the screen
     kin_hagarara(1);                                                # here we have one but 0 is also supported. it's used to indicate that program exited but there was no error. # Exiting Kin but with an error from user. Case kin_hagarara(0); means that there is no error
 }
 
-tangaza_amakuru `Uratsinzzzeeeee wanditse umubare uruta uwacu.`;    # Loggin' information to the std
+tangaza_amakuru (Uratsinzzzeeeee wanditse umubare uruta uwacu.);    # Loggin' information to the std

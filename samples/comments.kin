@@ -6,4 +6,4 @@
 
 # Comment in Kin
 
-tangaza_amakuru `comments are ignored while tokenizing`; # Loggin information to the std.
+tangaza_amakuru (comments are ignored while tokenizing); # Loggin information to the std.

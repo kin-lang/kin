@@ -6,9 +6,9 @@
 # File Operations in Kin
 
 
-reka amakuru_ari_munyandiko = soma_inyandiko `path-to-file`;                            # reading a file.
-reka amakuru_ajya_munyandiko = injiza_amakuru `Amakuru ushaka gushyira munyandiko:`;    # getting user's data that will be written to file.
-andika_inyandiko `path-to-file`;                                                        # writing to file
+reka amakuru_ari_munyandiko = soma_inyandiko(path-to-file);                            # reading a file.
+reka amakuru_ajya_munyandiko = injiza_amakuru("Amakuru ushaka gushyira munyandiko: ");    # getting user's data that will be written to file.
+andika_inyandiko(path-to-file, information);                                           # writing to file
 
 reka amakuru_ajya_munyandiko = "amakuru mashya";                                        # decralation of amakuru_ajya_munyandiko which will hold new information to be appended to a file
-vugurura_inyandiko `path-to-file , ${amakuru_ajya_munyandiko}`;                         # updating information in the file
+vugurura_inyandiko (path-to-file , amakuru_ajya_munyandiko);                            # updating information in the file

@@ -7,5 +7,5 @@
 
 # sisitemu is built-in function which will run systems commands directly from Kin
 
-sisitemu(`sudo apt update`); # for linux users this will run "sudo apt update" command.          # run sudo apt update directly from Kin
-sisitemu `ipconfig`; # this is for windows users where it will print your ip configurations.     #  run ipconfig directly from Kin
+sisitemu("sudo apt update");     # for linux users this will run "sudo apt update" command.
+sisitemu("ipconfig");           # this is for windows users where it will print your ip configurations.

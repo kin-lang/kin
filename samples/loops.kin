@@ -7,6 +7,6 @@
 reka i = 0;                     # Declare variable i and assign it
 
 niba (i<10) subiramo {          # Check if i<10,  if yes repeat the code in block, if no stop the loop
-    tangaza_amakuru `${i}`;     # Log i
+    tangaza_amakuru(i);         # Log i
     i = i+1;                    # Increment i
 }
