@@ -14,7 +14,7 @@
 
     <assignment> ::= <variable> "=" <expression>
 
-    <expression> ::= <term> {<binary_operator> <term>}
+    <expression> ::= <term> {<binary_operator> <expression>}
 
     <term> ::= <factor> {<binary_operator> <factor>}
 
