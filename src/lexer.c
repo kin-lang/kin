@@ -121,7 +121,7 @@ Token scanNumber() {
         return makeTokenWithLexeme(TOKEN_FLOAT, strndup(&source[start], currentPos - start));
     }
 
-    return makeTokenWithLexeme(TOKEN_NUMBER, strndup(&source[start], currentPos - start));
+    return makeTokenWithLexeme(TOKEN_INTEGER, strndup(&source[start], currentPos - start));
 }
 
 /* Function to skip whitespace and comments */
