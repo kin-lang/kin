@@ -1,35 +1,35 @@
-# kin-lang
+# Kin
 
-Kin relies on many contributors who help us to maintain or track issues, we continously `thank them` for their great work.
+Kin relies on many contributors who help us to maintain or track issues, we continuously `thank them` for their great work.
 
-## Building project locally
+## Building Project Locally
 
 Run this command it it will generate  *kin.out* binary.
 
 ```Make
-    make
+make
 ```
 
 Remember to run it in the root directory.
 
-If you're using linux or any other unix like OS
-Run ``make install`` to install *kin* globally.
+If you're using Linux or any other Unix like OS
+Run ``make install`` to install *Kin* globally.
 
 You can also run ``make clean`` to delete all ``.out, .o`` files.
 
-## Issue tracking
+## Issue Tracking
 
-Kin team tracks issues by using Github, if you face any issue or you want to request changes please submit a new Issue and respect those templates because we will not tolerate those who violates them since they make our work too dificult. `If you don't respect Issue templates and use them unaccordingly your issue will be closed Immediately.`
+Kin team tracks issues by using GitHub, if you face any issue or you want to request changes please submit a new Issue and respect those templates because we will not tolerate those who violate them since they make our work too difficult. `If you don't respect Issue templates and use them inappropriately your issue will be closed immediately.`
 
 ## Pull Request
 
-If you fix any issue or add new feature, feel free to open a pull request. It will be reviewed by our engineers and if it meets all requirements we'll merge it.
+If you fix any issue or add a new feature, feel free to open a pull request. It will be reviewed by our engineers and if it meets all requirements we'll merge it.
 
 `Pull Request - Requirements`
 
 1. A pull-request name must reflect what you've done.
 2. Add if it's a bug fix or a new feature or typo.
-3. You've to describe what you've done beriefly.
+3. You've to describe what you've done briefly.
 
 `We will not merge those pull requests that doesn't have a clear description`
 
