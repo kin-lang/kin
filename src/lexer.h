@@ -46,7 +46,6 @@
         int line;
     } Token;
 
-    void initLexersSource();
     Token scanToken();
-
+    void initLexersSource();
     #endif

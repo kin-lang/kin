@@ -11,9 +11,5 @@
 #include "lexer.h"
 
 void parser();
-Token* initializeTokens();
-Token currentToken(Token **tokens);
-Token previousToken(Token **tokens);
-Token nextToken(Token **tokens);
 
 #endif
