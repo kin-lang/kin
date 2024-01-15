@@ -10,19 +10,21 @@
 
     <statement> ::= <declaration> | <assignment> | <expression> | <conditional> | <loop> | <function> | <file_operation> | <pointers> | <system_command> | <type_casting> | <unary_operation> | <input_statement> | <output_statement>
 
-    <declaration> ::= "reka" <variable> "=" <value>
+    <declaration> ::= "reka" <variable> "=" <value> | <pointer-decralation>
+    
+    <value> ::= <factor>
 
-    <assignment> ::= <variable> "=" <expression>
+    <assignment> ::= <variable> "=" <expression> | <function_call> | <input_statement>
 
     <expression> ::= <term> {<binary_operator> <expression>}
 
     <term> ::= <factor> {<binary_operator> <factor>}
 
-    <factor> ::= <number> | <variable> | <string> | <list> | <structure> | "(" <expression> ")" | <function_call>
+    <factor> ::= <number> | <variable> | <string> | "(" <expression> ")" | <function_call>
 
-    <conditional> ::= "niba" "(" <condition> ")" "{" <block> "}" [{"nanone_niba" "(" <condition> ")" <block>}*] ["niba_byanze" <block>]
+    <conditional> ::= "niba" "(" <condition> ")" "{" <block> "}" [{"nanone_niba" "(" <condition> ")" "{" <block> "}"}*] ["niba_byanze" "{" <block> "}"]
 
-    <condition> ::= <logical_condition> | <unary_operation> | nibyo | sibyo
+    <condition> ::= <logical_condition> | nibyo | sibyo
 
     <logical_condition> ::= <expression> <logical_operator> <expression> | "(" <logical_condition> ")"
 
@@ -30,19 +32,19 @@
 
     <loop> ::= "niba" "(" <loop-conditions> ")" "subiramo" "{" <statement>* "}"
 
-    <loop-conditions> ::= <expression> | <unary_operation>
+    <loop-conditions> ::= <condition>
 
     <function> ::= "porogaramu_ntoya" <function_name> "(" <parameter_list> ")" <function-block>
 
     <parameter_list> ::= <parameter> {"," <parameter>}
 
-    <parameter> ::= <variable>
+    <parameter> ::= <variable> | <value>
 
     <function-block> :: = "{" <block> ["tanga" <expression>]  "}"
 
     <file_operation> ::= <file_read> | <file_write> | <file_append>
 
-    <file_read> ::= "reka" <variable> "=" "soma_inyandiko" "(" <string> ")"
+    <file_read> ::= "soma_inyandiko" "(" <string> ")"
 
     <file_write> ::= "andika_inyandiko" "(" <string> "," <variable> ")"
 
@@ -50,7 +52,7 @@
 
     <pointers> ::= <pointer-decralation> | <accessing-pointer>
 
-    <pointer-decralation> ::= "reka" "*" <pointer> "=" "&" <variable> ";"
+    <pointer-decralation> ::= "reka" "*" <variable> "=" "&" <variable> ";"
 
     <accessing-pointer> ::= "*" <variable>
 
@@ -64,7 +66,7 @@
 
     <unary_operator> ::= "++" | "--" | "!"
 
-    <input_statement> ::= ["reka"] <variable> "=" "injiza_amakuru" "(" <string> ")"
+    <input_statement> ::= "injiza_amakuru" "(" <string> ")"
     
     <output_statement> ::= "tangaza_amakuru" "(" <string> ")"
 
@@ -92,7 +94,7 @@
 
     <string> ::= <string_element> | <string> "+" <string_element>
 
-    <string_element> ::= "\"" <characters> "\"" | <variable>
+    <string_element> ::= "\"" <characters> "\""
 
     <list> ::= "[" {<expression> ","}* <expression> "]"
 
