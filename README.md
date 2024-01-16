@@ -1,27 +1,25 @@
 # Kin
 
 **Kin** is a straightforward programming language created with the purpose of aiding Kinyarwanda speakers in easily learning programming.
-> **Note** Kin is designed to enable individuals to write computer programs in Kinyarwanda, the native language of Rwandans. The aim is to facilitate an easy introduction to programming for people. While it is well-suited for teaching or learning programming, its suitability for use in a production environment is not guaranteed.
+> [!Important]
+> **Kin** is designed to enable individuals to write computer programs in Kinyarwanda, the native language of Rwandans. The aim is to facilitate an easy introduction to programming for people. While it is well-suited for teaching or learning programming, its suitability for use in a production environment is not guaranteed.
 
 ## What does it look like
 
 ```Kin
 # Program to calculate factorial in Kin Programming Language
 
-porogaramu_ntoya factorial(umubare) {               # Factorial function
-    niba (umubare == 1) {                           # Check if a given number is equal to 1
-        tanga 1;                                    # Return one if the condition above was true
-    } niba_byanze {                                 # If  above condition has failed
-        tanga umubare * factorial(umubare - 1);     # Call factorial again to find the factorial of a given number - 1
-    }
+porogaramu_ntoya factorial(umubare) {               
+    niba (umubare == 1) {                           
+        tanga 1;                                    
+    }                              
+        tanga umubare * factorial(umubare - 1);
 }
 
 
-reka umubare1 = 10;                                  # Declare variable umubare1 and assign 10 to it.
-
-reka ibisubizo = factorial(umubare1);                # Call factorial function to find the factorial of umubare1
-
-tangaza_amakuru(ibisubizo);                          # Log ibisubizo to the std
+reka nbr = injiza_amakuru("Enter a number: ");                                 
+reka nbr_factorial = factorial(nbr);             
+tangaza_amakuru(nbr_factorial);     
 ```
 > **Note** *umubare* is a keyword in Kin, don't use it as an identifier.
 
