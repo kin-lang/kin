@@ -17,8 +17,7 @@
 
 /* entry point of Kin's parser. */
 void parser() {
-
-    initLexersSource();
+    
     for (;;) {
         Token token = scanToken();
         if (token.type == TOKEN_EOF) break;
