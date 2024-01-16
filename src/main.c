@@ -83,6 +83,7 @@ static char* readFile(char const *fileLocation) {
 
 static void runFile(char const *file_location) {
     char *source_code_buffer = readFile(file_location); /*defined in common*/
+    initLexersSource(); // initLexersSource defined in lexer.h
     parser(); /* parser Input */
 }
 
