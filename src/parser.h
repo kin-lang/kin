@@ -11,8 +11,8 @@
 #include "lexer.h"
 
 void parser();
-Token expect(TokenType type, char* error);
-Token paser_consume(TokenType type);
+Token* tokenize();
+Token expect(TokenType type);
 Token current_token();
 Token previous_token();
 Token next_token();

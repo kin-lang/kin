@@ -271,3 +271,77 @@ Token scanToken() {
             }
     }
 }
+
+// getting lexeme from TokenType
+char* tokenTypeToString(TokenType type) {
+    switch (type) {
+        /* One-character tokens */
+        case TOKEN_MINUS: return "minus";
+        case TOKEN_PLUS: return "plus";
+        case TOKEN_STAR: return "star";
+        case TOKEN_DIVISION: return "division";
+        case TOKEN_POWER: return "power";
+        case TOKEN_MODULO: return "modulo";
+        case TOKEN_AMPERSAND: return "ampersand";
+        case TOKEN_NEGATION: return "negation";
+        case TOKEN_END_OF_LINE: return "semicolon";
+        case TOKEN_CLOSE_BRACKET: return "closing bracket";
+        case TOKEN_OPEN_BRACKET: return "open bracket";
+        case TOKEN_OPEN_PARANTHESES: return "open parentheses";
+        case TOKEN_CLOSE_PARANTHESES: return "close parentheses";
+        case TOKEN_OPEN_CURLY_BRACES: return "open curly braces";
+        case TOKEN_CLOSE_CURLY_BRACES: return "close curly braces";
+        case TOKEN_SINGLE_QUOTATION: return "single quotation";
+        case TOKEN_DOUBLE_QUOTATION: return "double quotation";
+        case TOKEN_COLON: return "colon";
+        case TOKEN_GREATER_THAN: return "greater than";
+        case TOKEN_LESS_THAN: return "less than";
+        case TOKEN_PERIOD: return "period";
+        case TOKEN_COMMA: return "comma";
+        case TOKEN_DOLLA_SIGN: return "dollar sign";
+        case TOKEN_ASSIGNMENT: return "assignment";
+
+        /* Literals */
+        case TOKEN_IDENTIFIER: return "identifier";
+        case TOKEN_STRING: return "string";
+        case TOKEN_INTEGER: return "integer";
+        case TOKEN_FLOAT: return "float";
+
+        /* Two or more characters tokens */
+        case TOKEN_NOT_EQUAL: return "not equal";
+        case TOKEN_EQUALITY: return "equality";
+        case TOKEN_INCREMENT: return "increment";
+        case TOKEN_DECREMENT: return "decrement";
+        case TOKEN_AND: return "logical and";
+        case TOKEN_OR: return "logical or";
+        case TOKEN_GREATER_THAN_OR_EQUAL: return "greater than or equal";
+        case TOKEN_LESS_THAN_OR_EQUAL: return "less than or equal";
+
+        /* Keywords */
+        case TOKEN_UBUSA: return "ubusa";
+        case TOKEN_NIBA: return "niba";
+        case TOKEN_NIBYO: return "nibyo";
+        case TOKEN_SIBYO: return "sibyo";
+        case TOKEN_NANONE_NIBA: return "nanone niba";
+        case TOKEN_UMUBARE: return "umubare";
+        case TOKEN_UMUBARE_WIBICE: return "umubare wibice";
+        case TOKEN_NIBA_BYANZE: return "niba byanze";
+        case TOKEN_SUBIRAMO: return "subiramo";
+        case TOKEN_TANGA: return "tanga";
+        case TOKEN_POROGARAMU_NTOYA: return "porogaramu ntoya";
+        case TOKEN_TANGAZA_AMAKURU: return "tangaza amakuru";
+        case TOKEN_INJIZA_AMAKURU: return "injiza amakuru";
+        case TOKEN_KOMEZA: return "komeza";
+        case TOKEN_HAGARARA: return "hagarara";
+        case TOKEN_UBWOKO: return "ubwoko";
+        case TOKEN_ERROR: return "error";
+        case TOKEN_KIN_HAGARARA: return "kin hagarara";
+        case TOKEN_REKA: return "reka";
+        case TOKEN_SOMA_INYANDIKO: return "soma inyandiko";
+        case TOKEN_ANDIKA_INYANDIKO: return "andika inyandiko";
+        case TOKEN_KUVUGURURA_INYANDIKO: return "kuvugurura inyandiko";
+        case TOKEN_SISITEMU: return "sisitemu";
+        case TOKEN_IJAMBO: return "ijambo";
+        case TOKEN_EOF: return "end of file";
+    }
+}

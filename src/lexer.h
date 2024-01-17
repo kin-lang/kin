@@ -47,4 +47,5 @@
 
     Token scanToken();
     void initLexersSource();
+    char* tokenTypeToString(TokenType type);
     #endif
