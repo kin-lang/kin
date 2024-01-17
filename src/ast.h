@@ -1,9 +1,8 @@
-/*  
+/*
     Copyright (c) MURANGWA Pacifique. and affiliates.
     This source code is licensed under the Apache License 2.0 found in the
     LICENSE file in the root directory of this source tree.
 */
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,29 +37,22 @@ typedef enum {
     AST_STRUCTURE,
 } ASTNodeType;
 
+// Forward declarations
+typedef struct Stmt Stmt;
+typedef struct Expr Expr;
 
 // AST Nodes
-
-/** Statements won't result in a value at runtime */
-typedef struct Stmt {
-    ASTNodeType kind;
-} Stmt;
-
-/**  Expressions will result in a value at runtime unlike Statements */
-typedef struct Expr {
-    ASTNodeType kind;
-} Expr;
-
 typedef struct Program {
     ASTNodeType kind;
     Stmt* statements;
+    int stmt_count;
 } Program;
 
 typedef struct VariableDeclaration {
     ASTNodeType kind;
     bool constant;
     char* identifier;
-    Expr* value;
+    Expr value;
 } VariableDeclaration;
 
 typedef struct IfStatement {
@@ -120,32 +112,48 @@ typedef struct Identifier {
     char* name;
 } Identifier;
 
-typedef struct IntegerLiteral {
+// Union to represent different literal types
+typedef union {
+    int int_value;
+    float float_value;
+    char* string_value;
+    Expr* list_elements;
+} LiteralValue;
+
+typedef struct Literal {
     ASTNodeType kind;
-    int value;
-} IntegerLiteral;
+    LiteralValue value;
+} Literal;
 
-typedef struct FloatLiteral {
+// Union to represent different expression types
+typedef union {
+    BinaryExpression binary_expr;
+    UnaryExpression unary_expr;
+    CallExpression call_expr;
+    MemberExpression member_expr;
+    AssignmentExpression assign_expr;
+    Literal literal_expr;
+} Expression;
+
+// Union to represent different statement types
+typedef union {
+    Program program_stmt;
+    VariableDeclaration var_decl_stmt;
+    IfStatement if_stmt;
+    LoopStatement loop_stmt;
+    FunctionDeclaration func_decl_stmt;
+} Statement;
+
+// Structure representing an expression
+struct Expr {
     ASTNodeType kind;
-    float value;
-} FloatLiteral;
+    Expression expr;
+};
 
-typedef struct StringLiteral {
+// Structure representing a statement
+struct Stmt {
     ASTNodeType kind;
-    char* value;
-} StringLiteral;
-
-typedef struct ListLiteral {
-    ASTNodeType kind;
-    Expr* elements;
-} ListLiteral;
-
-typedef struct Structure {
-    ASTNodeType kind;
-    char* name;
-    Expr* properties;
-} Structure;
-
-
+    Statement stmt;
+};
 
 #endif
