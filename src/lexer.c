@@ -13,7 +13,7 @@
 
 #include "common.h"
 #include "lexer.h"
-#include "kin.h"
+#include "error-codes.h"
 #include "errors.h"
 
 

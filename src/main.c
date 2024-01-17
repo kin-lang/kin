@@ -11,7 +11,7 @@
 
 /* .h files imports */
 #include "common.h"
-#include "kin.h"
+#include "error-codes.h"
 #include "lexer.h"
 #include "parser.h"
 #include "errors.h"

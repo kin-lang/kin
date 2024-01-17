@@ -38,7 +38,6 @@
         TOKEN_EOF 
     } TokenType;
 
-
     /* Token structure */
     typedef struct {
         TokenType type;
