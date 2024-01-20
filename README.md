@@ -6,13 +6,13 @@
 
 ## What does it look like
 
-```Kin
+```kin
 # Program to calculate factorial in Kin Programming Language
 
-porogaramu_ntoya factorial(umubare) {               
-    niba (umubare == 1) {                           
-        tanga 1;                                    
-    }                              
+porogaramu_ntoya factorial(umubare) {
+    niba (umubare == 1) {
+        tanga 1;
+    }
         tanga umubare * factorial(umubare - 1);
 }
 
