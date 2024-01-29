@@ -1,0 +1,46 @@
+{
+  "name": "@kin-lang/core",
+  "version": "0.0.0",
+  "description": "Kin Programming Language: write computer programs in Kinyarwanda.",
+  "main": "/src/index.ts",
+  "author": "MURANGWA Pacifique",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/kin-lang/kin#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kin-lang/kin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kin-lang/kin/issues"
+  },
+  "scripts": {
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "lint": "eslint \"{src,test}/**/*.ts\" --fix",
+    "build": "tsc",
+    "test": "vitest --no-watch",
+    "test:watch": "vitest --watch",
+    "test:cov": "vitest --coverage",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "kin",
+    "language",
+    "kinyarwanda",
+    "interpreter"
+  ],
+  "devDependencies": {
+    "@types/node": "^20.11.9",
+    "@typescript-eslint/eslint-plugin": "^6.19.1",
+    "@typescript-eslint/parser": "^6.19.1",
+    "@vitest/coverage-v8": "^1.2.2",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "eslint-plugin-vitest": "^0.3.20",
+    "husky": "^9.0.6",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.2",
+    "why-is-node-running": "^2.2.2"
+  }
+}

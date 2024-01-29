@@ -30,7 +30,7 @@
 
     <logical_operator> ::= "&&" | "||" | "==" | "!=" | "<" | "<=" | ">" | ">=" | "!"
 
-    <loop> ::= "niba" "(" <loop-conditions> ")" "subiramo" "{" <statement>* "}"
+    <loop> ::= "subiramo" "{" <statement>* "}" niba "(" <loop-conditions> ")"
 
     <loop-conditions> ::= <condition>
 
