@@ -1,78 +1,42 @@
-# Build Artifacts
-*.S
-*.o
-*.exe
-*.ll
-# CCache
-.cache
-# CMake
-**/bld
-**/bld-*
-**/build
-**/win
-**/win-*
-**/winbld
-**/winbuild
-**/mswin*
-**/lnx
-**/lin
-**/lin-*
-**/linbld
-**/linbuild
-**/lnx
-**/lnxbld
-**/lnxbuild
-**/linux
-**/linuxbld
-**/linuxbuild
-**/dbg
-**/debug
-**/rls
-**/release
-/out
-/.idea
-/tst/out.txt
-*.dot
+# Node.js
+node_modules/
 
-# Language Server
-**/compile_commands.json
-.Random.seed
-.clang-format
+# Compiled files
+dist/
+build/
+*.js
+*.d.ts
+*.js.map
 
-# Disallow files starting with some symbols
-**/_*
+# Dependency directories
+lib/
+typings/
 
-# Testing
-Testing/
+# Logs
+*.log
+logs/
+log-debug/
+log-error/
 
-.vscode
-
-
-# CMake build artifacts
-/build/
-/CMakeFiles/
-/CMakeScripts/
-/CMakeCache.txt
-/CMakeSettings.json
-
-# Visual Studio Code specific files (if using VSCode)
+# Editor-specific files
 .vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
 
-# CMake-generated files
-compile_commands.json
+# OS generated files
+.DS_Store
+Thumbs.db
 
-# Generated Makefiles or project files (if using Make or other build systems)
-*.make
-*.cbp
-*.workspace
-*.project
-*.sln
+# Environment variables
+.env
 
-# Ignore CMake user-specific files (optional)
-CMakeUserPresets.json
-CMakeUserPresets.json.backup
+# Visual Studio Code settings
+.vscode/settings.json
 
+# Jest coverage output
+coverage/
 
-/bin
-*.cmake
-*.out
+# npm
+*.npm-debug.log
+npm-debug.log
