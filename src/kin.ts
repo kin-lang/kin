@@ -27,9 +27,15 @@ if (file) {
 }
 
 async function run(filename: string): Promise<void> {
-  const input: string = readFileSync(filename, 'utf-8');
-  const parser = new Parser();
-  LogMessage(parser.produceAST(input));
+  try {
+    const input: string = readFileSync(filename, 'utf-8');
+    const parser = new Parser();
+    LogMessage(parser.produceAST(input));
+  } catch (error) {
+    const err = error as Error;
+    LogError(err);
+    process.exit(1);
+  }
 }
 
 async function repl() {
@@ -40,7 +46,7 @@ async function repl() {
 
     // check for no user input or exit keyword.
     if (input === '.exit' || input === '.quit' || input === '.q') {
-      process.exit(1);
+      process.exit(0);
     }
 
     try {
@@ -48,7 +54,8 @@ async function repl() {
       LogMessage(parser.produceAST(input));
     } catch (error: unknown) {
       const err = error as Error;
-      LogError(err.message);
+      LogError(err);
+      process.exit(1);
     }
   }
 }
