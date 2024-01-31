@@ -1,3 +1,8 @@
+/****************************************
+ *              Parser                  *
+ *       Product Kin's AST              *
+ ****************************************/
+
 import Lexer, { Token } from '../lexer/lexer';
 import TokenType from '../lexer/tokens';
 import { LogError } from '../utils/log';
