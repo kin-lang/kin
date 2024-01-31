@@ -26,7 +26,7 @@ enum TokenType {
   GREATER_THAN,
   LESS_THAN,
   COMMA,
-  ASSIGNMENT,
+  EQUAL,
 
   /* Literals */
   IDENTIFIER,

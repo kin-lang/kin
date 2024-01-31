@@ -30,7 +30,7 @@ describe('Lexer', () => {
     const expectedTokens = [
       { line: 1, type: TokenType.REKA, lexeme: 'reka' },
       { line: 1, type: TokenType.IDENTIFIER, lexeme: 'x' },
-      { line: 1, type: TokenType.ASSIGNMENT, lexeme: '=' },
+      { line: 1, type: TokenType.EQUAL, lexeme: '=' },
       { line: 1, type: TokenType.INTEGER, lexeme: '42' },
       { line: 1, type: TokenType.END_OF_LINE, lexeme: ';' },
       { line: 1, type: TokenType.EOF, lexeme: 'EOF' },
@@ -58,7 +58,7 @@ describe('Lexer', () => {
     const expectedTokens = [
       { line: 3, type: TokenType.REKA, lexeme: 'reka' },
       { line: 3, type: TokenType.IDENTIFIER, lexeme: 'a' },
-      { line: 3, type: TokenType.ASSIGNMENT, lexeme: '=' },
+      { line: 3, type: TokenType.EQUAL, lexeme: '=' },
       { line: 3, type: TokenType.INTEGER, lexeme: '10' },
       { line: 3, type: TokenType.END_OF_LINE, lexeme: ';' },
       { line: 4, type: TokenType.EOF, lexeme: 'EOF' },

@@ -6,7 +6,7 @@
 import TokenType from './tokens';
 
 /* Token structure */
-interface Token {
+export interface Token {
   type: TokenType;
   lexeme: string;
   line: number;
@@ -228,7 +228,7 @@ class Lexer {
           this.advance();
           return this.makeTokenWithLexeme(TokenType.EQUALITY, '==');
         }
-        return this.makeTokenWithLexeme(TokenType.ASSIGNMENT, '=');
+        return this.makeTokenWithLexeme(TokenType.EQUAL, '=');
       case '/':
         this.advance();
         return this.makeTokenWithLexeme(TokenType.DIVISION, '/');
