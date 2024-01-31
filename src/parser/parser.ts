@@ -72,6 +72,24 @@ export default class Parser {
     }
   }
 
+  private parse_block_statement(): Stmt[] {
+    this.expect(
+      TokenType.OPEN_CURLY_BRACES,
+      `"Expected { while parsing code block"`,
+    );
+    const body: Stmt[] = [];
+    while (this.not_eof() && this.at().type != TokenType.CLOSE_CURLY_BRACES) {
+      body.push(this.parse_stmt());
+    }
+
+    this.expect(
+      TokenType.CLOSE_CURLY_BRACES,
+      `"Expected } while parsing code block"`,
+    );
+
+    return body;
+  }
+
   private parse_var_declaration(): Stmt {
     const isConstant = this.eat().type == TokenType.NTAHINDUKA;
     const identifier = this.expect(
