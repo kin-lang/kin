@@ -7,6 +7,7 @@ import Lexer, { Token } from '../lexer/lexer';
 import TokenType from '../lexer/tokens';
 import { LogError } from '../utils/log';
 import {
+  ConditionalStmt,
   Expr,
   Identifier,
   NumericLiteral,
@@ -67,6 +68,10 @@ export default class Parser {
       case TokenType.REKA:
       case TokenType.NTAHINDUKA:
         return this.parse_var_declaration();
+      case TokenType.NIBA:
+        return this.parse_if_statement();
+      case TokenType.SUBIRAMO_NIBA:
+        return this.parse_loop_statement();
       default:
         return this.parse_expr();
     }
@@ -245,5 +250,28 @@ export default class Parser {
     );
 
     return { kind: 'ObjectLiteral', properties } as ObjectLiteral;
+  }
+
+  private parse_if_statement(): Stmt {
+    this.eat(); // advance past niba or nanone_niba
+    this.expect(TokenType.OPEN_PARANTHESES, `"Expected ( after niba"`);
+    const condition: Stmt = this.parse_expr();
+    this.expect(TokenType.CLOSE_PARANTHESES, `"Expected ) after condition"`);
+    const body: Stmt[] = this.parse_block_statement();
+    let alternate: Stmt[] = [];
+
+    if (this.at().type == TokenType.NANONE_NIBA) {
+      alternate = [this.parse_if_statement()];
+    } else if (this.at().type == TokenType.NIBA_BYANZE) {
+      this.eat(); // advance past niba_byanze
+      alternate = this.parse_block_statement();
+    }
+
+    return {
+      kind: 'ConditionalStatement',
+      body,
+      condition,
+      alternate,
+    } as ConditionalStmt;
   }
 }
