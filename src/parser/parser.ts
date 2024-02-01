@@ -9,6 +9,7 @@ import { LogError } from '../utils/log';
 import {
   ConditionalStmt,
   Expr,
+  FunctionDeclaration,
   Identifier,
   LoopStatement,
   NumericLiteral,
@@ -73,6 +74,8 @@ export default class Parser {
         return this.parse_if_statement();
       case TokenType.SUBIRAMO_NIBA:
         return this.parse_loop_statement();
+      case TokenType.POROGARAMU_NTOYA:
+        return this.parse_function_declaration();
       default:
         return this.parse_expr();
     }
@@ -287,5 +290,60 @@ export default class Parser {
       body,
       condition,
     } as LoopStatement;
+  }
+
+  private parse_function_declaration(): Stmt {
+    this.eat(); // eat porogaramu_ntoya keywork
+    const name = this.expect(
+      TokenType.IDENTIFIER,
+      `"Expected function name following porogaramu_ntoya keyword"`,
+    ).lexeme;
+
+    const args = this.parse_args();
+    const params: string[] = new Array<string>();
+
+    for (const arg of args) {
+      if (arg.kind != 'Identifier') {
+        LogError(
+          `On line ${this.at().line}: Kin Error: Expected identifier for function parameter`,
+        );
+        process.exit(1);
+      }
+
+      params.push((arg as Identifier).symbol);
+    }
+
+    const body = this.parse_block_statement();
+
+    return {
+      kind: 'FunctionDeclaration',
+      name,
+      parameters: params,
+      body,
+    } as FunctionDeclaration;
+  }
+
+  private parse_args(): Expr[] {
+    this.expect(TokenType.OPEN_PARANTHESES, `"Expected ( after function name"`);
+    const args =
+      this.at().type == TokenType.CLOSE_PARANTHESES
+        ? new Array<Expr>()
+        : this.parse_args_list();
+
+    this.expect(
+      TokenType.CLOSE_PARANTHESES,
+      `"Expected ) after function parameters"`,
+    );
+
+    return args;
+  }
+
+  private parse_args_list() {
+    const args: Expr[] = [this.parse_expr()]; //TODO: assignment expr
+
+    while (this.at().type == TokenType.COMMA && this.eat()) {
+      args.push(this.parse_expr()); // TODO: assignment expr
+    }
+    return args;
   }
 }
