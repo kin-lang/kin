@@ -10,6 +10,7 @@ import {
   ConditionalStmt,
   Expr,
   Identifier,
+  LoopStatement,
   NumericLiteral,
   ObjectLiteral,
   Program,
@@ -273,5 +274,18 @@ export default class Parser {
       condition,
       alternate,
     } as ConditionalStmt;
+  }
+
+  private parse_loop_statement(): Stmt {
+    this.eat(); // advance past subiramo_niba
+    this.expect(TokenType.OPEN_PARANTHESES, `"Expected ( after subiramo_niba"`);
+    const condition: Stmt = this.parse_expr();
+    const body: Stmt[] = this.parse_block_statement();
+
+    return {
+      kind: 'LoopStatement',
+      body,
+      condition,
+    } as LoopStatement;
   }
 }
