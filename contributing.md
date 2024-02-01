@@ -4,18 +4,15 @@ Kin relies on many contributors who help us to maintain or track issues, we cont
 
 ## Building Project Locally
 
-Run this command it it will generate  *kin.out* binary.
+Run this command it it will generate  */dist* directory.
 
-```Make
-make
+```shell
+npm run build
 ```
 
 Remember to run it in the root directory.
 
-If you're using Linux or any other Unix like OS
-Run ``make install`` to install *Kin* globally.
-
-You can also run ``make clean`` to delete all ``.out, .o`` files.
+To test it you can run ```kin.js``` file found in generated ```/dist``` directory 
 
 ## Issue Tracking
 
