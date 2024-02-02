@@ -139,54 +139,26 @@ class Lexer {
     const lexeme: string = this.sourceCodes.slice(start, this.currentPos);
 
     /* Check if lexeme is a keywork */
-    if (lexeme === 'ubusa')
-      return this.makeTokenWithLexeme(TokenType.UBUSA, lexeme);
     if (lexeme === 'niba')
       return this.makeTokenWithLexeme(TokenType.NIBA, lexeme);
-    if (lexeme === 'nibyo')
-      return this.makeTokenWithLexeme(TokenType.NIBYO, lexeme);
-    if (lexeme === 'sibyo')
-      return this.makeTokenWithLexeme(TokenType.SIBYO, lexeme);
     if (lexeme === 'nanone_niba')
       return this.makeTokenWithLexeme(TokenType.NANONE_NIBA, lexeme);
     if (lexeme === 'umubare')
       return this.makeTokenWithLexeme(TokenType.UMUBARE, lexeme);
     if (lexeme === 'umubare_wibice')
       return this.makeTokenWithLexeme(TokenType.UMUBARE_WIBICE, lexeme);
-    if (lexeme === 'ijambo')
-      return this.makeTokenWithLexeme(TokenType.IJAMBO, lexeme);
     if (lexeme === 'niba_byanze')
       return this.makeTokenWithLexeme(TokenType.NIBA_BYANZE, lexeme);
-    if (lexeme === 'subiramo_NIBA')
+    if (lexeme === 'subiramo_niba')
       return this.makeTokenWithLexeme(TokenType.SUBIRAMO_NIBA, lexeme);
     if (lexeme === 'tanga')
       return this.makeTokenWithLexeme(TokenType.TANGA, lexeme);
     if (lexeme === 'porogaramu_ntoya')
       return this.makeTokenWithLexeme(TokenType.POROGARAMU_NTOYA, lexeme);
-    if (lexeme === 'tangaza_amakuru')
-      return this.makeTokenWithLexeme(TokenType.TANGAZA_AMAKURU, lexeme);
-    if (lexeme === 'injiza_amakuru')
-      return this.makeTokenWithLexeme(TokenType.INJIZA_AMAKURU, lexeme);
-    if (lexeme === 'komeza')
-      return this.makeTokenWithLexeme(TokenType.KOMEZA, lexeme);
-    if (lexeme === 'hagarara')
-      return this.makeTokenWithLexeme(TokenType.HAGARARA, lexeme);
-    if (lexeme === 'ubwoko')
-      return this.makeTokenWithLexeme(TokenType.UBWOKO, lexeme);
     if (lexeme === 'reka')
       return this.makeTokenWithLexeme(TokenType.REKA, lexeme);
     if (lexeme === 'ntahinduka')
       return this.makeTokenWithLexeme(TokenType.NTAHINDUKA, lexeme);
-    if (lexeme === 'soma_inyandiko')
-      return this.makeTokenWithLexeme(TokenType.SOMA_INYANDIKO, lexeme);
-    if (lexeme === 'andika_inyandiko')
-      return this.makeTokenWithLexeme(TokenType.ANDIKA_INYANDIKO, lexeme);
-    if (lexeme === 'vugurura_inyandiko')
-      return this.makeTokenWithLexeme(TokenType.KUVUGURURA_INYANDIKO, lexeme);
-    if (lexeme === 'kin_hagarara')
-      return this.makeTokenWithLexeme(TokenType.KIN_HAGARARA, lexeme);
-    if (lexeme === 'sisitemu')
-      return this.makeTokenWithLexeme(TokenType.SISITEMU, lexeme);
 
     /* Not a keywork, it's an identifier */
     return this.makeTokenWithLexeme(TokenType.IDENTIFIER, lexeme);
@@ -260,7 +232,7 @@ class Lexer {
         }
       case ';':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.END_OF_LINE, ';');
+        return this.makeTokenWithLexeme(TokenType.SEMI_COLON, ';');
       case ']':
         this.advance();
         return this.makeTokenWithLexeme(TokenType.CLOSE_BRACKET, ']');
