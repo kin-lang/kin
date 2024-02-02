@@ -251,8 +251,6 @@ class Lexer {
       case '}':
         this.advance();
         return this.makeTokenWithLexeme(TokenType.CLOSE_CURLY_BRACES, '}');
-      case "'":
-        return this.scanStringLiteral();
       case '"':
         return this.scanStringLiteral();
       case ':':
@@ -278,6 +276,9 @@ class Lexer {
       case ',':
         this.advance();
         return this.makeTokenWithLexeme(TokenType.COMMA, ',');
+      case '.':
+        this.advance();
+        return this.makeTokenWithLexeme(TokenType.DOT, '.');
       default:
         if (!Number.isNaN(Number(char))) {
           return this.scanNumber();
