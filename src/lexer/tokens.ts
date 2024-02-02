@@ -5,6 +5,7 @@
 
 enum TokenType {
   /* One-character tokens */
+  DOT,
   MINUS,
   PLUS,
   STAR,
@@ -13,7 +14,7 @@ enum TokenType {
   MODULO,
   AMPERSAND,
   NEGATION,
-  END_OF_LINE,
+  SEMI_COLON,
   OPEN_PARANTHESES,
   CLOSE_PARANTHESES,
   OPEN_BRACKET,
@@ -45,10 +46,7 @@ enum TokenType {
   LESS_THAN_OR_EQUAL,
 
   /* Keywords */
-  UBUSA,
   NIBA,
-  NIBYO,
-  SIBYO,
   NTAHINDUKA,
   NANONE_NIBA,
   UMUBARE,
@@ -57,19 +55,7 @@ enum TokenType {
   SUBIRAMO_NIBA,
   TANGA,
   POROGARAMU_NTOYA,
-  TANGAZA_AMAKURU,
-  INJIZA_AMAKURU,
-  KOMEZA,
-  HAGARARA,
-  UBWOKO,
-  ERROR,
-  KIN_HAGARARA,
   REKA,
-  SOMA_INYANDIKO,
-  ANDIKA_INYANDIKO,
-  KUVUGURURA_INYANDIKO,
-  SISITEMU,
-  IJAMBO,
   EOF,
 }
 

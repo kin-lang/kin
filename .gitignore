@@ -40,3 +40,7 @@ coverage/
 # npm
 *.npm-debug.log
 npm-debug.log
+
+
+# Custom
+local.todo.md

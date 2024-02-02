@@ -16,6 +16,7 @@ export type NodeType =
   | 'MemberExpression'
   | 'CallExpression'
   | 'BinaryExpr'
+  | 'ReturnExpr'
 
   // Literals
   | 'ObjectLiteral'
@@ -44,6 +45,14 @@ export interface Expr extends Stmt {}
 export interface Program extends Stmt {
   kind: 'Program';
   body: Stmt[];
+}
+
+/**
+ * Defines a return statement
+ */
+export interface ReturnExpr extends Expr {
+  kind: 'ReturnExpr';
+  value?: Expr;
 }
 
 /**
@@ -87,6 +96,11 @@ export interface FunctionDeclaration extends Stmt {
   body: Stmt[];
 }
 
+export interface ReturnExpr extends Expr {
+  kind: 'ReturnExpr';
+  value?: Expr;
+}
+
 /**
  * Defines a binary expression
  */
@@ -100,7 +114,7 @@ export interface BinaryExpr extends Expr {
 // foo["bar"]()  should work
 export interface CallExpr extends Expr {
   kind: 'CallExpression';
-  callee: Expr;
+  caller: Expr;
   args: Expr[];
 }
 

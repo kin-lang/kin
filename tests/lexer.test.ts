@@ -24,7 +24,7 @@ describe('Lexer', () => {
   });
 
   test('should tokenize variable assignment correctly', () => {
-    const lexer = new Lexer('reka x = 42;');
+    const lexer = new Lexer('reka x = 42');
     const tokens = lexer.tokenize();
 
     const expectedTokens = [
@@ -32,7 +32,6 @@ describe('Lexer', () => {
       { line: 1, type: TokenType.IDENTIFIER, lexeme: 'x' },
       { line: 1, type: TokenType.EQUAL, lexeme: '=' },
       { line: 1, type: TokenType.INTEGER, lexeme: '42' },
-      { line: 1, type: TokenType.END_OF_LINE, lexeme: ';' },
       { line: 1, type: TokenType.EOF, lexeme: 'EOF' },
     ];
     expect(tokens).toEqual(expectedTokens);
@@ -51,7 +50,7 @@ describe('Lexer', () => {
   test('should tokenize comments and ignore whitespace', () => {
     const lexer = new Lexer(`
       # This is a comment
-      reka a = 10; # Another comment
+      reka a = 10 # Another comment
     `);
     const tokens = lexer.tokenize();
 
@@ -60,7 +59,6 @@ describe('Lexer', () => {
       { line: 3, type: TokenType.IDENTIFIER, lexeme: 'a' },
       { line: 3, type: TokenType.EQUAL, lexeme: '=' },
       { line: 3, type: TokenType.INTEGER, lexeme: '10' },
-      { line: 3, type: TokenType.END_OF_LINE, lexeme: ';' },
       { line: 4, type: TokenType.EOF, lexeme: 'EOF' },
     ];
     expect(tokens).toEqual(expectedTokens);

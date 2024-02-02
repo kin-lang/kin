@@ -6,11 +6,11 @@
 
 porogaramu_ntoya fibonacci(nbr) {
     niba (nbr == 1 || nbr == 0) {
-        tanga 1;
+        tanga 1
     }
-        tanga fibonacci(nbr - 1) + fibonacci(nbr - 2);
+        tanga fibonacci(nbr - 1) + fibonacci(nbr - 2)
 }
 
-reka input_nbr = injiza_amakuru("Enter a number: ");
-reka nbr_fibonacci = fibonacci(nbr);
-tangaza_amakuru(nbr_fibonacci);
+reka input_nbr = injiza_amakuru("Enter a number: ")
+reka nbr_fibonacci = fibonacci(nbr)
+tangaza_amakuru(nbr_fibonacci)
