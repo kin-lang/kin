@@ -45,7 +45,7 @@ export default class Parser {
 
   private expect(type: TokenType, err: string) {
     const prev = this.eat();
-    console.log(prev);
+
     if (!prev || prev.type != type) {
       LogError(`On line ${prev.line}: Kin Error: ${err}`);
       process.exit(1);
