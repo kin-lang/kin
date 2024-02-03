@@ -45,6 +45,7 @@ export default class Parser {
 
   private expect(type: TokenType, err: string) {
     const prev = this.eat();
+
     if (!prev || prev.type != type) {
       LogError(`On line ${prev.line}: Kin Error: ${err}`);
       process.exit(1);
@@ -138,6 +139,9 @@ export default class Parser {
     return declaration;
   }
 
+  // ! reka obj.key = value  : will work
+  // ! reka obj["key"] = value : will not work
+  // ! This is to avoid arrays to assign values to undefined indexes, since arrays are objects
   private parse_expr(): Expr {
     return this.parse_assignment_expr();
   }
@@ -184,34 +188,6 @@ export default class Parser {
         );
         process.exit(1);
     }
-  }
-
-  private parse_array_expr(): Expr {
-    const properties = new Array<Property>();
-    let index = 0; // arr index starts at 0;
-    while (this.not_eof() && this.at().type != TokenType.CLOSE_BRACKET) {
-      // [val, val2]
-      const value: Expr = this.parse_expr();
-      const property: Property = {
-        key: index.toString(),
-        value,
-        kind: 'Property',
-      } as Property;
-      properties.push(property);
-
-      index += 1; // increment the index
-
-      if (this.at().type != TokenType.CLOSE_BRACKET) {
-        this.expect(
-          TokenType.COMMA,
-          `"Semicolor (;) or Closing bracket (]) expected at the end of array expression"`,
-        );
-      }
-    }
-
-    this.eat(); // advance past ]
-
-    return { kind: 'ObjectLiteral', properties } as ObjectLiteral;
   }
 
   private parse_and_statement(): Expr {
@@ -336,16 +312,52 @@ export default class Parser {
     return left;
   }
 
-  private parse_object_expr(): Expr {
-    if (this.at().type !== TokenType.OPEN_CURLY_BRACES) {
+  private parse_array_expr(): Expr {
+    if (this.at().type !== TokenType.OPEN_BRACKET) {
       return this.parse_and_statement();
     }
+    this.eat(); // eat [ token
+    const properties = new Array<Property>();
+    let index = 0; // arr index starts at 0;
+    while (this.not_eof() && this.at().type != TokenType.CLOSE_BRACKET) {
+      // [val, val2]
+      const value: Expr = this.parse_expr();
+      const property: Property = {
+        key: index.toString(),
+        value,
+        kind: 'Property',
+      } as Property;
+      properties.push(property);
+
+      index += 1; // increment the index
+
+      if (this.at().type != TokenType.CLOSE_BRACKET) {
+        this.expect(
+          TokenType.COMMA,
+          `"Closing bracket ']' expected at the end of array expression"`,
+        );
+      }
+    }
+
+    this.expect(
+      TokenType.CLOSE_BRACKET,
+      `"Closing bracket ']' expected at the end of array expression"`,
+    );
+
+    return { kind: 'ObjectLiteral', properties } as ObjectLiteral;
+  }
+
+  private parse_object_expr(): Expr {
+    if (this.at().type !== TokenType.OPEN_CURLY_BRACES) {
+      return this.parse_array_expr();
+    }
+
+    this.eat(); // advance past {
 
     const properties = new Array<Property>();
 
     while (this.not_eof() && this.at().type != TokenType.CLOSE_CURLY_BRACES) {
       // {key: val, key2: val}
-      this.eat(); // advance past {
       const key = this.expect(
         TokenType.IDENTIFIER,
         `"Identifier Expected for object key"`,
@@ -363,24 +375,21 @@ export default class Parser {
 
       // {key: val}
       this.expect(TokenType.COLON, `"Expected colon (:) after key ${key}"`);
-      const value: Expr = {
-        kind: 'StringLiteral',
-        value: this.eat().lexeme,
-      } as StringLiteral;
+      const value = this.parse_expr();
 
       properties.push({ key, value, kind: 'Property' });
 
       if (this.at().type != TokenType.CLOSE_CURLY_BRACES) {
         this.expect(
           TokenType.COMMA,
-          `"Semicolor (;) or Closing brace (}) expected at the end of object expression"`,
+          `"Closing brace '}' expected at the end of object expression"`,
         );
       }
     }
 
     this.expect(
       TokenType.CLOSE_CURLY_BRACES,
-      `"Closing brace (}) expected at the end of object expression"`,
+      `"Closing brace '}' expected at the end of object expression"`,
     );
 
     return { kind: 'ObjectLiteral', properties } as ObjectLiteral;
