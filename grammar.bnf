@@ -6,108 +6,45 @@
 ;   Kin Programming Language's Grammar in BNF (Backus-Naur Form)
 
 
-    <program> ::= {<statement> ";"}*
+program           ::= statement*
 
-    <statement> ::= <declaration> | <assignment> | <expression> | <conditional> | <loop> | <function> | <file_operation> | <pointers> | <system_command> | <type_casting> | <unary_operation> | <input_statement> | <output_statement>
+statement         ::= variableDeclaration
+                   | functionDeclaration
+                   | loopStatement
+                   | conditionalStatement
+                   | expressionStatement
+                   | returnStatement
 
-    <declaration> ::= "reka" <variable> "=" <value> | <pointer-decralation>
-    
-    <value> ::= <factor>
+variableDeclaration ::= "reka" | "ntahinduka" identifier ("=" expression)? ";"
 
-    <assignment> ::= <variable> "=" <expression> | <function_call> | <input_statement>
+functionDeclaration ::= "porogaramu_ntoya" identifier "(" (identifier ("," identifier)*)? ")" "{" statement* "}"
 
-    <expression> ::= <term> {<binary_operator> <expression>}
+loopStatement      ::= "subiramo_niba" "(" expression ")" "{" statement* "}"
 
-    <term> ::= <factor> {<binary_operator> <factor>}
+conditionalStatement ::= "niba" "(" expression ")" "{" statement* "}" ("nanone_niba" "(" expression ")" "{" statement* "}")? ("niba_byanze" "{" statement* "}")?
 
-    <factor> ::= <number> | <variable> | <string> | "(" <expression> ")" | <function_call>
+expressionStatement ::= expression
 
-    <conditional> ::= "niba" "(" <condition> ")" "{" <block> "}" [{"nanone_niba" "(" <condition> ")" "{" <block> "}"}*] ["niba_byanze" "{" <block> "}"]
+returnStatement    ::= "tanga" (expression | ";")
 
-    <condition> ::= <logical_condition> | nibyo | sibyo
+expression         ::= assignmentExpression
 
-    <logical_condition> ::= <expression> <logical_operator> <expression> | "(" <logical_condition> ")"
+assignmentExpression ::= objectLiteral ("=" assignmentExpression)?
 
-    <logical_operator> ::= "&&" | "||" | "==" | "!=" | "<" | "<=" | ">" | ">=" | "!"
+objectLiteral      ::= arrayExpression | primaryExpression
 
-    <loop> ::= "subiramo" "{" <statement>* "}" niba "(" <loop-conditions> ")"
+arrayExpression    ::= "[" (expression ("," expression)*)? "]"
 
-    <loop-conditions> ::= <condition>
+primaryExpression  ::= identifier
+                   | numericLiteral
+                   | stringLiteral
+                   | "(" expression ")"
+                   | functionReturn
 
-    <function> ::= "porogaramu_ntoya" <function_name> "(" <parameter_list> ")" <function-block>
+functionReturn     ::= "tanga" (expression | ";")
 
-    <parameter_list> ::= <parameter> {"," <parameter>}
+identifier         ::= [a-zA-Z_] [a-zA-Z0-9_]*
 
-    <parameter> ::= <variable> | <value>
+numericLiteral     ::= [0-9]+ ("." [0-9]+)?
 
-    <function-block> :: = "{" <block> ["tanga" <expression>]  "}"
-
-    <file_operation> ::= <file_read> | <file_write> | <file_append>
-
-    <file_read> ::= "soma_inyandiko" "(" <string> ")"
-
-    <file_write> ::= "andika_inyandiko" "(" <string> "," <variable> ")"
-
-    <file_append> ::= "vugurura_inyandiko" "(" <string> "," <string> ")"
-
-    <pointers> ::= <pointer-decralation> | <accessing-pointer>
-
-    <pointer-decralation> ::= "reka" "*" <variable> "=" "&" <variable> ";"
-
-    <accessing-pointer> ::= "*" <variable>
-
-    <system_command> ::= "sisitemu" "(" <string> ")"
-
-    <type_casting> ::= <casting_function> "(" <value> ")"
-
-    <casting_function> ::= "umubare" | "umubare_wibice" | "ijambo"
-
-    <unary_operation> ::= <unary_operator> <value>
-
-    <unary_operator> ::= "++" | "--" | "!"
-
-    <input_statement> ::= "injiza_amakuru" "(" <string> ")"
-    
-    <output_statement> ::= "tangaza_amakuru" "(" <string> ")"
-
-    <ubwoko> ::= "ubwoko" "(" <variable> ")"
-
-    <binary_operator> ::= "+" | "-" | "*" | "/" | "%" |  "^" | "&&" | "||" | ">" | ">=" | "<" | "<=" | "==" | "!="
-
-    <variable> ::= <identifier>
-
-    <function_call> ::= <function_name> "(" <argument_list> ")"
-
-    <function_name> ::= <identifier>
-
-    <argument_list> ::= <expression> {"," <expression>}
-
-    <block> ::= {<statement> ";"}*
-
-    <number> ::= <integer> | <float>
-
-    <integer> ::= <digit>+
-
-    <float> ::= <digit>+ "." <digit>+
-
-    <digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-
-    <string> ::= <string_element> | <string> "+" <string_element>
-
-    <string_element> ::= "\"" <characters> "\""
-
-    <list> ::= "[" {<expression> ","}* <expression> "]"
-
-    <structure> ::= "{" {<field> ","}* <field> "}"
-
-    <field> ::= <identifier> ":" <expression>
-
-    <identifier> ::= <letter> {<letter> | <digit> | "_"}
-
-    <letter> ::= "a" | "b" | ... | "z" | "A" | "B" | ... | "Z"
-
-    <characters> ::= <character> {<character>}
-
-    <character> ::= <letter> | <digit> | <symbol>
-
-    <symbol> ::= "~" | "`" | "!" | "@" | "#" | ... | "/"
+stringLiteral      ::= "\"" .* "\""
