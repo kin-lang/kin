@@ -5,7 +5,7 @@
 
 import Lexer, { Token } from '../lexer/lexer';
 import TokenType from '../lexer/tokens';
-import { LogError } from '../utils/log';
+import { LogError } from '../lib/log';
 import {
   AssignmentExpr,
   BinaryExpr,

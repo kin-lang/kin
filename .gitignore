@@ -9,7 +9,6 @@ build/
 *.js.map
 
 # Dependency directories
-lib/
 typings/
 
 # Logs
