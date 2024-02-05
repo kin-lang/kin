@@ -1,6 +1,6 @@
 /****************************************
  *              Parser                  *
- *       Product Kin's AST              *
+ *       Produces Kin's AST              *
  ****************************************/
 
 import Lexer, { Token } from '../lexer/lexer';
