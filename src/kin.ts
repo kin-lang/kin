@@ -1,14 +1,12 @@
-/**********************************************
- *       Kin Programming Language             *
- *                                            *
- * Author: Copyright (c) MURANGWA Pacifique   *
- *          and affiliates.                   *
- * Description: Write computer programs in    *
- *              Kinyarwanda.                  *
- * License: Apache License 2.0                *
- *********************************************/
+/**************************************************************************
+ *                      Kin Programming Language                          *
+ *                        Apache License 2.0                              *
+ *           Copyright (c) MURANGWA Pacifique  and affiliates.            *
+ *             Write computer programs in    Kinyarwanda.                 *                                        *
+ **************************************************************************/
+
 import Parser from './parser/parser';
-import { LogError, LogMessage } from './utils/log';
+import { LogError, LogMessage } from './lib/log';
 
 import * as readline from 'readline/promises';
 import { readFileSync } from 'fs';
