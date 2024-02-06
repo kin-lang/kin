@@ -40,7 +40,6 @@
     "husky": "^9.0.6",
     "prettier": "^3.2.4",
     "typescript": "^5.3.3",
-    "vitest": "^1.2.2",
-    "why-is-node-running": "^2.2.2"
+    "vitest": "^1.2.2"
   }
 }
