@@ -20,7 +20,6 @@ import {
   ObjectLiteral,
   Program,
   Property,
-  ReturnExpr,
   Stmt,
   StringLiteral,
   VariableDeclaration,
@@ -93,8 +92,17 @@ export default class Parser {
       `"Expected { starting a code block"`,
     );
     const body: Stmt[] = [];
-    while (this.not_eof() && this.at().type != TokenType.CLOSE_CURLY_BRACES) {
+    while (
+      this.not_eof() &&
+      this.at().type != TokenType.CLOSE_CURLY_BRACES &&
+      this.at().type != TokenType.TANGA
+    ) {
       body.push(this.parse_stmt());
+    }
+
+    // In case we reached tanga, we have to return to function in other to parse it.
+    if (this.at().type == TokenType.TANGA) {
+      return body;
     }
 
     this.expect(
@@ -181,7 +189,9 @@ export default class Parser {
 
         return value;
       case TokenType.TANGA:
-        return this.parse_function_return();
+        LogError(
+          `On line ${this.at().line} : Kin Error : porogaramu_ntoya niyo yonyine ishobora gutanga ikintu`,
+        );
       default:
         LogError(
           `On line ${this.at().line}: Kin Error: Unexpected token ${this.at().lexeme}`,
@@ -454,12 +464,31 @@ export default class Parser {
     }
 
     const body = this.parse_block_statement();
+    let returnValue: undefined | Expr;
+
+    if (this.at().type == TokenType.TANGA) {
+      this.eat(); // eat tanga keyword
+      //Check if function returns nothing else returns an expression
+      returnValue =
+        this.at().type == TokenType.SEMI_COLON ? undefined : this.parse_expr();
+
+      // eat semicolon when there was no return value
+      if (returnValue == undefined) {
+        this.eat();
+      }
+
+      this.expect(
+        TokenType.CLOSE_CURLY_BRACES,
+        `On line ${this.at().line} : Kin Error : No statements allowed after 'tanga', closing curly brace '}' expected `,
+      );
+    }
 
     return {
       kind: 'FunctionDeclaration',
       name,
       parameters: params,
       body,
+      return: returnValue,
     } as FunctionDeclaration;
   }
 
@@ -501,17 +530,5 @@ export default class Parser {
     }
 
     return left;
-  }
-
-  private parse_function_return(): Expr {
-    this.eat(); // advance past tanga
-    if (this.at().type == TokenType.SEMI_COLON) {
-      return { kind: 'ReturnExpr', value: undefined } as Expr;
-    }
-    const value = this.parse_expr();
-    return {
-      kind: 'ReturnExpr',
-      value,
-    } as ReturnExpr;
   }
 }
