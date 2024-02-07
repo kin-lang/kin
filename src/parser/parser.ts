@@ -141,7 +141,7 @@ export default class Parser {
 
   // ! reka obj.key = value  : will work
   // ! reka obj["key"] = value : will not work
-  // ! This is to avoid arrays to assign values to undefined indexes, since arrays are objects
+  // ! This is to avoid assigning values to undefined indexes in arrays, since arrays are objects
   private parse_expr(): Expr {
     return this.parse_assignment_expr();
   }

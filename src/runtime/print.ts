@@ -6,9 +6,9 @@ import {
   NullVal,
   ObjectVal,
   FunctionValue,
-} from '../values';
+} from './values';
 
-import { LogMessage } from '../../lib/log';
+import { LogMessage } from '../lib/log';
 
 export function printValues(args: Array<RuntimeVal>) {
   for (let i = 0; i < args.length; i++) {

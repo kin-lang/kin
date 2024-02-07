@@ -18,7 +18,7 @@ import {
   NumberVal,
 } from './values';
 import Environment from './environment';
-import { printValues } from './eval/print';
+import { printValues } from './print';
 import moment from 'moment';
 
 export function createGlobalEnv(): Environment {
