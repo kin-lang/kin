@@ -1,4 +1,10 @@
-# Kin
+<p align="center">
+  <a href="https://github.com/pacifiquem" target="blank"><img src="https://github.com/kin-lang/kin/blob/main/kin-logo.svg" width="120" alt="Kin Logo" /></a>
+</p>
+
+<p align="center">Write computer programs in Kinyarwanda! </p>
+
+## Description
 
 **Kin** is a straightforward programming language created with the purpose of aiding Kinyarwanda speakers in easily learning programming.
 > [!Important]
