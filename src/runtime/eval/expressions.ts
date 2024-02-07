@@ -1,5 +1,13 @@
 import { CallExpr } from '../../parser/ast';
 import { RuntimeVal } from '../values';
+import {
+  Identifier,
+  AssignmentExpr,
+  ObjectLiteral,
+  MemberExpr,
+} from '../../parser/ast';
+
+import Environment from '../environment';
 
 export default class Eval_expr {
   public static eval_identifier(
