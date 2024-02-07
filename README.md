@@ -11,14 +11,14 @@
 
 porogaramu_ntoya factorial(nbr) {
     niba (nbr == 1) {
-        tanga 1;
+        tanga 1
     }
-        tanga nbr * factorial(nbr - 1);
+        tanga nbr * factorial(nbr - 1)
 }
 
-reka input_nbr = injiza_amakuru("Enter a number: ");
-reka nbr_factorial = factorial(nbr);
-tangaza_amakuru(nbr_factorial);
+reka input_nbr = injiza_amakuru("Enter a number: ")
+reka nbr_factorial = factorial(nbr)
+tangaza_amakuru(nbr_factorial)
 ```
 
 ## Maintainers
