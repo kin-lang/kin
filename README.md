@@ -13,18 +13,33 @@
 ## What does it look like
 
 ```kin
-# Program to calculate factorial in Kin Programming Language
 
-porogaramu_ntoya factorial(nbr) {
-    niba (nbr == 1) {
-        tanga 1
+#                        FizzBuzz
+#  FizzBuzz problem solved by using Kin Programming language
+#
+
+
+reka limit = injiza_amakuru("Enter the limit (must be a number): ")
+
+reka response;
+reka i = 1
+
+subiramo_niba(i <= limit) {
+    niba (i%5 == 0 && i%3 == 0) {
+        response = "FizzBuzz"
+    } nanone_niba (i%5 == 0) {
+        response = "Fizz"
+    } nanone_niba (i%3 == 0) {
+        response = "Buzz"
+    } niba_byanze {
+        response = i
     }
-        tanga nbr * factorial(nbr - 1)
+
+    i = i + 1
+
+    tangaza_amakuru(response)
 }
 
-reka input_nbr = injiza_amakuru("Enter a number: ")
-reka nbr_factorial = factorial(nbr)
-tangaza_amakuru(nbr_factorial)
 ```
 
 ## Maintainers
