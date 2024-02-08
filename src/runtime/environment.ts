@@ -1,4 +1,10 @@
-import { Identifier, MemberExpr } from '../parser/ast';
+/*******************************************************************************************
+ *                                      Kin's Environment                                  *
+ *             In which environment are we in? variables accessible -                      *
+ *    in current scope and other questions like this are solved by Kin's Environment       *
+ *******************************************************************************************/
+
+import { Identifier, MemberExpr, NumericLiteral } from '../parser/ast';
 import { ObjectVal, RuntimeVal } from './values';
 
 export default class Environment {
@@ -61,7 +67,10 @@ export default class Environment {
     const prop = property
       ? property.symbol
       : (expr.property as Identifier).symbol;
-    const currentProp = (expr.property as Identifier).symbol;
+    const currentProp =
+      expr.property.kind == 'Identifier'
+        ? (expr.property as Identifier).symbol
+        : (expr.property as NumericLiteral).value.toString();
 
     if (value) pastVal.properties.set(prop, value);
 

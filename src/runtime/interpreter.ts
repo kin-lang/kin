@@ -1,3 +1,8 @@
+/*************************************************************************************************************
+ *                                                    Interpreter                                            *
+ *              Kin's Interpreter entry point, for walking Kin's AST by it's evaluate static method          *
+ *************************************************************************************************************/
+
 import { NumberVal, RuntimeVal, StringVal } from './values';
 import {
   AssignmentExpr,
@@ -22,7 +27,7 @@ import EvalStmt from './eval/statements';
 import { LogError } from '../lib/log';
 
 export class Interpreter {
-  public evaluate(astNode: Stmt, env: Environment): RuntimeVal {
+  public static evaluate(astNode: Stmt, env: Environment): RuntimeVal {
     switch (astNode.kind) {
       case 'Program':
         return EvalStmt.eval_program(astNode as Program, env);
@@ -68,7 +73,7 @@ export class Interpreter {
         );
       default:
         LogError(
-          'Kin Error: AST of unknown kind found. Cannot evaluate. Exiting. \n Please report this to Kin developers',
+          'Kin Error: AST of unknown kind found. Cannot evaluate. Exiting. \n Please report this to Kin developers \n',
           astNode,
         );
         process.exit(0);

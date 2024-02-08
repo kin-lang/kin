@@ -1,3 +1,8 @@
+/********************************************************************
+ *                        print values                              *
+ *          Whenever we want to write something to the console      *
+ ********************************************************************/
+
 import {
   RuntimeVal,
   StringVal,
@@ -11,11 +16,12 @@ import {
 import { LogMessage } from '../lib/log';
 
 export function printValues(args: Array<RuntimeVal>) {
+  let output = '';
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-
-    LogMessage(matchType(arg));
+    output += matchType(arg);
   }
+  LogMessage(output);
 }
 
 export function matchType(arg: RuntimeVal) {
