@@ -1,4 +1,4 @@
-import { CallExpr } from '../../parser/ast';
+import { BinaryExpr, CallExpr } from '../../parser/ast';
 import { RuntimeVal } from '../values';
 import {
   Identifier,
@@ -9,13 +9,13 @@ import {
 
 import Environment from '../environment';
 
-export default class Eval_expr {
+export default class EvalExpr {
   public static eval_identifier(
     ident: Identifier,
     env: Environment,
   ): RuntimeVal {}
   public static eval_binary_expr(
-    node: AssignmentExpr,
+    node: BinaryExpr,
     env: Environment,
   ): RuntimeVal {}
   public static eval_assignment(

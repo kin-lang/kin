@@ -9,7 +9,7 @@ import {
 import Environment from '../environment';
 import { RuntimeVal } from '../values';
 
-export default class eval_stmt {
+export default class EvalStmt {
   public static eval_program(program: Program, env: Environment): RuntimeVal {}
   public static eval_function_declaration(
     declaration: FunctionDeclaration,

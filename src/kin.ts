@@ -10,6 +10,8 @@ import { LogError, LogMessage } from './lib/log';
 
 import * as readline from 'readline/promises';
 import { readFileSync } from 'fs';
+import { Interpreter } from './runtime/interpreter';
+import { createGlobalEnv } from './runtime/globals';
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -28,7 +30,11 @@ async function run(filename: string): Promise<void> {
   try {
     const input: string = readFileSync(filename, 'utf-8');
     const parser = new Parser();
-    LogMessage(parser.produceAST(input));
+    const interpreter = new Interpreter();
+    const env = createGlobalEnv(); // global environment
+    const program = parser.produceAST(input);
+    const results = interpreter.evaluate(program, env);
+    console.log(JSON.stringify(results));
   } catch (error) {
     const err = error as Error;
     LogError(err);
@@ -49,7 +55,11 @@ async function repl() {
 
     try {
       const parser = new Parser();
-      LogMessage(parser.produceAST(input));
+      const interpreter = new Interpreter();
+      const env = createGlobalEnv(); // global environment
+      const program = parser.produceAST(input);
+      const results = interpreter.evaluate(program, env);
+      console.log(JSON.stringify(results));
     } catch (error: unknown) {
       const err = error as Error;
       LogError(err);
