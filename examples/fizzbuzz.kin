@@ -20,5 +20,7 @@ subiramo_niba(i <= limit) {
         response = i
     }
 
+    i = i + 1
+
     tangaza_amakuru(response)
 }
