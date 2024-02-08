@@ -165,6 +165,7 @@ export default class Parser {
 
         return identifier_expr;
       case TokenType.INTEGER:
+      case TokenType.FLOAT:
         const nbr_literal: Expr = {
           kind: 'NumericLiteral',
           value: parseFloat(this.eat().lexeme),
@@ -188,10 +189,6 @@ export default class Parser {
         ); // closing paren
 
         return value;
-      case TokenType.TANGA:
-        LogError(
-          `On line ${this.at().line} : Kin Error : porogaramu_ntoya niyo yonyine ishobora gutanga ikintu`,
-        );
       default:
         LogError(
           `On line ${this.at().line}: Kin Error: Unexpected token ${this.at().lexeme}`,
@@ -308,7 +305,7 @@ export default class Parser {
   private parse_multiplicative_expr(): Expr {
     let left = this.parse_call_member_expr();
 
-    while (['/', '*', '%'].includes(this.at().lexeme)) {
+    while (['/', '*', '%', '^'].includes(this.at().lexeme)) {
       const operator = this.eat().lexeme;
       const right = this.parse_call_member_expr();
       left = {

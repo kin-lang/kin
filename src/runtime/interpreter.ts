@@ -1,3 +1,8 @@
+/*************************************************************************************************************
+ *                                                    Interpreter                                            *
+ *              Kin's Interpreter entry point, for walking Kin's AST by it's evaluate static method          *
+ *************************************************************************************************************/
+
 import { NumberVal, RuntimeVal, StringVal } from './values';
 import {
   AssignmentExpr,
@@ -17,15 +22,15 @@ import {
 } from '../parser/ast';
 
 import Environment from './environment';
-import Eval_expr from './eval/expressions';
-import Eval_stmt from './eval/statements';
+import EvalExpr from './eval/expressions';
+import EvalStmt from './eval/statements';
 import { LogError } from '../lib/log';
 
 export class Interpreter {
-  public evaluate(astNode: Stmt, env: Environment): RuntimeVal {
+  public static evaluate(astNode: Stmt, env: Environment): RuntimeVal {
     switch (astNode.kind) {
       case 'Program':
-        return Eval_stmt.eval_program(astNode as Program, env);
+        return EvalStmt.eval_program(astNode as Program, env);
       case 'NumericLiteral':
         return {
           value: (astNode as NumericLiteral).value,
@@ -37,42 +42,38 @@ export class Interpreter {
           type: 'string',
         } as StringVal;
       case 'Identifier':
-        return Eval_expr.eval_identifier(astNode as Identifier, env);
+        return EvalExpr.eval_identifier(astNode as Identifier, env);
       case 'ObjectLiteral':
-        return Eval_expr.eval_object_expr(astNode as ObjectLiteral, env);
+        return EvalExpr.eval_object_expr(astNode as ObjectLiteral, env);
       case 'CallExpression':
-        return Eval_expr.eval_call_expr(astNode as CallExpr, env);
+        return EvalExpr.eval_call_expr(astNode as CallExpr, env);
       case 'AssignmentExpression':
-        return Eval_expr.eval_assignment(astNode as AssignmentExpr, env);
+        return EvalExpr.eval_assignment(astNode as AssignmentExpr, env);
       case 'BinaryExpr':
-        return Eval_expr.eval_binary_expr(astNode as BinaryExpr, env);
+        return EvalExpr.eval_binary_expr(astNode as BinaryExpr, env);
       case 'MemberExpression':
-        return Eval_expr.eval_member_expr(
-          env,
-          undefined,
-          astNode as MemberExpr,
-        );
+        return EvalExpr.eval_member_expr(env, undefined, astNode as MemberExpr);
       // Handle statements
       case 'ConditionalStatement':
-        return Eval_stmt.eval_conditional_statement(
+        return EvalStmt.eval_conditional_statement(
           astNode as ConditionalStmt,
           env,
         );
       case 'LoopStatement':
-        return Eval_stmt.eval_for_statement(astNode as LoopStatement, env);
+        return EvalStmt.eval_for_statement(astNode as LoopStatement, env);
       case 'VariableDeclaration':
-        return Eval_stmt.eval_val_declaration(
+        return EvalStmt.eval_val_declaration(
           astNode as VariableDeclaration,
           env,
         );
       case 'FunctionDeclaration':
-        return Eval_stmt.eval_function_declaration(
+        return EvalStmt.eval_function_declaration(
           astNode as FunctionDeclaration,
           env,
         );
       default:
         LogError(
-          'Kin Error: AST of unknown kind found. Cannot evaluate. Exiting. \n Please report this to Kin developers',
+          'Kin Error: AST of unknown kind found. Cannot evaluate. Exiting. \n Please report this to Kin developers \n',
           astNode,
         );
         process.exit(0);

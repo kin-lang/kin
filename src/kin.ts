@@ -6,54 +6,32 @@
  **************************************************************************/
 
 import Parser from './parser/parser';
-import { LogError, LogMessage } from './lib/log';
+import { LogError } from './lib/log';
 
-import * as readline from 'readline/promises';
 import { readFileSync } from 'fs';
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+import { Interpreter } from './runtime/interpreter';
+import { createGlobalEnv } from './runtime/globals';
 
 const file = process.argv[2];
 
 if (file) {
   run(file);
 } else {
-  repl();
+  LogError('No file provided');
+  process.exit(1);
 }
 
 async function run(filename: string): Promise<void> {
   try {
     const input: string = readFileSync(filename, 'utf-8');
     const parser = new Parser();
-    LogMessage(parser.produceAST(input));
+    const env = createGlobalEnv(); // global environment
+    const program = parser.produceAST(input);
+    Interpreter.evaluate(program, env);
+    process.exit(0);
   } catch (error) {
     const err = error as Error;
     LogError(err);
     process.exit(1);
-  }
-}
-
-async function repl() {
-  LogMessage('Kin Repl v0.0');
-
-  while (true) {
-    const input = await rl.question('> ');
-
-    // check for no user input or exit keyword.
-    if (input === '.exit' || input === '.quit' || input === '.q') {
-      process.exit(0);
-    }
-
-    try {
-      const parser = new Parser();
-      LogMessage(parser.produceAST(input));
-    } catch (error: unknown) {
-      const err = error as Error;
-      LogError(err);
-      process.exit(1);
-    }
   }
 }

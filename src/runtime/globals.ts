@@ -65,6 +65,8 @@ export function createGlobalEnv(): Environment {
       try {
         const result = rl.question(cmd);
         if (result !== null) {
+          const numberRegex = /^-?\d+(\.\d*)?$/; // regex for numbers and floats
+          if (numberRegex.test(result)) return MK_NUMBER(Number(result));
           return MK_STRING(result);
         } else {
           return MK_NULL();
