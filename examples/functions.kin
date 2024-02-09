@@ -1,0 +1,22 @@
+# function that doesn't return anything
+porogaramu_ntoya printTime() {
+    tangaza_amakuru(KIN_IGIHE.isaha())
+}
+
+printTime() # This will print current time in this format: HH:MM:SS
+
+# function that return something
+porogaramu_ntoya add(a, b) {
+    tanga a + b
+}
+
+tangaza_amakuru(add(1, 2)) # This will print 3
+
+# function being a member of an object
+reka obj = {
+    addNumbers: add
+}
+
+tangaza_amakuru(obj.addNumbers(1, 2))  # This will print 3
+
+# Note: if there's any statement after tanga<return>, you'll get an error since tanga must be the last statement in a function

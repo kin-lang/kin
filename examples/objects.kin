@@ -1,0 +1,25 @@
+porogaramu_ntoya add (a, b) {
+    tanga a + b
+}
+
+# object can't as complex as you want in Kin
+# only make sure that key is a string and value is an expression.
+
+reka obj = {
+    key: "value",
+    key2: 1,
+    key3: add,
+    key4: {
+        sub_key: "sub_key's value",
+        sub_obj: {
+            sub_sub_key: "sub sub key value"
+        }
+    },
+    key5: [1, 2, 4, 5]
+}
+
+tangaza_amakuru(obj["key4"]["sub_obj"]["sub_sub_key"]) # this will print "sub sub key value"
+tangaza_amakuru(obj.key4.sub_obj.sub_sub_key) # Also this will print "sub sub key value"
+
+tangaza_amakuru(obj.key5[3]) # this will print 5 on screen
+tangaza_amakuru(obj.key3(1, 3)) # this will print 4, since key3 is assigned to "add" which is function which add 2 inputs
