@@ -74,7 +74,10 @@ class Lexer {
         this.currentLine++;
       } else if (c === '#') {
         /* Comment, skip until the end of the line */
-        while (this.peek() !== '\n' && this.peek() !== '\0') {
+        while (
+          this.peek() !== '\n' &&
+          this.sourceCodes.length !== this.currentPos
+        ) {
           this.advance();
         }
       } else {
@@ -114,7 +117,7 @@ class Lexer {
     const start: number = this.currentPos;
     const quote: string = this.consume();
     while (this.peek() !== quote) {
-      if (this.peek() === '\n' || this.peek() === '\0') {
+      if (this.peek() === '\n' || this.currentPos === this.sourceCodes.length) {
         throw new Error(
           `Unterminated string literal at line ${this.currentLine}`,
         );
