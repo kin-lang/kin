@@ -52,12 +52,26 @@ export default class Environment {
     value?: RuntimeVal,
     property?: Identifier,
   ): RuntimeVal {
-    if (expr.object.kind == 'MemberExpression')
-      return this.lookupOrMutObject(
+    if (expr.object.kind == 'MemberExpression') {
+      let variable = this.lookupOrMutObject(
         expr.object as MemberExpr,
         value,
         expr.property as Identifier,
       );
+
+      // For nested properties
+      if (expr.property && variable.type == 'object') {
+        const computed_property =
+          (expr.property as Identifier).symbol ||
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (expr.property as any)?.value.toString();
+        variable = (variable as ObjectVal).properties.get(
+          computed_property,
+        ) as RuntimeVal;
+      }
+
+      return variable;
+    }
 
     const varname = (expr.object as Identifier).symbol;
     const env = this.resolve(varname);
