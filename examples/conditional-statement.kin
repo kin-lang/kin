@@ -1,0 +1,13 @@
+reka grade = 90
+
+niba (grade >= 90) {
+  tangaza_amakuru("Excellent work! You got an A.")
+} nanone_niba (grade >= 80) {
+  tangaza_amakuru("Great job! You got a B.")
+} nanone_niba (grade >= 70) {
+  tangaza_amakuru("Good effort! You got a C.")
+} nanone_niba (grade >= 60) {
+  tangaza_amakuru("You passed with a D. Keep practicing!")
+} niba_byanze {
+  tangaza_amakuru("Uh oh, looks like you need to study more. You failed.")
+}

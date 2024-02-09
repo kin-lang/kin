@@ -1,0 +1,14 @@
+reka list = [1+4] # Array can contain expressions
+tangaza_amakuru(list[0]) # will print 5
+
+reka list2 = [KIN_IGIHE.isaha] # Array can contain function's identifier
+tangaza_amakuru(list2[0]()) # will current time in this format HH:MM:SS
+
+reka list3 = [{key: "value"}] # Array can contain object
+tangaza_amakuru(list3[0].key) # this will print value
+
+reka list4 = [[1, 2], [3, 4]] # Arrays can be nested
+tangaza_amakuru(list4[1][0]) # This will print 3
+
+reka list5 = [list, list2] # Array can contain variable names
+tangaza_amakuru(list5[1][0]()) # this will print time on screen since it's at index 0 of list2 array

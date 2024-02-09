@@ -1,0 +1,5 @@
+reka i = 1
+subiramo_niba(i<=100) {
+    tangaza_amakuru(i)
+    i = i + 1
+}
