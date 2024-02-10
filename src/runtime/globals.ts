@@ -22,10 +22,17 @@ import {
 import Environment from './environment';
 import { printValues } from './print';
 import moment from 'moment';
+import {
+  readFileSync,
+  writeFileSync,
+  appendFileSync,
+  unlinkSync as deleteFileSync,
+} from 'fs';
+import path from 'path';
 
-export function createGlobalEnv(): Environment {
+export function createGlobalEnv(filename: string): Environment {
   const env = new Environment();
-
+  env.declareVar('filename', MK_STRING(filename), true);
   env.declareVar('nibyo', MK_BOOL(true), true);
   env.declareVar('sibyo', MK_BOOL(false), true);
   env.declareVar('ubusa', MK_NULL(), true);
@@ -205,14 +212,14 @@ export function createGlobalEnv(): Environment {
       new Map()
         .set(
           'ingano',
-          MK_NATIVE_FN((args, env) => {
+          MK_NATIVE_FN((args) => {
             const keys = args[0] as ObjectVal;
             return MK_NUMBER(keys.properties.size);
           }),
         )
         .set(
           'ifite_ikirango',
-          MK_NATIVE_FN((args, env) => {
+          MK_NATIVE_FN((args) => {
             const arr = args[0] as ObjectVal;
             const val = args[1] as StringVal;
 
@@ -221,7 +228,7 @@ export function createGlobalEnv(): Environment {
         )
         .set(
           'ifite',
-          MK_NATIVE_FN((args, env) => {
+          MK_NATIVE_FN((args) => {
             const obj = args[0] as ObjectVal; // map with <key, value>
             const arr = obj.properties.values(); // only map's values
             const val = args[1] as StringVal; // value to check
@@ -230,7 +237,7 @@ export function createGlobalEnv(): Environment {
         )
         .set(
           'kora_ijambo',
-          MK_NATIVE_FN((args, env) => {
+          MK_NATIVE_FN((args) => {
             const obj = args[0] as ObjectVal; // map with <key, value>
             const str = Array.from(obj.properties.values())
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -248,6 +255,113 @@ export function createGlobalEnv(): Environment {
     MK_NATIVE_FN((args) => {
       return MK_STRING(args[0].type);
     }),
+    true,
+  );
+
+  env.declareVar(
+    'KIN_INYANDIKO',
+    MK_OBJECT(
+      new Map()
+        .set(
+          'soma',
+          MK_NATIVE_FN((args) => {
+            const file_location = path.join(
+              path.dirname(
+                path.join(
+                  process.cwd(),
+                  (env.lookupVar('filename') as StringVal).value,
+                ),
+              ),
+              (args[0] as StringVal).value,
+            );
+            try {
+              const data = readFileSync(file_location, 'utf-8');
+              return MK_STRING(data);
+            } catch (error) {
+              if (error instanceof Error) {
+                return MK_STRING(error.message);
+              }
+
+              return MK_STRING(error as string);
+            }
+          }),
+        )
+        .set(
+          'andika',
+          MK_NATIVE_FN((args) => {
+            const file_location = path.join(
+              path.dirname(
+                path.join(
+                  process.cwd(),
+                  (env.lookupVar('filename') as StringVal).value,
+                ),
+              ),
+              (args[0] as StringVal).value,
+            );
+            const data = args[1] as StringVal;
+            try {
+              writeFileSync(file_location, data.value, 'utf-8');
+              return MK_BOOL();
+            } catch (error: unknown) {
+              if (error instanceof Error) {
+                return MK_STRING(error.message);
+              }
+
+              return MK_STRING(error as string);
+            }
+          }),
+        )
+        .set(
+          'vugurura',
+          MK_NATIVE_FN((args) => {
+            const file_location = path.join(
+              path.dirname(
+                path.join(
+                  process.cwd(),
+                  (env.lookupVar('filename') as StringVal).value,
+                ),
+              ),
+              (args[0] as StringVal).value,
+            );
+            const data = args[1] as StringVal;
+            try {
+              appendFileSync(file_location, data.value, 'utf-8');
+              return MK_BOOL();
+            } catch (error: unknown) {
+              if (error instanceof Error) {
+                return MK_STRING(error.message);
+              }
+
+              return MK_STRING(error as string);
+            }
+          }),
+        )
+        .set(
+          'siba',
+          MK_NATIVE_FN((args) => {
+            const file_location = path.join(
+              path.dirname(
+                path.join(
+                  process.cwd(),
+                  (env.lookupVar('filename') as StringVal).value,
+                ),
+              ),
+              (args[0] as StringVal).value,
+            );
+            const data = args[1] as StringVal;
+            try {
+              deleteFileSync(file_location);
+              return MK_BOOL();
+            } catch (error: unknown) {
+              if (error instanceof Error) {
+                return MK_STRING(error.message);
+              }
+
+              return MK_STRING(error as string);
+            }
+          }),
+        ),
+    ),
     true,
   );
 

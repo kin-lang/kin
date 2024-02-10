@@ -25,7 +25,7 @@ async function run(filename: string): Promise<void> {
   try {
     const input: string = readFileSync(filename, 'utf-8');
     const parser = new Parser();
-    const env = createGlobalEnv(); // global environment
+    const env = createGlobalEnv(filename); // global environment of the current running file.
     const program = parser.produceAST(input);
     Interpreter.evaluate(program, env);
     process.exit(0);
