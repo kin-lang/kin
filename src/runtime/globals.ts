@@ -16,6 +16,7 @@ import {
   MK_NUMBER,
   StringVal,
   NumberVal,
+  RuntimeVal,
 } from './values';
 import Environment from './environment';
 import { printValues } from './print';
@@ -138,20 +139,34 @@ export function createGlobalEnv(): Environment {
   env.declareVar(
     'KIN_AMAGAMBO',
     MK_OBJECT(
-      new Map().set(
-        'huza_amagambo', // joining 2 string
-        MK_NATIVE_FN((args, env) => {
-          let res = '';
+      new Map()
+        .set(
+          'huza', // joining 2 string
+          MK_NATIVE_FN((args, env) => {
+            let res = '';
 
-          for (let i = 0; i < args.length; i++) {
-            const arg = args[i] as StringVal;
+            for (let i = 0; i < args.length; i++) {
+              const arg = args[i] as StringVal;
 
-            res += arg.value;
-          }
+              res += arg.value;
+            }
 
-          return MK_STRING(res);
-        }),
-      ),
+            return MK_STRING(res);
+          }),
+        )
+        .set(
+          'tandukanya', // splitting a string
+          MK_NATIVE_FN((args, env) => {
+            const str = (args[0] as StringVal).value;
+            const separator = (args[1] as StringVal).value;
+            const arr = new Map<string, RuntimeVal>();
+            str.split(separator).map((s, i) => {
+              // s for string and i for index
+              arr.set(i.toString(), MK_STRING(s));
+            });
+            return MK_OBJECT(arr);
+          }),
+        ),
     ),
     true,
   );
