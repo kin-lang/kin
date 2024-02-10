@@ -243,5 +243,13 @@ export function createGlobalEnv(): Environment {
     true,
   );
 
+  env.declareVar(
+    'ubwoko',
+    MK_NATIVE_FN((args) => {
+      return MK_STRING(args[0].type);
+    }),
+    true,
+  );
+
   return env;
 }
