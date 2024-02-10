@@ -17,6 +17,7 @@ import {
   StringVal,
   NumberVal,
   RuntimeVal,
+  ObjectVal,
 } from './values';
 import Environment from './environment';
 import { printValues } from './print';
@@ -171,6 +172,7 @@ export function createGlobalEnv(): Environment {
     true,
   );
 
+  // time built in function for KIN
   env.declareVar(
     'KIN_IGIHE',
     MK_OBJECT(
@@ -196,5 +198,50 @@ export function createGlobalEnv(): Environment {
     ),
     true,
   );
+
+  env.declareVar(
+    'KIN_URUTONDE',
+    MK_OBJECT(
+      new Map()
+        .set(
+          'ingano',
+          MK_NATIVE_FN((args, env) => {
+            const keys = args[0] as ObjectVal;
+            return MK_NUMBER(keys.properties.size);
+          }),
+        )
+        .set(
+          'ifite_ikirango',
+          MK_NATIVE_FN((args, env) => {
+            const arr = args[0] as ObjectVal;
+            const val = args[1] as StringVal;
+
+            return MK_BOOL(arr.properties.has(val.value));
+          }),
+        )
+        .set(
+          'ifite',
+          MK_NATIVE_FN((args, env) => {
+            const obj = args[0] as ObjectVal; // map with <key, value>
+            const arr = obj.properties.values(); // only map's values
+            const val = args[1] as StringVal; // value to check
+            return MK_BOOL(arr.next().value.value === val.value);
+          }),
+        )
+        .set(
+          'kora_ijambo',
+          MK_NATIVE_FN((args, env) => {
+            const obj = args[0] as ObjectVal; // map with <key, value>
+            const str = Array.from(obj.properties.values())
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              .map((v: any) => v?.value)
+              .join('');
+            return MK_STRING(str);
+          }),
+        ),
+    ),
+    true,
+  );
+
   return env;
 }
