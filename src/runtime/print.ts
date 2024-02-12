@@ -8,7 +8,6 @@ import {
   StringVal,
   NumberVal,
   BooleanVal,
-  NullVal,
   ObjectVal,
   FunctionValue,
 } from './values';
@@ -31,9 +30,9 @@ export function matchType(arg: RuntimeVal) {
     case 'number':
       return (arg as NumberVal).value;
     case 'boolean':
-      return (arg as BooleanVal).value;
+      (arg as BooleanVal).value ? 'nibyo' : 'sibyo';
     case 'null':
-      return (arg as NullVal).value;
+      return 'ubusa';
     case 'object':
       const obj: { [key: string]: unknown } = {};
       const aObj = arg as ObjectVal;
