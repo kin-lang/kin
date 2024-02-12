@@ -1,8 +1,8 @@
 {
   "name": "@kin-lang/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Kin Programming Language: write computer programs in Kinyarwanda.",
-  "main": "/src/index.ts",
+  "main": "./dist/index.js",
   "author": "MURANGWA Pacifique",
   "license": "Apache-2.0",
   "homepage": "https://github.com/kin-lang/kin#readme",
