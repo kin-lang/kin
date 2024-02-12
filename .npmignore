@@ -5,3 +5,5 @@
 /.vscode
 /.github
 todo.md
+/coverage
+/examples

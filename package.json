@@ -5,6 +5,7 @@
   "main": "./dist/index.js",
   "author": "MURANGWA Pacifique",
   "license": "Apache-2.0",
+  "private": false,
   "homepage": "https://github.com/kin-lang/kin#readme",
   "repository": {
     "type": "git",
@@ -19,8 +20,7 @@
     "build": "tsc",
     "test": "vitest --no-watch",
     "test:watch": "vitest --watch",
-    "test:cov": "vitest --coverage",
-    "prepare": "husky"
+    "test:cov": "vitest --coverage"
   },
   "keywords": [
     "kin",
