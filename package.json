@@ -44,7 +44,6 @@
     "vitest": "^1.2.2"
   },
   "dependencies": {
-    "moment": "^2.30.1",
-    "readline-sync": "^1.4.10"
+    "moment": "^2.30.1"
   }
 }
