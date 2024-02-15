@@ -4,8 +4,7 @@
  *                                                    Globals                                                *
  *              Global environment for Kin, it contains it's global env, variables and functions             *
  *************************************************************************************************************/
-
-import rl from 'readline-sync';
+import prompt from 'prompt-sync';
 import { execSync } from 'child_process';
 import {
   MK_BOOL,
@@ -72,7 +71,7 @@ export function createGlobalEnv(filename: string): Environment {
       const cmd = (args[0] as StringVal).value;
 
       try {
-        const result = rl.question(cmd);
+        const result = prompt()(cmd);
         if (result !== null) {
           const numberRegex = /^-?\d+(\.\d*)?$/; // regex for numbers and floats
           if (numberRegex.test(result)) return MK_NUMBER(Number(result));

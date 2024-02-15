@@ -1,6 +1,6 @@
 {
   "name": "@kin-lang/core",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Kin Programming Language: write computer programs in Kinyarwanda.",
   "main": "./dist/index.js",
   "author": "MURANGWA Pacifique",
@@ -29,8 +29,8 @@
     "interpreter"
   ],
   "devDependencies": {
+    "@types/prompt-sync": "^4.2.3",
     "@types/node": "^20.11.9",
-    "@types/readline-sync": "^1.4.8",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@typescript-eslint/parser": "^6.19.1",
     "@vitest/coverage-v8": "^1.2.2",
@@ -44,6 +44,7 @@
     "vitest": "^1.2.2"
   },
   "dependencies": {
+    "prompt-sync": "^4.2.0",
     "moment": "^2.30.1"
   }
 }
