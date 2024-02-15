@@ -3,6 +3,12 @@
 </p>
 
 <p align="center">Write computer programs in Kinyarwanda! </p>
+<p align="center">
+  <a href="https://kinlang.vercel.app/getting-started">Getting Started</a> .
+  <a href="https://kinlang.vercel.app/getting-started">Why Kin?</a> .
+  <a href="https://kinlang.vercel.app/getting-started#ide-integrations">VS Code support</a> .
+  <a href="https://github.com/kin-lang/showcase"> Show us what you did! </a>
+</p>
 
 ## Description
 
@@ -44,7 +50,7 @@ subiramo_niba(i <= limit) {
 
 ## Maintainers
 
-This language is still under development and it's being written by [@pacifiquem](https://github.com/pacifiquem).
+This language is maintained by [@pacifiquem](https://github.com/pacifiquem).
 
 ## Contributing
 
