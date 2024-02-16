@@ -162,6 +162,27 @@ export function createGlobalEnv(filename: string): Environment {
           }),
         )
         .set(
+          'ingano',
+          MK_NATIVE_FN((args, env) => {
+            const str = (args[0] as StringVal).value;
+            return MK_NUMBER(str.length);
+          }),
+        )
+        .set(
+          'inyuguti_nkuru',
+          MK_NATIVE_FN((args, env) => {
+            const str = (args[0] as StringVal).value;
+            return MK_STRING(str.toUpperCase());
+          }),
+        )
+        .set(
+          'inyuguti_ntoya',
+          MK_NATIVE_FN((args, env) => {
+            const str = (args[0] as StringVal).value;
+            return MK_STRING(str.toLowerCase());
+          }),
+        )
+        .set(
           'tandukanya', // splitting a string
           MK_NATIVE_FN((args, env) => {
             const str = (args[0] as StringVal).value;
