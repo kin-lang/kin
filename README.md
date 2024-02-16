@@ -5,7 +5,7 @@
 <p align="center">Write computer programs in Kinyarwanda! </p>
 <p align="center">
   <a href="https://kinlang.vercel.app/getting-started">Getting Started</a> .
-  <a href="https://kinlang.vercel.app/getting-started">Why Kin?</a> .
+  <a href="https://kinlang.vercel.app/#why">Why Kin?</a> .
   <a href="https://kinlang.vercel.app/getting-started#ide-integrations">VS Code support</a> .
   <a href="https://github.com/kin-lang/showcase"> Show us what you did! </a>
 </p>
