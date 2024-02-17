@@ -6,3 +6,8 @@ Support:
 - Stop Kin while it's running
 - Recursion
 - Introduce more native functions
+
+Methods:
+
+- unshift for arrays
+- shift for arrays

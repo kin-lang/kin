@@ -28,6 +28,7 @@ import {
   unlinkSync as deleteFileSync,
 } from 'fs';
 import path from 'path';
+import { Runtime } from 'inspector';
 
 export function createGlobalEnv(filename: string): Environment {
   const env = new Environment();
@@ -235,6 +236,24 @@ export function createGlobalEnv(filename: string): Environment {
           MK_NATIVE_FN((args) => {
             const keys = args[0] as ObjectVal;
             return MK_NUMBER(keys.properties.size);
+          }),
+        )
+        .set(
+          'ongera_kumusozo',
+          MK_NATIVE_FN((args) => {
+            const obj = args[0] as ObjectVal;
+            const val = args[1];
+            const key = obj.properties.size; // get the size of the map
+            obj.properties.set(key.toString(), val);
+            return MK_NUMBER(obj.properties.size); // return the new size of arr.
+          }),
+        )
+        .set(
+          'siba_kumusozo',
+          MK_NATIVE_FN((args) => {
+            const obj = args[0] as ObjectVal;
+            obj.properties.delete((obj.properties.size - 1).toString()); // remove the last element
+            return MK_NUMBER(obj.properties.size); // return the new size of arr.
           }),
         )
         .set(
