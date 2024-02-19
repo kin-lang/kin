@@ -60,7 +60,7 @@ export class Interpreter {
           env,
         );
       case 'LoopStatement':
-        return EvalStmt.eval_for_statement(astNode as LoopStatement, env);
+        return EvalStmt.eval_loop_statement(astNode as LoopStatement, env);
       case 'VariableDeclaration':
         return EvalStmt.eval_val_declaration(
           astNode as VariableDeclaration,

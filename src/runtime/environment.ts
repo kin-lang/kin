@@ -4,8 +4,9 @@
  *    in current scope and other questions like this are solved by Kin's Environment       *
  *******************************************************************************************/
 
-import { Identifier, MemberExpr, NumericLiteral } from '../parser/ast';
-import { ObjectVal, RuntimeVal } from './values';
+import { Interpreter } from '..';
+import { Identifier, MemberExpr } from '../parser/ast';
+import { NumberVal, ObjectVal, RuntimeVal, StringVal } from './values';
 
 export default class Environment {
   private parent?: Environment;
@@ -78,13 +79,26 @@ export default class Environment {
 
     let pastVal = env.variables.get(varname) as ObjectVal;
 
-    const prop = property
-      ? property.symbol
-      : (expr.property as Identifier).symbol;
-    const currentProp =
+    const prop = (
+      property
+        ? property.symbol
+        : !expr.computed
+          ? (expr.property as Identifier).symbol
+          : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (Interpreter.evaluate(expr.property, env) as StringVal | NumberVal)
+              .value
+    ).toString();
+
+    const currentProp = (
       expr.property.kind == 'Identifier'
-        ? (expr.property as Identifier).symbol
-        : (expr.property as NumericLiteral).value.toString();
+        ? expr.computed
+          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (Interpreter.evaluate(expr.property, env) as any).value
+          : (expr.property as Identifier).symbol
+        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (Interpreter.evaluate(expr.property, env) as StringVal | NumberVal)
+            .value
+    ).toString();
 
     if (value) pastVal.properties.set(prop, value);
 
