@@ -19,42 +19,22 @@
 ## What does it look like
 
 ```kin
-
-#                        FizzBuzz
-#  FizzBuzz problem solved by using Kin Programming language
-#
-
-
-reka limit = injiza_amakuru("Enter the limit (must be a number): ")
-
-reka response;
+# Print 100 numbers
 reka i = 1
-
-subiramo_niba(i <= limit) {
-    niba (i%5 == 0 && i%3 == 0) {
-        response = "FizzBuzz"
-    } nanone_niba (i%5 == 0) {
-        response = "Fizz"
-    } nanone_niba (i%3 == 0) {
-        response = "Buzz"
-    } niba_byanze {
-        response = i
-    }
-
-    i = i + 1
-
-    tangaza_amakuru(response)
+subiramo_niba (i<=100) {
+  tangaza_amakuru(i)
+  i = i + 1
 }
-
 ```
+## Contributing
+
+We still have a long way to go with Kin, with many features and behaviour that we still need to introduce as they're in [TODO](https://github.com/kin-lang/kin/blob/main/todo.md)
+we're calling for your contributions!
+Contributions are welcomed, refer to [Contiributing.md](https://github.com/kin-lang/kin/blob/main/contributing.md) for futher info.
 
 ## Maintainers
 
 This language is maintained by [@pacifiquem](https://github.com/pacifiquem).
-
-## Contributing
-
-Contributions are welcomed, refer to [Contiributing.md](https://github.com/kin-lang/kin/blob/main/contributing.md) for futher info.
 
 ## License
 
