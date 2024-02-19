@@ -64,7 +64,7 @@ export default class EvalStmt {
       return MK_NULL();
     }
   }
-  public static eval_for_statement(
+  public static eval_loop_statement(
     declaration: LoopStatement,
     env: Environment,
   ): RuntimeVal {
