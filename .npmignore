@@ -8,3 +8,7 @@ todo.md
 /coverage
 /examples
 *.kin
+*.svg
+.prettierrc
+.prettierignore
+.eslintrc
