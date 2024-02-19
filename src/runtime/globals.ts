@@ -234,8 +234,8 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'ingano',
           MK_NATIVE_FN((args) => {
-            const keys = args[0] as ObjectVal;
-            return MK_NUMBER(keys.properties.size);
+            const obj = args[0] as ObjectVal;
+            return MK_NUMBER(obj.properties.size);
           }),
         )
         .set(
