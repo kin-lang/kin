@@ -197,10 +197,27 @@ export default class Parser {
     }
   }
 
-  private parse_and_statement(): Expr {
-    let left = this.parse_additive_expr();
+  private parse_logical_expr(): Expr {
+    let left = this.parse_relational_expr();
 
     if (['&&', '||'].includes(this.at().lexeme)) {
+      const operator = this.eat().lexeme;
+      const right = this.parse_relational_expr();
+      left = {
+        kind: 'BinaryExpr',
+        left,
+        right,
+        operator,
+      } as BinaryExpr;
+    }
+
+    return left;
+  }
+
+  private parse_relational_expr(): Expr {
+    let left = this.parse_additive_expr();
+
+    if (['<', '>', '==', '!=', '<=', '>='].includes(this.at().lexeme)) {
       const operator = this.eat().lexeme;
       const right = this.parse_additive_expr();
 
@@ -218,9 +235,7 @@ export default class Parser {
   private parse_additive_expr(): Expr {
     let left = this.parse_multiplicative_expr();
 
-    while (
-      ['+', '-', '==', '!=', '<', '>', '<=', '>='].includes(this.at().lexeme)
-    ) {
+    while (['+', '-'].includes(this.at().lexeme)) {
       const operator = this.eat().lexeme;
       const right = this.parse_multiplicative_expr();
       left = {
@@ -321,7 +336,7 @@ export default class Parser {
 
   private parse_array_expr(): Expr {
     if (this.at().type !== TokenType.OPEN_BRACKET) {
-      return this.parse_and_statement();
+      return this.parse_logical_expr();
     }
     this.eat(); // eat [ token
     const properties = new Array<Property>();
