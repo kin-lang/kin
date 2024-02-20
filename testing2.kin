@@ -1,3 +1,0 @@
-niba ((20 / 4 >= 3) && (5 != 5) || (2 * 2 < 8)) {
-  tangaza_amakuru("nibyo")
-}
