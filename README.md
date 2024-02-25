@@ -18,7 +18,7 @@
 
 ## What does it look like
 
-<img src="https://github.com/kin-lang/kin/blob/main/public/sample-codes.png" width="500" alt="Kin Sample Codes" />
+<img src="https://github.com/kin-lang/kin/blob/main/public/sample-codes.png" width="800" alt="Kin Sample Codes" />
 
 ## Contributing
 
