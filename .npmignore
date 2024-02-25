@@ -12,3 +12,7 @@ todo.md
 .prettierrc
 .prettierignore
 .eslintrc
+*.png
+/public
+*.ts
+/bin
