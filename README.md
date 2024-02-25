@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/pacifiquem" target="blank"><img src="https://github.com/kin-lang/kin/blob/main/kin-logo.svg" width="120" alt="Kin Logo" /></a>
+  <a href="https://github.com/pacifiquem" target="blank"><img src="https://github.com/kin-lang/kin/blob/main/public/kin-logo.svg" width="120" alt="Kin Logo" /></a>
 </p>
 
 <p align="center">Write computer programs in Kinyarwanda! </p>
@@ -18,14 +18,8 @@
 
 ## What does it look like
 
-```kin
-# Print 100 numbers
-reka i = 1
-subiramo_niba (i<=100) {
-  tangaza_amakuru(i)
-  i = i + 1
-}
-```
+<img src="https://github.com/kin-lang/kin/blob/main/public/sample-codes.png" width="120" alt="Kin Sample Codes" />
+
 ## Contributing
 
 We still have a long way to go with Kin, with many features and behaviour that we still need to introduce as they're in [TODO](https://github.com/kin-lang/kin/blob/main/todo.md)
