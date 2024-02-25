@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/pacifiquem" target="blank"><img src="https://github.com/kin-lang/kin/blob/main/public/kin-logo.svg" width="120" alt="Kin Logo" /></a>
+  <img src="https://github.com/kin-lang/kin/blob/main/public/kin-logo.svg" width="120" alt="Kin Logo" />
 </p>
 
 <p align="center">Write computer programs in Kinyarwanda! </p>
@@ -13,12 +13,12 @@
 ## Description
 
 **Kin** is a straightforward programming language created with the purpose of aiding Kinyarwanda speakers in easily learning programming.
-> [!Important]
-> **Kin** is designed to enable individuals to write computer programs in Kinyarwanda, the native language of Rwandans. The aim is to facilitate an easy introduction to programming for people. While it is well-suited for teaching or learning programming, its suitability for use in a production environment is not guaranteed.
+
+> [!Important] > **Kin** is designed to enable individuals to write computer programs in Kinyarwanda, the native language of Rwandans. The aim is to facilitate an easy introduction to programming for people. While it is well-suited for teaching or learning programming, its suitability for use in a production environment is not guaranteed.
 
 ## What does it look like
 
-<img src="https://github.com/kin-lang/kin/blob/main/public/sample-codes.png" width="120" alt="Kin Sample Codes" />
+<img src="https://github.com/kin-lang/kin/blob/main/public/sample-codes.png" width="500" alt="Kin Sample Codes" />
 
 ## Contributing
 
