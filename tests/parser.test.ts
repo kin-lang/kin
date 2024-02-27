@@ -46,19 +46,23 @@ describe('Parser', () => {
           kind: 'FunctionDeclaration',
           name: 'add',
           parameters: ['a', 'b'],
-          body: [],
-          return: {
-            kind: 'BinaryExpr',
-            operator: '+',
-            left: {
-              kind: 'Identifier',
-              symbol: 'a',
+          body: [
+            {
+              kind: 'ReturnExpr',
+              value: {
+                kind: 'BinaryExpr',
+                operator: '+',
+                left: {
+                  kind: 'Identifier',
+                  symbol: 'a',
+                },
+                right: {
+                  kind: 'Identifier',
+                  symbol: 'b',
+                },
+              },
             },
-            right: {
-              kind: 'Identifier',
-              symbol: 'b',
-            },
-          },
+          ],
         },
       ],
     };
