@@ -74,13 +74,11 @@ export class Interpreter {
       default:
         if (astNode.kind == 'ReturnExpr') {
           LogError('Kin Error: values are returned in functions only.');
-          process.exit(1);
         }
-        LogError(
+        return LogError(
           'Kin Error: AST of unknown kind found. Cannot evaluate. Exiting. \n Please report this to Kin developers \n',
           astNode,
         );
-        process.exit(0);
     }
   }
 }

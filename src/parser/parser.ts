@@ -48,7 +48,6 @@ export default class Parser {
 
     if (!prev || prev.type != type) {
       LogError(`On line ${prev.line}: Kin Error: ${err}`);
-      process.exit(1);
     }
 
     return prev;
@@ -202,10 +201,9 @@ export default class Parser {
 
         return value;
       default:
-        LogError(
+        return LogError(
           `On line ${this.at().line}: Kin Error: Unexpected token ${this.at().lexeme}`,
         );
-        process.exit(1);
     }
   }
 
@@ -481,7 +479,6 @@ export default class Parser {
         LogError(
           `On line ${this.at().line}: Kin Error: Expected identifier for function parameter`,
         );
-        process.exit(1);
       }
 
       params.push((arg as Identifier).symbol);

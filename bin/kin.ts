@@ -5,6 +5,7 @@ import pkg from '../package.json';
 import { readFile } from 'fs/promises';
 import { Interpreter, Parser, createGlobalEnv } from '../src/index';
 import * as readline from 'readline/promises';
+import { LogError } from '../src/lib/log';
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -61,9 +62,9 @@ program
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.code === 'ENOENT') {
-        console.error(`Kin Error: Can't resolve file at '${file_location}'`);
+        LogError(`Kin Error: Can't resolve file at '${file_location}'`);
       } else {
-        console.error(`Error reading file: ${(error as Error).message}`);
+        LogError(`Error reading file: ${(error as Error).message}`);
       }
     }
   });
