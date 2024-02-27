@@ -36,7 +36,6 @@ export default class EvalStmt {
       parameters: declaration.parameters,
       declarationEnv: env,
       body: declaration.body,
-      return: declaration.return,
     } as FunctionValue;
 
     return env.declareVar(declaration.name, fn, true);

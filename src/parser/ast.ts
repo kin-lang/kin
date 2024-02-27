@@ -16,6 +16,7 @@ export type NodeType =
   | 'MemberExpression'
   | 'CallExpression'
   | 'BinaryExpr'
+  | 'ReturnExpr'
 
   // Literals
   | 'ObjectLiteral'
@@ -45,10 +46,6 @@ export interface Program extends Stmt {
   kind: 'Program';
   body: Stmt[];
 }
-
-/**
- * Defines a return statement
- */
 
 /**
  * Defines a variable declaration
@@ -89,7 +86,15 @@ export interface FunctionDeclaration extends Stmt {
   name: string;
   parameters: string[];
   body: Stmt[];
-  return?: Expr;
+}
+
+/**
+ * Defines a return statement
+ */
+
+export interface ReturnExpr extends Expr {
+  kind: 'ReturnExpr';
+  value?: Expr;
 }
 
 /**

@@ -3,7 +3,6 @@
  *             Responsible of Kin's Expressions Evaluation              *
  ***********************************************************************/
 
-import { BinaryExpr, CallExpr } from '../../parser/ast';
 import {
   BooleanVal,
   FunctionValue,
@@ -22,6 +21,8 @@ import {
   AssignmentExpr,
   ObjectLiteral,
   MemberExpr,
+  BinaryExpr,
+  CallExpr,
 } from '../../parser/ast';
 
 import Environment from '../environment';
@@ -105,14 +106,20 @@ export default class EvalExpr {
 
       // Evaluate the function body line by line
       for (const stmt of func.body) {
+        // manage return stmt
+        if (stmt.kind == 'ReturnExpr') {
+          const has_return_value =
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (stmt as any).value != undefined ? true : false;
+          return has_return_value
+            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              Interpreter.evaluate((stmt as any).value, scope)
+            : MK_NULL();
+        }
         Interpreter.evaluate(stmt, scope);
       }
 
-      let result: RuntimeVal = MK_NULL();
-
-      if (func.return) {
-        result = Interpreter.evaluate(func.return, scope);
-      }
+      const result: RuntimeVal = MK_NULL();
 
       return result;
     }

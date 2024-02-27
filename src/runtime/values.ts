@@ -3,7 +3,7 @@
  *              Kin's runtime values, responsible of defining Runtime values types             *
  ***********************************************************************************************/
 
-import { Expr, Stmt } from '../parser/ast';
+import { Stmt } from '../parser/ast';
 import Environment from './environment';
 
 export type ValueType =
@@ -50,7 +50,6 @@ export interface FunctionValue extends RuntimeVal {
   parameters: string[];
   declarationEnv: Environment;
   body: Stmt[];
-  return?: Expr;
 }
 
 export type FunctionCall = (args: RuntimeVal[], env: Environment) => RuntimeVal;

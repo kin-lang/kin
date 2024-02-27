@@ -23,6 +23,7 @@ import {
   Stmt,
   StringLiteral,
   VariableDeclaration,
+  ReturnExpr,
 } from './ast';
 
 export default class Parser {
@@ -81,9 +82,29 @@ export default class Parser {
         return this.parse_loop_statement();
       case TokenType.POROGARAMU_NTOYA:
         return this.parse_function_declaration();
+      case TokenType.TANGA:
+        return this.parse_return_expr();
       default:
         return this.parse_expr();
     }
+  }
+
+  private parse_return_expr(): Expr {
+    this.eat(); // eat tanga keyword
+
+    // nothing returned
+    if (this.at().type == TokenType.SEMI_COLON) {
+      this.eat(); // eat semi-colon
+      return {
+        kind: 'ReturnExpr',
+        value: undefined,
+      } as ReturnExpr;
+    }
+
+    return {
+      kind: 'ReturnExpr',
+      value: this.parse_expr(),
+    } as ReturnExpr;
   }
 
   private parse_block_statement(): Stmt[] {
@@ -92,17 +113,8 @@ export default class Parser {
       `"Expected { starting a code block"`,
     );
     const body: Stmt[] = [];
-    while (
-      this.not_eof() &&
-      this.at().type != TokenType.CLOSE_CURLY_BRACES &&
-      this.at().type != TokenType.TANGA
-    ) {
+    while (this.not_eof() && this.at().type != TokenType.CLOSE_CURLY_BRACES) {
       body.push(this.parse_stmt());
-    }
-
-    // In case we reached tanga, we have to return to function in other to parse it.
-    if (this.at().type == TokenType.TANGA) {
-      return body;
     }
 
     this.expect(
@@ -476,31 +488,12 @@ export default class Parser {
     }
 
     const body = this.parse_block_statement();
-    let returnValue: undefined | Expr;
-
-    if (this.at().type == TokenType.TANGA) {
-      this.eat(); // eat tanga keyword
-      //Check if function returns nothing else returns an expression
-      returnValue =
-        this.at().type == TokenType.SEMI_COLON ? undefined : this.parse_expr();
-
-      // eat semicolon when there was no return value
-      if (returnValue == undefined) {
-        this.eat();
-      }
-
-      this.expect(
-        TokenType.CLOSE_CURLY_BRACES,
-        `On line ${this.at().line} : Kin Error : No statements allowed after 'tanga', closing curly brace '}' expected `,
-      );
-    }
 
     return {
       kind: 'FunctionDeclaration',
       name,
       parameters: params,
       body,
-      return: returnValue,
     } as FunctionDeclaration;
   }
 
