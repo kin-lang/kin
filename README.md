@@ -10,6 +10,13 @@
   <a href="https://github.com/kin-lang/showcase"> Show us what you did! </a>
 </p>
 
+<div align="center">
+  
+![GitHub](https://img.shields.io/github/license/kin-lang/kin) . ![GitHub last commit](https://img.shields.io/github/last-commit/kin-lang/kin) . ![Version](https://img.shields.io/npm/v/@kin-lang/kin) . ![Stars](https://img.shields.io/github/stars/kin-lang/kin) . ![Issues](https://img.shields.io/github/issues/kin-lang/kin)
+
+</div>
+
+
 ## Description
 
 **Kin** is a straightforward programming language created with the purpose of aiding Kinyarwanda speakers in easily learning programming.
@@ -19,7 +26,30 @@
 
 ## What does it look like
 
-<img src="https://github.com/kin-lang/kin/blob/main/public/sample-codes.png" width="800" alt="Kin Sample Codes" />
+> Bubble sort algorithm implementation 😎
+<img src="https://github.com/kin-lang/kin/blob/main/public/sample-codes.png" width="350" height="450" alt="Kin Sample Codes" />
+
+## Hello \<name\> !
+
+```Kin
+reka name = injiza_amakuru("Enter your name: ")
+tangaza_amakuru("Hello ", name, "!")
+```
+> Get name from console and greet you!
+
+## Fun fact!
+
+In Kin, multiple statements can be written on the same line 😂
+
+### This will work
+```Kin
+reka name = injiza_amakuru("Enter your name: ") tangaza_amakuru("Hello ", name, "!")
+```
+
+### Also this will work
+```Kin
+tangaza_amakuru("Hello ", injiza_amakuru("Enter your name: "), "!")
+```
 
 ## Contributing
 
