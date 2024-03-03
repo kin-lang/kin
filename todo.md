@@ -11,7 +11,3 @@ Methods:
 
 - unshift for arrays
 - shift for arrays
-
-Behavior:
-
-- Make string iteratable
