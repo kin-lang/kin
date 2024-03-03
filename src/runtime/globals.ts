@@ -29,6 +29,7 @@ import {
 } from 'fs';
 import path from 'path';
 import { Runtime } from 'inspector';
+import { NumericLiteral } from '../parser/ast';
 
 export function createGlobalEnv(filename: string): Environment {
   const env = new Environment();
@@ -167,6 +168,14 @@ export function createGlobalEnv(filename: string): Environment {
           MK_NATIVE_FN((args, env) => {
             const str = (args[0] as StringVal).value;
             return MK_NUMBER(str.length);
+          }),
+        )
+        .set(
+          'inyuguti',
+          MK_NATIVE_FN((args, env) => {
+            const str = (args[0] as StringVal).value;
+            const charIndex = (args[1] as NumberVal).value;
+            return MK_STRING(str.charAt(charIndex));
           }),
         )
         .set(
