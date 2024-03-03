@@ -28,8 +28,6 @@ import {
   unlinkSync as deleteFileSync,
 } from 'fs';
 import path from 'path';
-import { Runtime } from 'inspector';
-import { NumericLiteral } from '../parser/ast';
 
 export function createGlobalEnv(filename: string): Environment {
   const env = new Environment();
@@ -84,6 +82,15 @@ export function createGlobalEnv(filename: string): Environment {
       } catch (error) {
         throw error;
       }
+    }),
+    true,
+  );
+
+  env.declareVar(
+    'hagarara',
+    MK_NATIVE_FN((args) => {
+      const exit_code = (args[0] as NumberVal).value;
+      process.exit(exit_code);
     }),
     true,
   );
