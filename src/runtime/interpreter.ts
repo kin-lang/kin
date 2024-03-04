@@ -19,6 +19,7 @@ import {
   StringLiteral,
   ConditionalStmt,
   VariableDeclaration,
+  UnaryExpr,
 } from '../parser/ast';
 
 import Environment from './environment';
@@ -51,6 +52,8 @@ export class Interpreter {
         return EvalExpr.eval_assignment(astNode as AssignmentExpr, env);
       case 'BinaryExpr':
         return EvalExpr.eval_binary_expr(astNode as BinaryExpr, env);
+      case 'UnaryExpr':
+        return EvalExpr.eval_unary_expr(astNode as UnaryExpr, env);
       case 'MemberExpression':
         return EvalExpr.eval_member_expr(env, undefined, astNode as MemberExpr);
       // Handle statements

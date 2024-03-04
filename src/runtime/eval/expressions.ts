@@ -23,10 +23,12 @@ import {
   MemberExpr,
   BinaryExpr,
   CallExpr,
+  UnaryExpr,
 } from '../../parser/ast';
 
 import Environment from '../environment';
 import { Interpreter } from '../interpreter';
+import { LogError } from '../../lib/log';
 
 export default class EvalExpr {
   public static eval_identifier(
@@ -48,6 +50,23 @@ export default class EvalExpr {
       rhs as RuntimeVal,
       node.operator,
     );
+  }
+
+  public static eval_unary_expr(node: UnaryExpr, env: Environment): RuntimeVal {
+    const ident: RuntimeVal = env.lookupVar(node.variable);
+    let value;
+    switch (node.operator) {
+      case '!':
+        value = MK_BOOL(!(ident as BooleanVal).value);
+        break;
+      default:
+        LogError(
+          'Unsupported unary operator ',
+          node.operator,
+          ' report this issue to our developers',
+        );
+    }
+    return value as RuntimeVal;
   }
 
   public static eval_assignment(
