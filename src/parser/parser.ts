@@ -24,6 +24,7 @@ import {
   StringLiteral,
   VariableDeclaration,
   ReturnExpr,
+  UnaryExpr,
 } from './ast';
 
 export default class Parser {
@@ -200,11 +201,30 @@ export default class Parser {
         ); // closing paren
 
         return value;
+      // ! We'll make arr of unary operators when we get more than one.
+      case TokenType.NEGATION:
+        return this.parse_negation_expr();
       default:
         return LogError(
           `On line ${this.at().line}: Kin Error: Unexpected token ${this.at().lexeme}`,
         );
     }
+  }
+
+  private parse_negation_expr(): Expr {
+    const operator = this.expect(
+      TokenType.NEGATION,
+      'Expected ! Operator',
+    ).lexeme;
+    const variable = this.expect(
+      TokenType.IDENTIFIER,
+      `Expected identifier after unary operator ${operator}`,
+    ).lexeme;
+    return {
+      kind: 'UnaryExpr',
+      operator,
+      variable,
+    } as UnaryExpr;
   }
 
   private parse_logical_expr(): Expr {
