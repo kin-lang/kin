@@ -16,6 +16,7 @@ export type NodeType =
   | 'MemberExpression'
   | 'CallExpression'
   | 'BinaryExpr'
+  | 'UnaryExpr'
   | 'ReturnExpr'
 
   // Literals
@@ -105,6 +106,16 @@ export interface BinaryExpr extends Expr {
   operator: string; // must be of type BinaryOperator
   left: Expr;
   right: Expr;
+}
+
+/**
+ * Defines a unary expression
+ */
+
+export interface UnaryExpr extends Expr {
+  kind: 'UnaryExpr';
+  operator: string;
+  variable: string;
 }
 
 // foo["bar"]()  should work
