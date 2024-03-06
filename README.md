@@ -18,7 +18,7 @@
 
 ## Description
 
-**Kin** is a straightforward programming language created with the purpose of aiding Kinyarwanda speakers in easily learning programming.
+**Kin** is a straightforward programming language created with the purpose of aiding Rwandans to write computer programs in their native language Kinyarwanda.
 
 > [!Important]
 > **Kin** is designed to enable individuals to write computer programs in Kinyarwanda, the native language of Rwandans. The aim is to facilitate an easy introduction to programming for people. While it is well-suited for teaching or learning programming, its suitability for use in a production environment is not guaranteed.
