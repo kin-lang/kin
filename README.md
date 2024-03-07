@@ -26,7 +26,7 @@
 ## What does it look like
 
 > Bubble sort algorithm implementation 😎
-> <img src="https://github.com/kin-lang/kin/blob/main/public/sample-codes.png" width="350" height="450" alt="Kin Sample Codes" />
+<img src="https://github.com/kin-lang/kin/blob/main/public/sample-codes.png" width="350" height="450" alt="Kin Sample Codes" />
 
 ## Hello \<name\> !
 
