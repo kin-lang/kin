@@ -52,6 +52,9 @@ export function createGlobalEnv(filename: string): Environment {
   env.declareVar(
     'sisitemu',
     MK_NATIVE_FN((args) => {
+      const MIN_ARGS_LENGTH = 1;
+      if (args.length < MIN_ARGS_LENGTH)
+        throw new Error('sisitemu expects at least one argument');
       const cmd = (args[0] as StringVal).value;
 
       try {
@@ -68,6 +71,9 @@ export function createGlobalEnv(filename: string): Environment {
   env.declareVar(
     'injiza_amakuru',
     MK_NATIVE_FN((args) => {
+      const MIN_ARGS_LENGTH = 1;
+      if (args.length < MIN_ARGS_LENGTH)
+        throw new Error('injiza_amakuru expects at least one argument');
       const cmd = (args[0] as StringVal).value;
 
       try {
@@ -89,7 +95,12 @@ export function createGlobalEnv(filename: string): Environment {
   env.declareVar(
     'hagarara',
     MK_NATIVE_FN((args) => {
+      const MIN_ARGS_LENGTH = 1;
+      if (args.length < MIN_ARGS_LENGTH)
+        throw new Error('sisitemu expects atleast one argument');
       const exit_code = (args[0] as NumberVal).value;
+      if (exit_code != 0 && exit_code != 1)
+        throw new Error('hagarara expects 1 or 0 as exit codes');
       process.exit(exit_code);
     }),
     true,
@@ -104,6 +115,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'umuzikare', // sqrt
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_IMIBARE.umuzikare expects atleast one argument',
+              );
             const arg = (args[0] as NumberVal).value;
             return MK_NUMBER(Math.sqrt(arg));
           }),
@@ -111,8 +127,18 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'umubare_utazwi', // random
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 2;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_IMIBARE.umubare_utazwi expects at least two arguments',
+              );
             const arg1 = (args[0] as NumberVal).value;
             const arg2 = (args[1] as NumberVal).value;
+
+            if (typeof arg1 != 'number' && typeof arg2 != 'number')
+              throw new Error(
+                "KIN_IMIBARE.umubare_utazwi expects 2 arguments of type 'number'",
+              );
 
             const min = Math.ceil(arg1);
             const max = Math.floor(arg2);
@@ -122,28 +148,58 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'kuraho_ibice', // round
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_IMIBARE.kuraho_ibice expects at least one argument',
+              );
             const arg = (args[0] as NumberVal).value;
+            if (typeof arg != 'number')
+              throw new Error(
+                'KIN_IMIBARE.kuraho_ibice expects a number as an argument',
+              );
             return MK_NUMBER(Math.round(arg));
           }),
         )
         .set(
           'sin',
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error('KIN_IMIBARE.sin expects at least one argument');
             const arg = (args[0] as NumberVal).value;
+            if (typeof arg != 'number')
+              throw new Error(
+                'KIN_IMIBARE.sin expects a number as an argument',
+              );
             return MK_NUMBER(Math.sin(arg));
           }),
         )
         .set(
           'cos',
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error('KIN_IMIBARE.cos expects at least one argument');
             const arg = (args[0] as NumberVal).value;
+            if (typeof arg != 'number')
+              throw new Error(
+                'KIN_IMIBARE.cos expects a number as an argument',
+              );
             return MK_NUMBER(Math.cos(arg));
           }),
         )
         .set(
           'tan',
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error('KIN_IMIBARE.tan expects at least one argument');
             const arg = (args[0] as NumberVal).value;
+            if (typeof arg != 'number')
+              throw new Error(
+                'KIN_IMIBARE.tan expects a number as an argument',
+              );
             return MK_NUMBER(Math.tan(arg));
           }),
         ),
@@ -173,37 +229,86 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'ingano',
           MK_NATIVE_FN((args, env) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_AMAGAMBO.ingano expects at least one argument',
+              );
             const str = (args[0] as StringVal).value;
+            if (typeof str != 'string')
+              throw new Error(
+                'KIN_AMAGAMBO.ingano expects string as an argument',
+              );
             return MK_NUMBER(str.length);
           }),
         )
         .set(
           'inyuguti',
           MK_NATIVE_FN((args, env) => {
+            const MIN_ARGS_LENGTH = 2;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_AMAGAMBO.inyuguti expects at least two argument',
+              );
             const str = (args[0] as StringVal).value;
             const charIndex = (args[1] as NumberVal).value;
+            if (typeof str != 'string')
+              throw new Error(
+                'first argument of KIN_AMABAMBO.inyuguti must be a string',
+              );
+            else if (typeof charIndex != 'number')
+              throw new Error(
+                'second argument of KIN_AMABAMBO.inyuguti must be a number',
+              );
             return MK_STRING(str.charAt(charIndex));
           }),
         )
         .set(
           'inyuguti_nkuru',
           MK_NATIVE_FN((args, env) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_AMAGAMBO.inyuguti_nkuru expects at least one argument',
+              );
             const str = (args[0] as StringVal).value;
+            if (typeof str != 'string')
+              throw new Error(
+                'KIN_AMAGAMBO.inyuguti_nkuru expect a string as an argument',
+              );
             return MK_STRING(str.toUpperCase());
           }),
         )
         .set(
           'inyuguti_ntoya',
           MK_NATIVE_FN((args, env) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_AMAGAMBO.inyuguti_ntoya expects at least one argument',
+              );
             const str = (args[0] as StringVal).value;
+            if (typeof str != 'string')
+              throw new Error(
+                'KIN_AMAGAMBO.inyuguti_ntoya expect a string as an argument',
+              );
             return MK_STRING(str.toLowerCase());
           }),
         )
         .set(
           'tandukanya', // splitting a string
           MK_NATIVE_FN((args, env) => {
+            const MIN_ARGS_LENGTH = 2;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_AMAGAMBO.tangukanya expects at least two argument',
+              );
             const str = (args[0] as StringVal).value;
             const separator = (args[1] as StringVal).value;
+            if (typeof str != 'string' || typeof separator != 'string')
+              throw new Error(
+                'KIN_AMAGAMBO.tandukanya expects 2 arguments to be strings',
+              );
             const arr = new Map<string, RuntimeVal>();
             str.split(separator).map((s, i) => {
               // s for string and i for index
@@ -250,15 +355,33 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'ingano',
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_URUTONDE.ingano expects at least one argument',
+              );
             const obj = args[0] as ObjectVal;
+            if (typeof obj != 'object')
+              throw new Error(
+                'KIN_URUTONDE.ingano expects argument to be an array',
+              );
             return MK_NUMBER(obj.properties.size);
           }),
         )
         .set(
           'ongera_kumusozo',
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 2;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_URUTONDE.ongera_kumusozo expects at least two arguments',
+              );
             const obj = args[0] as ObjectVal;
             const val = args[1];
+            if (typeof obj != 'object')
+              throw new Error(
+                'KIN_URUTONDE.ongera_kumusozo expects first argument to be an array',
+              );
             const key = obj.properties.size; // get the size of the map
             obj.properties.set(key.toString(), val);
             return MK_NUMBER(obj.properties.size); // return the new size of arr.
@@ -267,7 +390,16 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'siba_kumusozo',
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_URUTONDE.siba_kumusozo expects at least one argument',
+              );
             const obj = args[0] as ObjectVal;
+            if (typeof obj != 'object')
+              throw new Error(
+                'KIN_URUTONDE.siba_kumusozo expects an argument to be an array',
+              );
             obj.properties.delete((obj.properties.size - 1).toString()); // remove the last element
             return MK_NUMBER(obj.properties.size); // return the new size of arr.
           }),
@@ -275,6 +407,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'ifite_ikirango',
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 2;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_URUTONDE.ifite_ikirango expects at least two arguments',
+              );
             const arr = args[0] as ObjectVal;
             const val = args[1] as StringVal;
 
@@ -284,6 +421,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'ifite',
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 2;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_URUTONDE.ifite expects at least two arguments',
+              );
             const obj = args[0] as ObjectVal; // map with <key, value>
             const arr = obj.properties.values(); // only map's values
             const val = args[1] as StringVal; // value to check
@@ -293,6 +435,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'kora_ijambo',
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_URUTONDE.kora_ijambo expects at least one argument',
+              );
             const obj = args[0] as ObjectVal; // map with <key, value>
             const str = Array.from(obj.properties.values())
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -308,6 +455,9 @@ export function createGlobalEnv(filename: string): Environment {
   env.declareVar(
     'ubwoko',
     MK_NATIVE_FN((args) => {
+      const MIN_ARGS_LENGTH = 1;
+      if (args.length < MIN_ARGS_LENGTH)
+        throw new Error('ubwoko expects at least one argument');
       return MK_STRING(args[0].type);
     }),
     true,
@@ -320,6 +470,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'soma',
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_INYANDIKO.soma expects at least one argument',
+              );
             const file_location = path.join(
               path.dirname(
                 path.join(
@@ -344,6 +499,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'andika',
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 2;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_URUTONDE.andika expects at least two arguments',
+              );
             const file_location = path.join(
               path.dirname(
                 path.join(
@@ -369,6 +529,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'vugurura',
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 2;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_URUTONDE.vugurura expects at least two arguments',
+              );
             const file_location = path.join(
               path.dirname(
                 path.join(
@@ -394,6 +559,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'siba',
           MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_URUTONDE.siba expects at least one argument',
+              );
             const file_location = path.join(
               path.dirname(
                 path.join(

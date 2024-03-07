@@ -11,7 +11,7 @@
 ## Installation
 
 ```shell
-npm i -g @kin-lang/cli
+npm i -g @kin-lang/kin
 ```
 
 ## Usage
