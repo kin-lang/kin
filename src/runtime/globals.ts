@@ -447,6 +447,61 @@ export function createGlobalEnv(filename: string): Environment {
               .join('');
             return MK_STRING(str);
           }),
+        )
+        .set(
+          'injiza_ahabanza',
+          MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 2;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_URUTONDE.injiza_ahabanza expects at least two arguments',
+              );
+            const obj = args[0] as ObjectVal;
+            if (typeof obj != 'object')
+              throw new Error(
+                'KIN_URUTONDE.injiza_ahabanza expects an argument to be an array',
+              );
+            const val = args[1] as RuntimeVal;
+
+            // New array with new value
+            const newArr: ObjectVal = { type: 'object', properties: new Map() };
+
+            // Setting values accordingly && Shift existing elements' keys by 1
+            newArr.properties.set('0', val);
+
+            for (const [key, value] of obj.properties) {
+              newArr.properties.set((parseInt(key) + 1).toString(), value);
+            }
+
+            return newArr;
+          }),
+        )
+        .set(
+          'siba_ahabanza',
+          MK_NATIVE_FN((args) => {
+            const MIN_ARGS_LENGTH = 1;
+            if (args.length < MIN_ARGS_LENGTH)
+              throw new Error(
+                'KIN_URUTONDE.siba_ahabanza expects at least one argument',
+              );
+            const obj = args[0] as ObjectVal;
+            if (typeof obj != 'object')
+              throw new Error(
+                'KIN_URUTONDE.siba_ahabanza expects an argument to be an array',
+              );
+
+            // New array with removed value
+            const newArr: ObjectVal = { type: 'object', properties: new Map() };
+
+            // Skip the first element
+            for (const [key, value] of obj.properties) {
+              if (parseInt(key) !== 0) {
+                newArr.properties.set((parseInt(key) - 1).toString(), value);
+              }
+            }
+
+            return newArr;
+          }),
         ),
     ),
     true,
