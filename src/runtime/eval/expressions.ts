@@ -115,9 +115,14 @@ export default class EvalExpr {
       const func = fn as FunctionValue;
       const scope = new Environment(func.declarationEnv);
 
+      if (args.length != func.parameters.length) {
+        LogError(
+          "Kin Error: number of function's arguments must equal to it's the parameters",
+        );
+      }
+
       // Create the variables for the parameters list
       for (let i = 0; i < func.parameters.length; i++) {
-        // TODO check the bounds here
         // verify arity of function
         const varname = func.parameters[i];
         scope.declareVar(varname, args[i], false);
