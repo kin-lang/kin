@@ -1,11 +1,11 @@
 {
   "name": "@kin-lang/kin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Kin Programming Language: write computer programs in Kinyarwanda.",
   "main": "./dist/src/index.js",
   "bin": "./dist/bin/kin.js",
   "author": "MURANGWA Pacifique",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "private": false,
   "homepage": "https://github.com/kin-lang/kin#readme",
   "repository": {
