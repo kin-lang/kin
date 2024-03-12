@@ -19,7 +19,7 @@ import {
   ObjectVal,
 } from './values';
 import Environment from './environment';
-import { printValues } from './print';
+import { makeValues, printValues } from './print';
 import moment from 'moment';
 import {
   readFileSync,
@@ -75,7 +75,7 @@ export function createGlobalEnv(filename: string): Environment {
       const MIN_ARGS_LENGTH = 1;
       if (args.length < MIN_ARGS_LENGTH)
         LogError('injiza_amakuru expects at least one argument');
-      const cmd = (args[0] as StringVal).value;
+      const cmd = makeValues(args).value;
 
       try {
         const result = prompt()(cmd);
