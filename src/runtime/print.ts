@@ -10,6 +10,7 @@ import {
   BooleanVal,
   ObjectVal,
   FunctionValue,
+  MK_STRING,
 } from './values';
 
 import { LogMessage } from '../lib/log';
@@ -21,6 +22,16 @@ export function printValues(args: Array<RuntimeVal>) {
     output += matchType(arg);
   }
   LogMessage(output);
+}
+
+// Utility for injiza_amakuru(), helps injiza_amakuru() to have multiple arguments
+export function makeValues(args: Array<RuntimeVal>) {
+  let output = '';
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    output += matchType(arg);
+  }
+  return MK_STRING(output);
 }
 
 export function matchType(arg: RuntimeVal) {
