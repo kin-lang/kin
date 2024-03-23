@@ -20,6 +20,7 @@ import {
   ConditionalStmt,
   VariableDeclaration,
   UnaryExpr,
+  ReturnExpr,
 } from '../parser/ast';
 
 import Environment from './environment';
@@ -74,10 +75,9 @@ export class Interpreter {
           astNode as FunctionDeclaration,
           env,
         );
+      case 'ReturnExpr':
+        return EvalExpr.eval_return_expr(astNode as ReturnExpr, env);
       default:
-        if (astNode.kind == 'ReturnExpr') {
-          LogError('Kin Error: values are returned in functions only.');
-        }
         return LogError(
           'Kin Error: AST of unknown kind found. Cannot evaluate. Exiting. \n Please report this to Kin developers \n',
           astNode,
