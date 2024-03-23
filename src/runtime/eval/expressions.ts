@@ -24,6 +24,7 @@ import {
   BinaryExpr,
   CallExpr,
   UnaryExpr,
+  ReturnExpr,
 } from '../../parser/ast';
 
 import Environment from '../environment';
@@ -31,6 +32,9 @@ import { Interpreter } from '../interpreter';
 import { LogError } from '../../lib/log';
 
 export default class EvalExpr {
+  public static functionReturned = false; // flag to check if function returned
+  public static functionReturnValue: RuntimeVal = MK_NULL(); // value to return from function
+
   public static eval_identifier(
     ident: Identifier,
     env: Environment,
@@ -130,25 +134,33 @@ export default class EvalExpr {
 
       // Evaluate the function body line by line
       for (const stmt of func.body) {
-        // manage return stmt
-        if (stmt.kind == 'ReturnExpr') {
-          const has_return_value =
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (stmt as any).value != undefined ? true : false;
-          return has_return_value
-            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              Interpreter.evaluate((stmt as any).value, scope)
-            : MK_NULL();
+        // stop when return statement is reached
+        if (this.functionReturned) {
+          this.functionReturned = false;
+          break;
         }
         Interpreter.evaluate(stmt, scope);
       }
 
-      const result: RuntimeVal = MK_NULL();
+      const result: RuntimeVal = this.functionReturnValue || MK_NULL();
 
       return result;
     }
 
     throw 'Cannot call value that is not a function: ' + JSON.stringify(fn);
+  }
+
+  public static eval_return_expr(
+    expr: ReturnExpr,
+    env: Environment,
+  ): RuntimeVal {
+    const value = expr.value
+      ? Interpreter.evaluate(expr.value, env)
+      : MK_NULL();
+
+    this.functionReturned = true;
+    this.functionReturnValue = value;
+    return value;
   }
 
   public static eval_member_expr(
