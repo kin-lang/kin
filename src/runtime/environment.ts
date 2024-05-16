@@ -25,7 +25,9 @@ export default class Environment {
     constant: boolean,
   ): RuntimeVal {
     if (this.variables.has(varname)) {
-      throw `Cannot declare variable ${varname}. As it already is defined.`;
+      throw new Error(
+        `Cannot declare variable ${varname}. As it already is defined.`,
+      );
     }
 
     this.variables.set(varname, value);
@@ -40,7 +42,9 @@ export default class Environment {
 
     // Cannot assign to constant
     if (env.constants.has(varname)) {
-      throw `Cannot reassign to variable "${varname}" as it's constant.`;
+      throw new Error(
+        `Cannot reassign to variable "${varname}" as it's constant.`,
+      );
     }
 
     env.variables.set(varname, value);
@@ -117,7 +121,7 @@ export default class Environment {
     if (this.variables.has(varname)) return this;
 
     if (this.parent == undefined)
-      throw `Cannot resolve '${varname}' as it does not exist.`;
+      throw new Error(`Cannot resolve '${varname}' as it does not exist.`);
 
     return this.parent.resolve(varname);
   }

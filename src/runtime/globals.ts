@@ -61,8 +61,8 @@ export function createGlobalEnv(filename: string): Environment {
       try {
         const result = execSync(cmd, { encoding: 'utf-8' });
         return MK_STRING(result.trim());
-      } catch (error) {
-        throw error;
+      } catch (error: unknown) {
+        throw new Error((error as Error).toString());
       }
     }),
     true,
@@ -86,8 +86,8 @@ export function createGlobalEnv(filename: string): Environment {
         } else {
           return MK_NULL();
         }
-      } catch (error) {
-        throw error;
+      } catch (error: unknown) {
+        throw new Error((error as Error).toString());
       }
     }),
     true,

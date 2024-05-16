@@ -64,7 +64,9 @@ program
       if (error.code === 'ENOENT') {
         LogError(`Kin Error: Can't resolve file at '${file_location}'`);
       } else {
-        LogError(`Kin Error: Unhandled : ${(error as Error).message}`);
+        (error as Error).message
+          ? LogError(`Kin Error: Unhandled : ${(error as Error).message}`)
+          : LogError(`Kin Error: Unhandled : ${error as Error}`);
       }
     }
   });

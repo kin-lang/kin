@@ -136,7 +136,8 @@ export default class Parser {
     if (this.at().type == TokenType.SEMI_COLON) {
       this.eat();
 
-      if (isConstant) throw 'Constant variables must be assigned a value';
+      if (isConstant)
+        throw new Error('Constant variables must be assigned a value');
 
       return {
         kind: 'VariableDeclaration',
@@ -323,7 +324,9 @@ export default class Parser {
         property = this.parse_primary_expr();
 
         if (property.kind !== 'Identifier') {
-          throw 'Dot operator (".") is illegal without right-hand-side (<-) being an Identifier.';
+          throw new Error(
+            'Dot operator (".") is illegal without right-hand-side (<-) being an Identifier.',
+          );
         }
       } // computed values (obj[computedVal])
       else {

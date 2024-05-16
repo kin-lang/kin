@@ -80,7 +80,9 @@ export default class EvalExpr {
     if (node.assigne.kind === 'MemberExpression')
       return this.eval_member_expr(env, node);
     if (node.assigne.kind !== 'Identifier')
-      throw `Invalid left-hand-side expression: ${JSON.stringify(node.assigne)}.`;
+      throw new Error(
+        `Invalid left-hand-side expression: ${JSON.stringify(node.assigne)}.`,
+      );
 
     const varname = (node.assigne as Identifier).symbol;
 
@@ -147,7 +149,9 @@ export default class EvalExpr {
       return result;
     }
 
-    throw 'Cannot call value that is not a function: ' + JSON.stringify(fn);
+    throw new Error(
+      'Cannot call value that is not a function: ' + JSON.stringify(fn),
+    );
   }
 
   public static eval_return_expr(
@@ -179,7 +183,9 @@ export default class EvalExpr {
 
       return variable;
     } else {
-      throw `Evaluating a member expression is not possible without a member or assignment expression.`;
+      throw new Error(
+        `Evaluating a member expression is not possible without a member or assignment expression.`,
+      );
     }
   }
 
@@ -228,7 +234,9 @@ export default class EvalExpr {
         case '>=':
           return MK_BOOL(llhs.value >= rrhs.value);
         default:
-          throw `Unknown operator provided in operation: ${lhs}, ${rhs}.`;
+          throw new Error(
+            `Unknown operator provided in operation: ${lhs}, ${rhs}.`,
+          );
       }
     } else {
       return MK_NULL();
@@ -272,7 +280,9 @@ export default class EvalExpr {
           compare((lhs as ObjectVal).properties, (rhs as ObjectVal).properties),
         );
       default:
-        throw `RunTime: Unhandled type in equals function: ${lhs}, ${rhs}`;
+        throw new Error(
+          `RunTime: Unhandled type in equals function: ${lhs}, ${rhs}`,
+        );
     }
   }
 }
