@@ -62,6 +62,9 @@ describe('Parser', () => {
                 },
               },
             },
+            {
+              kind: 'FunctionTerminator',
+            },
           ],
         },
       ],

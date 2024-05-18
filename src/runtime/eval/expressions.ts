@@ -139,12 +139,17 @@ export default class EvalExpr {
         // stop when return statement is reached
         if (this.functionReturned) {
           this.functionReturned = false;
-          break;
+
+          return this.functionReturnValue;
         }
+
+        if (stmt.kind === 'FunctionTerminator') break;
+
         Interpreter.evaluate(stmt, scope);
       }
 
-      const result: RuntimeVal = this.functionReturnValue || MK_NULL();
+      // We only reach here when the function did not return hence return null
+      const result: RuntimeVal = MK_NULL();
 
       return result;
     }
