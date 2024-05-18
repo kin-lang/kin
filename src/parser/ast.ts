@@ -24,7 +24,10 @@ export type NodeType =
   | 'NumericLiteral'
   | 'StringLiteral'
   | 'Identifier'
-  | 'Property';
+  | 'Property'
+
+  // Special
+  | 'FunctionTerminator'; // Used to terminate function body when it has no return statement
 
 /**
  *  Statements do not result in a value at runtime.
@@ -96,6 +99,14 @@ export interface FunctionDeclaration extends Stmt {
 export interface ReturnExpr extends Expr {
   kind: 'ReturnExpr';
   value?: Expr;
+}
+
+/**
+ * Defines a function terminator, used when a function has no return statement
+ */
+
+export interface FunctionTerminator extends Stmt {
+  kind: 'FunctionTerminator';
 }
 
 /**

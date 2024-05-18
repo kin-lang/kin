@@ -509,6 +509,9 @@ export default class Parser {
 
     const body = this.parse_block_statement();
 
+    // Add a function terminator
+    body.push({ kind: 'FunctionTerminator' });
+
     return {
       kind: 'FunctionDeclaration',
       name,
