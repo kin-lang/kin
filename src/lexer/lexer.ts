@@ -87,7 +87,7 @@ class Lexer {
   }
 
   /* Function to scan a number */
-  private scanNumber(): Token {
+  private scanNumber(negative = false): Token {
     const start: number = this.currentPos;
     while (this.isDigit(this.peek())) {
       this.advance();
@@ -100,16 +100,14 @@ class Lexer {
       while (this.isDigit(this.peek())) {
         this.advance();
       }
-      return this.makeTokenWithLexeme(
-        TokenType.FLOAT,
-        this.sourceCodes.slice(start, this.currentPos),
-      );
+      let nbr = this.sourceCodes.slice(start, this.currentPos);
+      negative ? (nbr = '-' + nbr) : nbr; // add sign for negative signs
+      return this.makeTokenWithLexeme(TokenType.FLOAT, nbr);
     }
 
-    return this.makeTokenWithLexeme(
-      TokenType.INTEGER,
-      this.sourceCodes.slice(start, this.currentPos),
-    );
+    let nbr = this.sourceCodes.slice(start, this.currentPos);
+    negative ? (nbr = '-' + nbr) : nbr; // add sign for negative signs
+    return this.makeTokenWithLexeme(TokenType.INTEGER, nbr);
   }
 
   /* Function to scan a string litelar */
@@ -181,6 +179,10 @@ class Lexer {
         if (this.peek() == '-') {
           this.advance();
           return this.makeTokenWithLexeme(TokenType.DECREMENT, '--');
+        }
+        if (this.isDigit(this.peek())) {
+          const negative = true;
+          return this.scanNumber(negative); // scan a negative number
         }
         return this.makeTokenWithLexeme(TokenType.MINUS, '-');
       case '+':
