@@ -7,7 +7,7 @@ If you believe you've found a security vulnerability in our programming language
 
 ### How to Report a Vulnerability
 
-Please report security vulnerabilities to us via email at: <pacifiquemurangwa001@gmail.com>
+Please report security vulnerabilities to us via email at: <security@kinlang.dev>
 
 When reporting security issues, kindly provide the following information:
 
