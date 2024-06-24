@@ -109,7 +109,7 @@ This language is maintained by [@pacifiquem](https://github.com/pacifiquem).
 
 ## License
 
-This project is under [Apache License 2.0 LICENSE](https://github.com/kin-lang/kin/blob/main/LICENSE).
+This project is under [MIT License](https://github.com/kin-lang/kin/blob/main/LICENSE).
 
 <br>
 <br>
