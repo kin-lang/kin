@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Ensure TypeScript files with shebang are not treated as JavaScript files
+*.ts linguist-language=TypeScript
