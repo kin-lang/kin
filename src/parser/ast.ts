@@ -10,6 +10,7 @@ export type NodeType =
   | 'FunctionDeclaration'
   | 'LoopStatement'
   | 'ConditionalStatement'
+  | 'LoopControlStatement'
 
   // Expressions
   | 'AssignmentExpression'
@@ -30,7 +31,7 @@ export type NodeType =
   | 'FunctionTerminator'; // Used to terminate function body when it has no return statement
 
 /**
- *  Statements do not result in a value at runtime.
+ * Statements do not result in a value at runtime.
  * They contain expressions internally.
  */
 export interface Stmt {
@@ -82,9 +83,16 @@ export interface LoopStatement extends Stmt {
 }
 
 /**
+ * Defines a break or continue loop control statements
+ */
+export interface LoopControlStatement extends Stmt {
+  kind: 'LoopControlStatement';
+  type: 'hagarara' | 'komeza';
+}
+
+/**
  * Defines a function declaration
  */
-
 export interface FunctionDeclaration extends Stmt {
   kind: 'FunctionDeclaration';
   name: string;

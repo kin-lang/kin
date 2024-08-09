@@ -21,6 +21,7 @@ import {
   VariableDeclaration,
   UnaryExpr,
   ReturnExpr,
+  LoopControlStatement,
 } from '../parser/ast';
 
 import Environment from './environment';
@@ -77,6 +78,11 @@ export class Interpreter {
         );
       case 'ReturnExpr':
         return EvalExpr.eval_return_expr(astNode as ReturnExpr, env);
+      case 'LoopControlStatement':
+        return EvalStmt.eval_loop_control_statement(
+          astNode as LoopControlStatement,
+          env,
+        );
       default:
         return LogError(
           'Kin Error: AST of unknown kind found. Cannot evaluate. Exiting. \n Please report this to Kin developers \n',

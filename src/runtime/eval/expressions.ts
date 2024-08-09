@@ -32,8 +32,8 @@ import { Interpreter } from '../interpreter';
 import { LogError } from '../../lib/log';
 
 export default class EvalExpr {
-  public static functionReturned = false; // flag to check if function returned
-  public static functionReturnValue: RuntimeVal = MK_NULL(); // value to return from function
+  private static functionReturned = false; // flag to check if function returned
+  private static functionReturnValue: RuntimeVal = MK_NULL(); // value to return from function
 
   public static eval_identifier(
     ident: Identifier,

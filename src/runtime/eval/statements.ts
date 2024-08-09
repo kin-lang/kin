@@ -6,6 +6,7 @@
 import {
   ConditionalStmt,
   FunctionDeclaration,
+  LoopControlStatement,
   LoopStatement,
   Program,
   Stmt,
@@ -16,6 +17,9 @@ import { Interpreter } from '../interpreter';
 import { BooleanVal, FunctionValue, MK_NULL, RuntimeVal } from '../values';
 
 export default class EvalStmt {
+  private static loopBreak: boolean = false;
+  private static loopContinue: boolean = false;
+
   public static eval_program(program: Program, env: Environment): RuntimeVal {
     let lastEvaluated: RuntimeVal = MK_NULL();
 
@@ -25,6 +29,7 @@ export default class EvalStmt {
 
     return lastEvaluated;
   }
+
   public static eval_function_declaration(
     declaration: FunctionDeclaration,
     env: Environment,
@@ -40,6 +45,7 @@ export default class EvalStmt {
 
     return env.declareVar(declaration.name, fn, true);
   }
+
   public static eval_val_declaration(
     declaration: VariableDeclaration,
     env: Environment,
@@ -50,6 +56,7 @@ export default class EvalStmt {
 
     return env.declareVar(declaration.identifier, value, declaration.constant);
   }
+
   public static eval_conditional_statement(
     declaration: ConditionalStmt,
     env: Environment,
@@ -63,47 +70,45 @@ export default class EvalStmt {
       return MK_NULL();
     }
   }
+
   public static eval_loop_statement(
     declaration: LoopStatement,
     env: Environment,
   ): RuntimeVal {
     env = new Environment(env);
     const body = declaration.body;
-
+    console.log(JSON.stringify(body, null, 4));
     let test = Interpreter.evaluate(declaration.condition, env);
 
     if ((test as BooleanVal).value !== true) return MK_NULL(); // The loop didn't start
     while ((test as BooleanVal).value) {
+      // checking break and continue statements
+      if (this.loopBreak == true) {
+        this.loopBreak = false;
+        break;
+      } else if (this.loopContinue == true) {
+        this.loopContinue = false;
+        continue;
+      }
+
       this.eval_body(body, new Environment(env), false);
       test = Interpreter.evaluate(declaration.condition, env);
     }
 
     return MK_NULL();
   }
-  public static eval_body(
-    body: Stmt[],
+
+  public static eval_loop_control_statement(
+    stmt: LoopControlStatement,
     env: Environment,
-    newEnv: boolean = true,
   ): RuntimeVal {
-    let scope: Environment;
+    if (stmt.type == 'hagarara') this.loopBreak = true;
+    if (stmt.type == 'komeza') this.loopContinue = true;
 
-    if (newEnv) {
-      scope = new Environment(env);
-    } else {
-      scope = env;
-    }
-    let result: RuntimeVal = MK_NULL();
-
-    // Evaluate the if body line by line
-    for (const stmt of body) {
-      // if((stmt as Identifier).symbol === 'continue') return result;
-      result = Interpreter.evaluate(stmt, scope);
-    }
-
-    return result;
+    return MK_NULL();
   }
 
-  private eval_body(
+  public static eval_body(
     body: Stmt[],
     env: Environment,
     newEnv: boolean = true,

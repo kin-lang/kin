@@ -25,6 +25,7 @@ import {
   VariableDeclaration,
   ReturnExpr,
   UnaryExpr,
+  LoopControlStatement,
 } from './ast';
 
 export default class Parser {
@@ -47,8 +48,8 @@ export default class Parser {
   private expect(type: TokenType, err: string) {
     const prev = this.eat();
 
-    if (!prev || prev.type != type) {
-      LogError(`On line ${prev.line}: Kin Error: ${err}`);
+    if (!prev || prev.type !== type) {
+      LogError(`On line ${prev?.line}: Kin Error: ${err}`);
     }
 
     return prev;
@@ -80,6 +81,10 @@ export default class Parser {
         return this.parse_if_statement();
       case TokenType.SUBIRAMO_NIBA:
         return this.parse_loop_statement();
+      case TokenType.HAGARARA:
+        return this.parse_loop_control_statement();
+      case TokenType.KOMEZA:
+        return this.parse_loop_control_statement();
       case TokenType.POROGARAMU_NTOYA:
         return this.parse_function_declaration();
       case TokenType.TANGA:
@@ -485,6 +490,15 @@ export default class Parser {
       body,
       condition,
     } as LoopStatement;
+  }
+
+  private parse_loop_control_statement(): Stmt {
+    const token: Token = this.eat(); // eat loop control keyword
+
+    return {
+      kind: 'LoopControlStatement',
+      type: token.lexeme, // hagarara | komeza
+    } as LoopControlStatement;
   }
 
   private parse_function_declaration(): Stmt {

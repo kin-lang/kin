@@ -156,11 +156,15 @@ class Lexer {
       return this.makeTokenWithLexeme(TokenType.REKA, lexeme);
     if (lexeme === 'ntahinduka')
       return this.makeTokenWithLexeme(TokenType.NTAHINDUKA, lexeme);
+    if (lexeme === 'komeza')
+      return this.makeTokenWithLexeme(TokenType.KOMEZA, lexeme);
+    if (lexeme === 'hagarara')
+      return this.makeTokenWithLexeme(TokenType.HAGARARA, lexeme);
 
     /* Not a keywork, it's an identifier */
     return this.makeTokenWithLexeme(TokenType.IDENTIFIER, lexeme);
   }
-
+  
   /* Function to scan the next token */
   private scanToken(): Token {
     this.skipWhitespaceAndComments(); // skip whitespace and comments
