@@ -31,7 +31,7 @@
     "interpreter"
   ],
   "devDependencies": {
-    "@types/node": "^20.11.9",
+    "@types/node": "^22.0.0",
     "@types/prompt-sync": "^4.2.3",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
