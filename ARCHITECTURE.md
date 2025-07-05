@@ -144,6 +144,32 @@ kin/
 
 ---
 
+## 4.6 Built-in Methods (Native Functions)
+
+- **Location**: [`src/runtime/globals.ts`](https://github.com/kin-lang/kin/blob/main/src/runtime/globals.ts)
+- **Responsibility**: Defines Kin's built-in (native) functions, such as system commands, input/output, and utility functions. These are available to all Kin programs by default.
+
+**How it works:**
+- Built-in methods are registered in the global environment during initialization.
+- Each built-in is implemented as a native JavaScript/TypeScript function and bound to a Kin variable name.
+- Contributors can add new built-ins or modify existing ones by editing `src/runtime/globals.ts`.
+
+**Example:**
+```typescript
+// src/runtime/globals.ts
+env.declareVar(
+  'sisitemu',
+  MK_NATIVE_FN((args) => {
+    // ...implementation
+  }),
+  true,
+);
+```
+
+See the file for more examples and implementation details.
+
+---
+
 ## 5. Adding Features & Contributing
 
 If you are looking to contribute to Kin, please make sure to also read the [`contributing.md`](https://github.com/kin-lang/kin/blob/main/contributing.md) file for detailed workflow, code style, and etiquette guidelines. The two documents are designed to work together: this architecture guide gives you the technical background, while `contributing.md` provides the step-by-step process for making your contributions effective and welcome.
@@ -175,14 +201,16 @@ If you are looking to contribute to Kin, please make sure to also read the [`con
 
 ```mermaid
 graph TD
-    A[CLI Input / File] --> B[Parser]
-    B --> C[Lexer]
-    C --> D[Tokens]
+    A[CLI Input / File] --> B[Lexer]
+    B --> C[Tokens]
+    C --> D[Parser]
     D --> E[AST]
     E --> F[Interpreter]
-    F --> G[Environment]
-    G --> H[Execution Output]
+    E --> G[Environment]
+    F & G --> H[Execution Output]
 ```
+
+- **Interpreter** and **Environment** operate together at runtime: the interpreter evaluates AST nodes, while the environment manages variable/function scopes and values. Their cooperation is essential for program execution.
 
 ---
 
