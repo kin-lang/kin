@@ -1,5 +1,7 @@
 # Kin
 
+**Before contributing, please read [`ARCHITECTURE.md`](https://github.com/kin-lang/kin/blob/main/ARCHITECTURE.md) to understand Kin's system design, architecture, and execution flow. This will help you make effective and well-integrated contributions.**
+
 Kin relies on many contributors who help us to maintain or track issues, we continuously `thank them` for their great work.
 
 ## Building Project Locally
