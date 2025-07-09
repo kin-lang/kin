@@ -156,6 +156,12 @@ class Lexer {
       return this.makeTokenWithLexeme(TokenType.REKA, lexeme);
     if (lexeme === 'ntahinduka')
       return this.makeTokenWithLexeme(TokenType.NTAHINDUKA, lexeme);
+    if (lexeme === 'zana')
+      return this.makeTokenWithLexeme(TokenType.ZANA, lexeme);
+    if (lexeme === 'kuva_muri')
+      return this.makeTokenWithLexeme(TokenType.KUVA_MURI, lexeme);
+    if (lexeme === 'nka')
+      return this.makeTokenWithLexeme(TokenType.NKA, lexeme);
 
     /* Not a keywork, it's an identifier */
     return this.makeTokenWithLexeme(TokenType.IDENTIFIER, lexeme);

@@ -25,6 +25,7 @@ import {
   VariableDeclaration,
   ReturnExpr,
   UnaryExpr,
+  ImportStatement,
 } from './ast';
 
 export default class Parser {
@@ -48,6 +49,16 @@ export default class Parser {
     const prev = this.eat();
 
     if (!prev || prev.type != type) {
+      LogError(`On line ${prev.line}: Kin Error: ${err}`);
+    }
+
+    return prev;
+  }
+
+  private expectMany(types: TokenType[], err: string) {
+    const prev = this.eat();
+
+    if (!prev || !types.includes(prev.type)) {
       LogError(`On line ${prev.line}: Kin Error: ${err}`);
     }
 
@@ -84,10 +95,48 @@ export default class Parser {
         return this.parse_function_declaration();
       case TokenType.TANGA:
         return this.parse_return_expr();
+      case TokenType.ZANA:
+        return this.parse_import_statement();
       default:
         return this.parse_expr();
     }
   }
+
+  private parse_import_statement(): ImportStatement {
+    this.eat(); // eat zana keyword
+
+    const token = this.expectMany([TokenType.IDENTIFIER, TokenType.STAR], 'Expected identifier after "zana" keyword');
+    if (token.type == TokenType.STAR) {
+      this.expect(TokenType.NKA, 'Expected keyword "nka" after *');
+      const alias = this.expect(TokenType.IDENTIFIER, 'Expected identifier after "nka"').lexeme;
+
+      this.expect(TokenType.KUVA_MURI, 'Expected keyword "kuva_muri" after nka');
+
+      const path = this.expect(TokenType.STRING, 'Expected path after "kuva_muri"').lexeme;
+      this.expect(TokenType.SEMI_COLON, 'Expected semi-colon after path');
+
+      return {
+        kind: 'ImportStatement',
+        identifiers: [{ name: '*', alias }],
+        path,
+      } as ImportStatement;
+    }
+
+    const identifiers: string[] = [token.lexeme];
+    while (this.at().type == TokenType.COMMA) {
+      this.eat(); // eat comma
+      identifiers.push(this.expect(TokenType.IDENTIFIER, 'Expected identifier after ,').lexeme);
+    }
+    this.expect(TokenType.KUVA_MURI, 'Expected keyword "kuva_muri" after identifiers');
+    const path = this.expect(TokenType.STRING, 'Expected path after "kuva_muri"').lexeme;
+    this.expect(TokenType.SEMI_COLON, 'Expected semi-colon after path');
+
+    return {
+      kind: 'ImportStatement',
+      identifiers,
+      path,
+    } as ImportStatement;
+  } 
 
   private parse_return_expr(): Expr {
     this.eat(); // eat tanga keyword

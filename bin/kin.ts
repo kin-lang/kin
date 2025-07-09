@@ -3,7 +3,7 @@
 import { program } from 'commander';
 import pkg from '../package.json';
 import { readFile } from 'fs/promises';
-import { Interpreter, Parser, createGlobalEnv } from '../src/index';
+import { Interpreter, Lexer, Parser, createGlobalEnv } from '../src/index';
 import * as readline from 'readline/promises';
 import { LogError } from '../src/lib/log';
 
@@ -59,12 +59,53 @@ program
       const env = createGlobalEnv(file_location); // create global environment for Kin
       Interpreter.evaluate(ast, env); // Evaluate the program
       process.exit(0);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.code === 'ENOENT') {
         LogError(`Kin Error: Can't resolve file at '${file_location}'`);
       } else {
-        (error as Error).message
+        error instanceof Error
+          ? LogError(`Kin Error: Unhandled : ${(error as Error).message}`)
+          : LogError(`Kin Error: Unhandled : ${error as Error}`);
+      }
+    }
+  });
+
+program
+  .command('run-lexer <file_location>')
+  .description('Runs lexer and log tokens to the console')
+  .action(async (file_location) => {
+    try {
+      const source_codes = await readFile(file_location, 'utf-8');
+      const lexer = new Lexer(source_codes);
+      const tokens = lexer.tokenize();
+      console.dir(tokens, { depth: null });
+      process.exit(0);
+    } catch (error: any) {
+      if (error.code === 'ENOENT') {
+        LogError(`Kin Error: Can't resolve file at '${file_location}'`);
+      } else {
+        error instanceof Error
+          ? LogError(`Kin Error: Unhandled : ${(error as Error).message}`)
+          : LogError(`Kin Error: Unhandled : ${error as Error}`);
+      }
+    }
+  });
+
+program
+  .command('run-parser <file_location>')
+  .description('Runs parser and log AST to the console')
+  .action(async (file_location) => {
+    try {
+      const source_codes = await readFile(file_location, 'utf-8');
+      const parser = new Parser();
+      const ast = parser.produceAST(source_codes);
+      console.dir(ast, { depth: null });
+      process.exit(0);
+    } catch (error: any) {
+      if (error.code === 'ENOENT') {
+        LogError(`Kin Error: Can't resolve file at '${file_location}'`);
+      } else {
+        error instanceof Error
           ? LogError(`Kin Error: Unhandled : ${(error as Error).message}`)
           : LogError(`Kin Error: Unhandled : ${error as Error}`);
       }
