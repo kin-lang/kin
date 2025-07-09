@@ -28,7 +28,6 @@ log-error/
 Thumbs.db
 
 # Environment variables
-.env
 
 # Visual Studio Code settings
 .vscode/settings.json
@@ -44,3 +43,4 @@ npm-debug.log
 # Custom
 local.todo.md
 testing.kin
+config.bat

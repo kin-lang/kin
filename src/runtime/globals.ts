@@ -408,7 +408,7 @@ export function createGlobalEnv(filename: string): Environment {
             const obj = args[0] as ObjectVal; // map with <key, value>
             const arr = obj.properties.values(); // only map's values
             const val = args[1] as StringVal; // value to check
-            return MK_BOOL(arr.next().value.value === val.value);
+            return MK_BOOL((arr.next()?.value as any)?.value === val.value);
           }),
         )
         .set(
