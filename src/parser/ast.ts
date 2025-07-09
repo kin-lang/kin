@@ -10,6 +10,7 @@ export type NodeType =
   | 'FunctionDeclaration'
   | 'LoopStatement'
   | 'ConditionalStatement'
+  | 'ImportStatement'
 
   // Expressions
   | 'AssignmentExpression'
@@ -90,6 +91,15 @@ export interface FunctionDeclaration extends Stmt {
   name: string;
   parameters: string[];
   body: Stmt[];
+}
+
+/**
+ * Defines an import statement
+ */
+export interface ImportStatement extends Stmt {
+  kind: 'ImportStatement';
+  identifiers: string[] | { name: string; alias: string }[];
+  path: string;
 }
 
 /**
