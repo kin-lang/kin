@@ -82,3 +82,4 @@ export function MK_STRING(val: string) {
 export function MK_OBJECT(obj: Map<string, RuntimeVal>) {
   return { type: 'object', properties: obj } as ObjectVal;
 }
+
