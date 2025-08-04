@@ -131,7 +131,7 @@ class Lexer {
   }
 
   /* Function to scan an identifier or a keyword */
-  private scanIdentifierOrKeywork(): Token {
+  private scanIdentifierOrKeyword(): Token {
     const start: number = this.currentPos;
     while (this.alphaNumeric(this.peek()) || this.peek() === '_') {
       this.advance();
@@ -284,7 +284,7 @@ class Lexer {
         if (!Number.isNaN(Number(char))) {
           return this.scanNumber();
         } else if (this.isSingleAlphaCharacter(char) || char === '_') {
-          return this.scanIdentifierOrKeywork();
+          return this.scanIdentifierOrKeyword();
         } else {
           throw new Error(
             `Unexpected character '${char}' at line ${this.currentLine}`,
