@@ -54,6 +54,9 @@ enum TokenType {
   TANGA,
   POROGARAMU_NTOYA,
   REKA,
+  GERERANYA,
+  USANZE,
+  IBINDI,
   EOF,
 }
 

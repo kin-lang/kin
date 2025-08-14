@@ -69,6 +69,7 @@ export interface ConditionalStmt extends Stmt {
   kind: 'ConditionalStatement';
   condition: Expr;
   body: Stmt[];
+  determinant?: Expr; // if this is present, the condition is a switch statement
   alternate?: Stmt[];
 }
 

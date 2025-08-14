@@ -72,12 +72,15 @@ export default class Parser {
   }
 
   private parse_stmt(): Stmt {
+    let condition: Expr;
     switch (this.at().type) {
       case TokenType.REKA:
       case TokenType.NTAHINDUKA:
         return this.parse_var_declaration();
       case TokenType.NIBA:
         return this.parse_if_statement();
+      case TokenType.GERERANYA:
+        return this.parse_switch_statement();
       case TokenType.SUBIRAMO_NIBA:
         return this.parse_loop_statement();
       case TokenType.POROGARAMU_NTOYA:
@@ -87,6 +90,80 @@ export default class Parser {
       default:
         return this.parse_expr();
     }
+  }
+
+
+  private parse_switch_statement(): Stmt {
+    this.eat(); // eat gereranya keyword
+    this.expect(TokenType.OPEN_PARANTHESES, `"Expected ( after gereranya"`);
+    const condition = this.parse_switch_condition();
+    this.expect(TokenType.CLOSE_PARANTHESES, `"Expected ) after condition"`);
+    const body = this.parse_block_statement();
+    let alternate: Stmt[] = [];
+    
+    if(this.at().type == TokenType.USANZE) {
+      alternate = [this.parse_if_statement()];
+    } else if(this.at().type == TokenType.IBINDI) {
+      this.eat(); // advance past ibindi
+      alternate = this.parse_case_block();
+    }
+
+    this.expect(TokenType.CLOSE_CURLY_BRACES, `"Expected } after switch body"`);
+    return {
+      kind: 'ConditionalStatement',
+      condition,
+      body,
+      alternate
+    } as ConditionalStmt;
+  }
+  private parse_case_block(): Stmt {
+    this.expect(TokenType.COLON,`"Expected : before case block"`)
+    let body: Stmt[] = [];
+    while(this.not_eof && this.at().type != TokenType.USANZE){
+      return this.parse_stmt();
+    }
+  }
+
+  /*! switch condition must be a primary expression but not completely
+  cause it can't be a function call and few other expressions. This works for now */
+  private parse_switch_condition(): Expr {
+    const condition = this.parse_primary_expr();
+    return condition;
+  }
+
+  private parse_switch_body(condition: Expr): Stmt[] {
+    this.eat(); // eat { token
+    const body: Stmt[] = [];
+    while (this.not_eof() && this.at().type != TokenType.CLOSE_CURLY_BRACES) {
+      body.push(this.parse_case_statement(condition));
+    }
+    return body;
+  }
+
+  private parse_case_statement(condition: Expr): Stmt {
+    this.expect(TokenType.USANZE, `"Expected usanze keyword after switch condition"`);
+    const label = this.parse_expr();
+    this.expect(TokenType.COLON, `"Expected : after case label"`);
+    const body = this.parse_block_statement();
+    return {
+      kind: 'ConditionalStatement',
+      condition: {
+        kind: 'BinaryExpr',
+        left: condition,
+        right: label,
+        operator: '==',
+      },
+      body,
+    } as ConditionalStmt;
+  }
+
+  private parse_default_statement(): Stmt {
+    this.eat(); // eat ibindi keyword
+    const body = this.parse_block_statement();
+    return {
+      kind: 'Default',
+      body,
+    } as Default;
   }
 
   private parse_return_expr(): Expr {
@@ -488,7 +565,7 @@ export default class Parser {
   }
 
   private parse_function_declaration(): Stmt {
-    this.eat(); // eat porogaramu_ntoya keywork
+    this.eat(); // eat porogaramu_ntoya keyword
     const name = this.expect(
       TokenType.IDENTIFIER,
       `"Expected function name following porogaramu_ntoya keyword"`,
