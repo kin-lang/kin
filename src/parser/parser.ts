@@ -3,9 +3,10 @@
  *       Produces Kin's AST             *
  ****************************************/
 
+import { deflateRaw } from 'zlib';
 import Lexer, { Token } from '../lexer/lexer';
 import TokenType from '../lexer/tokens';
-import { LogError } from '../lib/log';
+import { LogError, LogMessage } from '../lib/log';
 import {
   AssignmentExpr,
   BinaryExpr,
@@ -48,7 +49,7 @@ export default class Parser {
     const prev = this.eat();
 
     if (!prev || prev.type != type) {
-      LogError(`On line ${prev.line}: Kin Error: ${err}`);
+      LogError(`On line ${prev.line}: Kin Error: ${err}, found ${prev.lexeme}`);
     }
 
     return prev;
@@ -72,7 +73,7 @@ export default class Parser {
   }
 
   private parse_stmt(): Stmt {
-    let condition: Expr;
+
     switch (this.at().type) {
       case TokenType.REKA:
       case TokenType.NTAHINDUKA:
@@ -80,7 +81,12 @@ export default class Parser {
       case TokenType.NIBA:
         return this.parse_if_statement();
       case TokenType.GERERANYA:
-        return this.parse_switch_statement();
+        this.eat(); // eat gereranya keyword
+        this.expect(TokenType.OPEN_PARANTHESES, `"Expected ( after gereranya"`);
+        const determinant = this.parse_switch_condition();
+        this.expect(TokenType.CLOSE_PARANTHESES, `"Expected ) after determinant"`);
+        this.expect(TokenType.OPEN_CURLY_BRACES, `"Expected { before switch body"`)
+        return this.parse_case_statement(determinant);
       case TokenType.SUBIRAMO_NIBA:
         return this.parse_loop_statement();
       case TokenType.POROGARAMU_NTOYA:
@@ -93,35 +99,62 @@ export default class Parser {
   }
 
 
-  private parse_switch_statement(): Stmt {
-    this.eat(); // eat gereranya keyword
-    this.expect(TokenType.OPEN_PARANTHESES, `"Expected ( after gereranya"`);
-    const condition = this.parse_switch_condition();
-    this.expect(TokenType.CLOSE_PARANTHESES, `"Expected ) after condition"`);
-    const body = this.parse_block_statement();
-    let alternate: Stmt[] = [];
-    
-    if(this.at().type == TokenType.USANZE) {
-      alternate = [this.parse_if_statement()];
-    } else if(this.at().type == TokenType.IBINDI) {
-      this.eat(); // advance past ibindi
-      alternate = this.parse_case_block();
-    }
+  private parse_case_statement(determinant: Expr): Stmt {
+	let root: ConditionalStmt | undefined;
+	let cur: ConditionalStmt | undefined;
 
-    this.expect(TokenType.CLOSE_CURLY_BRACES, `"Expected } after switch body"`);
+	while (this.not_eof() && this.at().type !== TokenType.CLOSE_CURLY_BRACES) {
+		if (this.at().type === TokenType.USANZE) {
+			this.eat(); // usanze
+			const node: ConditionalStmt = {
+				kind: 'ConditionalStatement',
+				condition: this.build_case_condition(determinant),
+				body: this.parse_case_block(),
+				alternate: [],
+			};
+			if (!root) root = node;
+			else (cur!.alternate as Stmt[]).push(node);
+			cur = node;
+		} else if (this.at().type === TokenType.IBINDI) {
+			const defBody = this.parse_default_statement(); // Stmt[]
+			if (cur) (cur.alternate as Stmt[]).push(...defBody);
+			break; // default ends switch arms
+		} else {
+			break;
+		}
+	}
+
+  this.expect(TokenType.CLOSE_CURLY_BRACES, "`Expected } after switch`");
+	if (!root) {
+		return {
+			kind: 'ConditionalStatement',
+			condition: { kind: 'BinaryExpr', left: determinant, operator: '==', right: { kind: 'StringLiteral', value: '' } as StringLiteral } as BinaryExpr,
+			body: [],
+			alternate: [],
+		} as ConditionalStmt;
+	}
+	return root;
+}
+
+  private build_case_condition(determinant: Expr): BinaryExpr {
     return {
-      kind: 'ConditionalStatement',
-      condition,
-      body,
-      alternate
-    } as ConditionalStmt;
-  }
-  private parse_case_block(): Stmt {
-    this.expect(TokenType.COLON,`"Expected : before case block"`)
-    let body: Stmt[] = [];
-    while(this.not_eof && this.at().type != TokenType.USANZE){
-      return this.parse_stmt();
+      kind: "BinaryExpr",
+      left: determinant,
+      operator: "==",
+      right: this.parse_primary_expr()
     }
+  }
+
+  private parse_case_block(): Stmt[] {
+    this.expect(TokenType.COLON, `"Expected : before case block"`)
+    let body: Stmt[] = [];
+    while (this.not_eof() &&
+      this.at().type != TokenType.USANZE &&
+      this.at().type != TokenType.IBINDI &&
+      this.at().type != TokenType.CLOSE_CURLY_BRACES) {
+      body.push(this.parse_stmt());
+    }
+    return body
   }
 
   /*! switch condition must be a primary expression but not completely
@@ -131,39 +164,11 @@ export default class Parser {
     return condition;
   }
 
-  private parse_switch_body(condition: Expr): Stmt[] {
-    this.eat(); // eat { token
-    const body: Stmt[] = [];
-    while (this.not_eof() && this.at().type != TokenType.CLOSE_CURLY_BRACES) {
-      body.push(this.parse_case_statement(condition));
-    }
-    return body;
-  }
 
-  private parse_case_statement(condition: Expr): Stmt {
-    this.expect(TokenType.USANZE, `"Expected usanze keyword after switch condition"`);
-    const label = this.parse_expr();
-    this.expect(TokenType.COLON, `"Expected : after case label"`);
-    const body = this.parse_block_statement();
-    return {
-      kind: 'ConditionalStatement',
-      condition: {
-        kind: 'BinaryExpr',
-        left: condition,
-        right: label,
-        operator: '==',
-      },
-      body,
-    } as ConditionalStmt;
-  }
-
-  private parse_default_statement(): Stmt {
+  private parse_default_statement(): Stmt[] {
     this.eat(); // eat ibindi keyword
-    const body = this.parse_block_statement();
-    return {
-      kind: 'Default',
-      body,
-    } as Default;
+    const body: Stmt[] = this.parse_case_block();
+    return body;
   }
 
   private parse_return_expr(): Expr {
