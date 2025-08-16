@@ -83,7 +83,7 @@ export default class Parser {
       case TokenType.GERERANYA:
         this.eat(); // eat gereranya keyword
         this.expect(TokenType.OPEN_PARANTHESES, `"Expected ( after gereranya"`);
-        const determinant = this.parse_switch_condition();
+        const determinant = this.parse_primary_expr();
         this.expect(TokenType.CLOSE_PARANTHESES, `"Expected ) after determinant"`);
         this.expect(TokenType.OPEN_CURLY_BRACES, `"Expected { before switch body"`)
         return this.parse_case_statement(determinant);
@@ -108,7 +108,12 @@ export default class Parser {
 			this.eat(); // usanze
 			const node: ConditionalStmt = {
 				kind: 'ConditionalStatement',
-				condition: this.build_case_condition(determinant),
+				condition: {
+          kind: "BinaryExpr",
+          left: determinant,
+          operator: "==",
+          right: this.parse_primary_expr()
+          } as BinaryExpr,
 				body: this.parse_case_block(),
 				alternate: [],
 			};
@@ -116,7 +121,8 @@ export default class Parser {
 			else (cur!.alternate as Stmt[]).push(node);
 			cur = node;
 		} else if (this.at().type === TokenType.IBINDI) {
-			const defBody = this.parse_default_statement(); // Stmt[]
+      this.eat();
+			const defBody = this.parse_case_block(); // Stmt[]
 			if (cur) (cur.alternate as Stmt[]).push(...defBody);
 			break; // default ends switch arms
 		} else {
@@ -136,14 +142,7 @@ export default class Parser {
 	return root;
 }
 
-  private build_case_condition(determinant: Expr): BinaryExpr {
-    return {
-      kind: "BinaryExpr",
-      left: determinant,
-      operator: "==",
-      right: this.parse_primary_expr()
-    }
-  }
+  
 
   private parse_case_block(): Stmt[] {
     this.expect(TokenType.COLON, `"Expected : before case block"`)
@@ -155,20 +154,6 @@ export default class Parser {
       body.push(this.parse_stmt());
     }
     return body
-  }
-
-  /*! switch condition must be a primary expression but not completely
-  cause it can't be a function call and few other expressions. This works for now */
-  private parse_switch_condition(): Expr {
-    const condition = this.parse_primary_expr();
-    return condition;
-  }
-
-
-  private parse_default_statement(): Stmt[] {
-    this.eat(); // eat ibindi keyword
-    const body: Stmt[] = this.parse_case_block();
-    return body;
   }
 
   private parse_return_expr(): Expr {
