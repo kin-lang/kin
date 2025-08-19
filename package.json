@@ -1,6 +1,6 @@
 {
   "name": "@kin-lang/kin",
-  "version": "0.3.1",
+  "version": "0.4.1",
   "description": "Kin Programming Language: write computer programs in Kinyarwanda.",
   "main": "./dist/src/index.js",
   "bin": "./dist/bin/kin.js",
