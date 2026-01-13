@@ -44,7 +44,11 @@ program
 
       const program = parser.produceAST(input);
 
-      Interpreter.evaluate(program, env);
+      try {
+        Interpreter.evaluate(program, env);
+      } catch (error: any) {
+        console.error(error.message);
+      }
     }
   });
 
@@ -62,12 +66,12 @@ program
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.code === 'ENOENT') {
-        LogError(`Kin Error: Can't resolve file at '${file_location}'`);
+        console.error(`Kin Error: Can't resolve file at '${file_location}'`);
       } else {
-        (error as Error).message
-          ? LogError(`Kin Error: Unhandled : ${(error as Error).message}`)
-          : LogError(`Kin Error: Unhandled : ${error as Error}`);
+        const message = error.message ? error.message : error;
+        console.error(`Kin Error: ${message}`);
       }
+      process.exit(1);
     }
   });
 
