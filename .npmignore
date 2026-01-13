@@ -15,5 +15,4 @@
 renovate.json
 /public/*.png
 /public/*.jpg
-*.ts
 /bin
