@@ -42,7 +42,7 @@
     "@vitest/eslint-plugin": "^1.0.1",
     "husky": "^9.0.10",
     "prettier": "^3.2.4",
-    "typescript": "^5.3.3",
+    "typescript": "^6.0.0",
     "vitest": "^4.0.0",
     "ts-node": "^10.9.2"
   },
