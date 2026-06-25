@@ -22,6 +22,61 @@
 
 > :information_source: **Contributors:** Please see our [ARCHITECTURE.md](https://github.com/kin-lang/kin/blob/main/ARCHITECTURE.md) for a deep dive into Kin's architecture, design, and execution flow before contributing!
 
+## Installation
+
+You can install Kin in one of two ways:
+
+### Option 1: npm (requires Node.js)
+
+If you already have [Node.js](https://nodejs.org/) installed:
+
+```shell
+npm i -g @kin-lang/kin
+```
+
+Then run Kin from any terminal:
+
+```shell
+kin --version
+kin repl
+kin run path/to/program.kin
+```
+
+### Option 2: Standalone Windows executable (no Node.js required)
+
+If you are on Windows and do **not** have Node.js installed, download the pre-built executable from the [latest GitHub Release](https://github.com/kin-lang/kin/releases/latest):
+
+1. Go to [Releases](https://github.com/kin-lang/kin/releases)
+2. Download `kin-win-x64.exe`
+3. Place it somewhere convenient (for example `C:\kin\`)
+4. Optionally add that folder to your system `PATH`
+5. Run it from Command Prompt or PowerShell:
+
+```shell
+kin-win-x64.exe --version
+kin-win-x64.exe repl
+kin-win-x64.exe run path\to\program.kin
+```
+
+> You can rename `kin-win-x64.exe` to `kin.exe` for shorter commands.
+
+This executable is built with [pkg](https://github.com/vercel/pkg) and bundles the Kin runtime so you do not need Node.js separately.
+
+#### Building the executable yourself
+
+Maintainers and contributors can build the Windows `.exe` locally:
+
+```shell
+npm install
+npm run build:exe
+```
+
+The output is written to `release/kin-win-x64.exe`. To build for multiple platforms:
+
+```shell
+npm run build:exe:all
+```
+
 ## Why Kin?
 
 - **Goal**:

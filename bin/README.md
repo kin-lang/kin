@@ -10,8 +10,27 @@
 
 ## Installation
 
+### npm (requires Node.js)
+
 ```shell
 npm i -g @kin-lang/kin
+```
+
+### Windows executable (no Node.js required)
+
+Download `kin-win-x64.exe` from the [latest GitHub Release](https://github.com/kin-lang/kin/releases/latest). No Node.js install is needed.
+
+```shell
+kin-win-x64.exe <command> <arguments>
+```
+
+You can rename the file to `kin.exe` if you prefer.
+
+### Build the executable from source
+
+```shell
+npm install
+npm run build:exe   # outputs release/kin-win-x64.exe
 ```
 
 ## Usage

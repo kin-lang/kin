@@ -19,10 +19,22 @@
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "build": "tsc",
+    "build:exe": "npm run build && pkg dist/bin/kin.js --targets node18-win-x64 --output release/kin-win-x64.exe",
+    "build:exe:all": "npm run build && pkg dist/bin/kin.js --targets node18-win-x64,node18-linux-x64,node18-macos-x64 --out-path release",
     "test": "vitest --no-watch",
     "test:watch": "vitest --watch",
     "test:cov": "vitest --coverage",
     "bin-script": "ts-node ./bin/kin.ts"
+  },
+  "pkg": {
+    "scripts": "dist/**/*.js",
+    "assets": [
+      "dist/package.json"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ],
+    "outputPath": "release"
   },
   "keywords": [
     "kin",
@@ -36,15 +48,16 @@
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@vitest/coverage-v8": "^4.0.0",
+    "@vitest/eslint-plugin": "^1.0.1",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-prettier": "^5.1.3",
-    "@vitest/eslint-plugin": "^1.0.1",
     "husky": "^9.0.10",
+    "pkg": "^5.8.1",
     "prettier": "^3.2.4",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
-    "vitest": "^4.0.0",
-    "ts-node": "^10.9.2"
+    "vitest": "^4.0.0"
   },
   "dependencies": {
     "chalk": "^5.3.0",

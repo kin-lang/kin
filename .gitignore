@@ -44,3 +44,6 @@ npm-debug.log
 # Custom
 local.todo.md
 testing.kin
+
+# Standalone executables (distributed via GitHub Releases)
+release/
