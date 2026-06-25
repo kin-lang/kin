@@ -148,6 +148,8 @@ class Lexer {
       return this.makeTokenWithLexeme(TokenType.NIBA_BYANZE, lexeme);
     if (lexeme === 'subiramo_niba')
       return this.makeTokenWithLexeme(TokenType.SUBIRAMO_NIBA, lexeme);
+    if (lexeme === 'hagarara')
+      return this.makeTokenWithLexeme(TokenType.HAGARARA, lexeme);
     if (lexeme === 'tanga')
       return this.makeTokenWithLexeme(TokenType.TANGA, lexeme);
     if (lexeme === 'porogaramu_ntoya')

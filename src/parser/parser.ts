@@ -10,6 +10,7 @@ import { LogError, LogMessage } from '../lib/log';
 import {
   AssignmentExpr,
   BinaryExpr,
+  BreakStatement,
   CallExpr,
   ConditionalStmt,
   Expr,
@@ -89,6 +90,8 @@ export default class Parser {
         return this.parse_case_statement(determinant);
       case TokenType.SUBIRAMO_NIBA:
         return this.parse_loop_statement();
+      case TokenType.HAGARARA:
+        return this.parse_break_statement();
       case TokenType.POROGARAMU_NTOYA:
         return this.parse_function_declaration();
       case TokenType.TANGA:
@@ -172,6 +175,17 @@ export default class Parser {
       kind: 'ReturnExpr',
       value: this.parse_expr(),
     } as ReturnExpr;
+  }
+
+  private parse_break_statement(): Stmt {
+    this.eat(); // eat hagarara keyword
+    // optional semi-colon
+    if (this.at().type == TokenType.SEMI_COLON) {
+      this.eat();
+    }
+    return {
+      kind: 'BreakStatement',
+    } as BreakStatement;
   }
 
   private parse_block_statement(): Stmt[] {

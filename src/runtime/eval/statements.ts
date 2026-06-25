@@ -4,6 +4,7 @@
  ***********************************************************************/
 
 import {
+  BreakStatement,
   ConditionalStmt,
   FunctionDeclaration,
   LoopStatement,
@@ -16,6 +17,9 @@ import { Interpreter } from '../interpreter';
 import { BooleanVal, FunctionValue, MK_NULL, RuntimeVal } from '../values';
 
 export default class EvalStmt {
+  /** Set when hagarara (break) is evaluated inside a loop body */
+  public static loopBroken = false;
+
   public static eval_program(program: Program, env: Environment): RuntimeVal {
     let lastEvaluated: RuntimeVal = MK_NULL();
 
@@ -75,11 +79,22 @@ export default class EvalStmt {
     if ((test as BooleanVal).value !== true) return MK_NULL(); // The loop didn't start
     while ((test as BooleanVal).value) {
       this.eval_body(body, new Environment(env), false);
+      // hagarara was hit — exit the loop
+      if (this.loopBroken) {
+        this.loopBroken = false;
+        break;
+      }
       test = Interpreter.evaluate(declaration.condition, env);
     }
 
     return MK_NULL();
   }
+
+  public static eval_break_statement(_declaration: BreakStatement): RuntimeVal {
+    this.loopBroken = true;
+    return MK_NULL();
+  }
+
   public static eval_body(
     body: Stmt[],
     env: Environment,
@@ -94,33 +109,13 @@ export default class EvalStmt {
     }
     let result: RuntimeVal = MK_NULL();
 
-    // Evaluate the if body line by line
+    // Evaluate the body line by line
     for (const stmt of body) {
-      // if((stmt as Identifier).symbol === 'continue') return result;
       result = Interpreter.evaluate(stmt, scope);
-    }
-
-    return result;
-  }
-
-  private eval_body(
-    body: Stmt[],
-    env: Environment,
-    newEnv: boolean = true,
-  ): RuntimeVal {
-    let scope: Environment;
-
-    if (newEnv) {
-      scope = new Environment(env);
-    } else {
-      scope = env;
-    }
-    let result: RuntimeVal = MK_NULL();
-
-    // Evaluate the if body line by line
-    for (const stmt of body) {
-      // if((stmt as Identifier).symbol === 'continue') return result;
-      result = Interpreter.evaluate(stmt, scope);
+      // stop evaluating remaining statements when hagarara is reached
+      if (this.loopBroken) {
+        return result;
+      }
     }
 
     return result;
