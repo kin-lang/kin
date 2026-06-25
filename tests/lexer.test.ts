@@ -37,6 +37,16 @@ describe('Lexer', () => {
     expect(tokens).toEqual(expectedTokens);
   });
 
+  test('should tokenize hagarara (break) keyword', () => {
+    const lexer = new Lexer('hagarara');
+    const tokens = lexer.tokenize();
+    const expectedTokens = [
+      { line: 1, type: TokenType.HAGARARA, lexeme: 'hagarara' },
+      { line: 1, type: TokenType.EOF, lexeme: 'EOF' },
+    ];
+    expect(tokens).toEqual(expectedTokens);
+  });
+
   test('should tokenize string literals correctly', () => {
     const lexer = new Lexer('"Hello, world!"');
     const tokens = lexer.tokenize();

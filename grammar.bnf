@@ -9,6 +9,7 @@ program ::= statement*
 statement ::= variableDeclaration
             | functionDeclaration
             | loopStatement
+            | breakStatement
             | conditionalStatement
             | expressionStatement
             | returnStatement
@@ -18,6 +19,8 @@ variableDeclaration ::= ("reka" | "ntahinduka") identifier ("=" expression)? ";"
 functionDeclaration ::= "porogaramu_ntoya" identifier "(" (identifier ("," identifier)*)? ")" "{" statement* "}"
 
 loopStatement ::= "subiramo_niba" "(" expression ")" "{" statement* "}"
+
+breakStatement ::= "hagarara" ";"?
 
 conditionalStatement ::= "niba" "(" expression ")" "{" statement* "}" 
                          ("nanone_niba" "(" expression ")" "{" statement* "}")? 

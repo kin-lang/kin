@@ -7,6 +7,7 @@ import { NumberVal, RuntimeVal, StringVal } from './values';
 import {
   AssignmentExpr,
   BinaryExpr,
+  BreakStatement,
   CallExpr,
   LoopStatement,
   FunctionDeclaration,
@@ -65,6 +66,8 @@ export class Interpreter {
         );
       case 'LoopStatement':
         return EvalStmt.eval_loop_statement(astNode as LoopStatement, env);
+      case 'BreakStatement':
+        return EvalStmt.eval_break_statement(astNode as BreakStatement);
       case 'VariableDeclaration':
         return EvalStmt.eval_val_declaration(
           astNode as VariableDeclaration,

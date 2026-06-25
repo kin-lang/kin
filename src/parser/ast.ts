@@ -9,6 +9,7 @@ export type NodeType =
   | 'VariableDeclaration'
   | 'FunctionDeclaration'
   | 'LoopStatement'
+  | 'BreakStatement'
   | 'ConditionalStatement'
 
   // Expressions
@@ -80,6 +81,13 @@ export interface LoopStatement extends Stmt {
   kind: 'LoopStatement';
   condition: Expr;
   body: Stmt[];
+}
+
+/**
+ * Defines a break statement (hagarara) — exits the current loop
+ */
+export interface BreakStatement extends Stmt {
+  kind: 'BreakStatement';
 }
 
 /**
