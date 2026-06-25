@@ -16,6 +16,12 @@
 
 </div>
 
+## Introduction
+
+Get a quick overview of Kin in action:
+
+https://github.com/kin-lang/kin/raw/main/public/introductionproject.mp4
+
 ## Description
 
 **Kin** is a straightforward programming language created with the purpose of aiding Rwandans to write computer programs in their native language Kinyarwanda.
