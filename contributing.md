@@ -41,6 +41,8 @@ If you fix any issue or add a new feature, feel free to open a pull request. It 
 
 `We will not merge those pull requests that doesn't have a clear description`
 
+> Each PR must respect out [PR template](https://github.com/kin-lang/kin/blob/main/.github/pull_request_template.md) otherwise it will be auto-closed.
+
 ## Discussions
 
 Kin uses `Github Discussions` to bring it's users together and create an engageable community.
