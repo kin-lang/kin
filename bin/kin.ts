@@ -5,7 +5,6 @@ import pkg from '../package.json';
 import { readFile } from 'fs/promises';
 import { Interpreter, Parser, createGlobalEnv } from '../src/index';
 import * as readline from 'readline/promises';
-import { LogError } from '../src/lib/log';
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -46,8 +45,8 @@ program
 
       try {
         Interpreter.evaluate(program, env);
-      } catch (error: any) {
-        console.error(error.message);
+      } catch (error: unknown) {
+        console.error(error instanceof Error ? error.message : error);
       }
     }
   });

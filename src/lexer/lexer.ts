@@ -101,12 +101,12 @@ class Lexer {
         this.advance();
       }
       let nbr = this.sourceCodes.slice(start, this.currentPos);
-      negative ? (nbr = '-' + nbr) : nbr; // add sign for negative signs
+      if (negative) nbr = '-' + nbr; // add sign for negative numbers
       return this.makeTokenWithLexeme(TokenType.FLOAT, nbr);
     }
 
     let nbr = this.sourceCodes.slice(start, this.currentPos);
-    negative ? (nbr = '-' + nbr) : nbr; // add sign for negative signs
+    if (negative) nbr = '-' + nbr; // add sign for negative numbers
     return this.makeTokenWithLexeme(TokenType.INTEGER, nbr);
   }
 
@@ -239,6 +239,7 @@ class Lexer {
           this.advance();
           return this.makeTokenWithLexeme(TokenType.OR, '||');
         }
+        throw new Error(`Unexpected character '|' at line ${this.currentLine}`);
       case ';':
         this.advance();
         return this.makeTokenWithLexeme(TokenType.SEMI_COLON, ';');

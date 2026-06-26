@@ -41,7 +41,7 @@ export interface Stmt {
 /**
  * Expression will result into a value at runtime.
  */
-export interface Expr extends Stmt {}
+export type Expr = Stmt;
 
 /**
  * Defines a block which contains many statements.

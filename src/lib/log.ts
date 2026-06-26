@@ -5,6 +5,6 @@
 
 export const LogMessage = console.log;
 export const LogError = (...args: unknown[]) => {
-  const message = args.map((arg: unknown) => (arg as any).toString()).join(' ');
+  const message = args.map((arg) => String(arg)).join(' ');
   throw new Error(message);
 };
