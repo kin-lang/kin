@@ -73,19 +73,22 @@ describe('Lexer', () => {
     ];
     expect(tokens).toEqual(expectedTokens);
   });
-  test('should tokenize switch case correctly',()=>{
+  test('should tokenize switch case correctly', () => {
     const lexer = new Lexer(`reka y = 1
       gereranya(y){
         usanze 3:
-          tangaza_amakuru('iyi ni gatatu')
+          tangaza_amakuru("iyi ni gatatu")
         usanze 4:
-          tangaza_amakuru('iyi yo ni 4')
+          tangaza_amakuru("iyi yo ni 4")
         ibindi:
-          tangaza_amakuru('iyo yo ntayo nzi pe')  
+          tangaza_amakuru("iyo yo ntayo nzi pe")  
       }`);
-
-     
-  })
+    const tokens = lexer.tokenize();
+    expect(tokens.some((t) => t.type === TokenType.GERERANYA)).toBe(true);
+    expect(tokens.some((t) => t.type === TokenType.USANZE)).toBe(true);
+    expect(tokens.some((t) => t.type === TokenType.IBINDI)).toBe(true);
+    expect(tokens[tokens.length - 1].type).toBe(TokenType.EOF);
+  });
   test('should handle errors for unexpected characters', () => {
     const lexer = new Lexer('let x = ~;');
     expect(() => lexer.tokenize()).toThrowError(
@@ -93,5 +96,3 @@ describe('Lexer', () => {
     );
   });
 });
-
-

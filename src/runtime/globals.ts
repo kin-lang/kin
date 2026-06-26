@@ -62,7 +62,9 @@ export function createGlobalEnv(filename: string): Environment {
         const result = execSync(cmd, { encoding: 'utf-8' });
         return MK_STRING(result.trim());
       } catch (error: unknown) {
-        throw new Error((error as Error).toString());
+        const message =
+          error instanceof Error ? error.toString() : String(error);
+        throw new Error(message, { cause: error });
       }
     }),
     true,
@@ -87,7 +89,9 @@ export function createGlobalEnv(filename: string): Environment {
           return MK_NULL();
         }
       } catch (error: unknown) {
-        throw new Error((error as Error).toString());
+        const message =
+          error instanceof Error ? error.toString() : String(error);
+        throw new Error(message, { cause: error });
       }
     }),
     true,
@@ -408,7 +412,12 @@ export function createGlobalEnv(filename: string): Environment {
             const obj = args[0] as ObjectVal; // map with <key, value>
             const arr = obj.properties.values(); // only map's values
             const val = args[1] as StringVal; // value to check
-            return MK_BOOL((arr.next()?.value as any)?.value === val.value);
+            const nextVal = arr.next()?.value as RuntimeVal | undefined;
+            return MK_BOOL(
+              nextVal !== undefined &&
+                'value' in nextVal &&
+                nextVal.value === val.value,
+            );
           }),
         )
         .set(

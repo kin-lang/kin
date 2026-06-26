@@ -88,8 +88,7 @@ export default class Environment {
         ? property.symbol
         : !expr.computed
           ? (expr.property as Identifier).symbol
-          : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (Interpreter.evaluate(expr.property, env) as StringVal | NumberVal)
+          : (Interpreter.evaluate(expr.property, env) as StringVal | NumberVal)
               .value
     ).toString();
 
@@ -99,8 +98,7 @@ export default class Environment {
           ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (Interpreter.evaluate(expr.property, env) as any).value
           : (expr.property as Identifier).symbol
-        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (Interpreter.evaluate(expr.property, env) as StringVal | NumberVal)
+        : (Interpreter.evaluate(expr.property, env) as StringVal | NumberVal)
             .value
     ).toString();
 

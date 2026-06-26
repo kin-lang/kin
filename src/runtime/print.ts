@@ -41,10 +41,10 @@ export function matchType(arg: RuntimeVal) {
     case 'number':
       return (arg as NumberVal).value;
     case 'boolean':
-      (arg as BooleanVal).value ? 'nibyo' : 'sibyo';
+      return (arg as BooleanVal).value ? 'nibyo' : 'sibyo';
     case 'null':
       return 'ubusa';
-    case 'object':
+    case 'object': {
       const obj: { [key: string]: unknown } = {};
       const aObj = arg as ObjectVal;
       aObj.properties.forEach((value, key) => {
@@ -52,7 +52,8 @@ export function matchType(arg: RuntimeVal) {
       });
 
       return obj;
-    case 'fn':
+    }
+    case 'fn': {
       const fn = arg as FunctionValue;
 
       return {
@@ -60,6 +61,7 @@ export function matchType(arg: RuntimeVal) {
         body: fn.body,
         internal: false,
       };
+    }
     default:
       return arg;
   }

@@ -4,7 +4,14 @@ import Lexer from '../src/lexer/lexer';
 import TokenType from '../src/lexer/tokens';
 import { Interpreter } from '../src/runtime/interpreter';
 import { createGlobalEnv } from '../src/runtime/globals';
-import { ConditionalStmt, StringLiteral, NumericLiteral, BinaryExpr, Identifier } from '../src/parser/ast';
+import {
+  ConditionalStmt,
+  StringLiteral,
+  NumericLiteral,
+  BinaryExpr,
+  Identifier,
+  VariableDeclaration,
+} from '../src/parser/ast';
 import { StringVal, NumberVal } from '../src/runtime/values';
 
 describe('Switch Case (Gereranya) Tests', () => {
@@ -47,7 +54,7 @@ describe('Switch Case (Gereranya) Tests', () => {
       const tokens = lexer.tokenize();
 
       // Check that all expected tokens are present
-      const tokenTypes = tokens.map(t => t.type);
+      const tokenTypes = tokens.map((t) => t.type);
       expect(tokenTypes).toContain(TokenType.GERERANYA);
       expect(tokenTypes).toContain(TokenType.USANZE);
       expect(tokenTypes).toContain(TokenType.IBINDI);
@@ -146,7 +153,7 @@ describe('Switch Case (Gereranya) Tests', () => {
       expect(switchStmt.alternate).toHaveLength(1);
       const defaultCase = switchStmt.alternate![0];
       expect(defaultCase.kind).toBe('VariableDeclaration');
-      expect((defaultCase as any).identifier).toBe('b');
+      expect((defaultCase as VariableDeclaration).identifier).toBe('b');
     });
 
     test('should parse switch statement with string cases', () => {
@@ -241,7 +248,7 @@ describe('Switch Case (Gereranya) Tests', () => {
       const parser = new Parser();
       const ast = parser.produceAST(sourceCode);
       const env = createGlobalEnv('test.kin');
-      
+
       // Should throw error because result is not defined
       expect(() => Interpreter.evaluate(ast, env)).toThrow();
     });
@@ -392,21 +399,21 @@ describe('Switch Case (Gereranya) Tests', () => {
     test('should handle switch statement with invalid syntax', () => {
       const sourceCode = 'gereranya(x){usanze 1}'; // Missing colon
       const parser = new Parser();
-      
+
       expect(() => parser.produceAST(sourceCode)).toThrow();
     });
 
     test('should handle switch statement with missing opening brace', () => {
       const sourceCode = 'gereranya(x)usanze 1:}'; // Missing {
       const parser = new Parser();
-      
+
       expect(() => parser.produceAST(sourceCode)).toThrow();
     });
 
     test('should handle switch statement with missing closing brace', () => {
       const sourceCode = 'gereranya(x){usanze 1:'; // Missing }
       const parser = new Parser();
-      
+
       expect(() => parser.produceAST(sourceCode)).toThrow();
     });
   });

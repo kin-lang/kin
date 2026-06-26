@@ -3,10 +3,9 @@
  *       Produces Kin's AST             *
  ****************************************/
 
-import { deflateRaw } from 'zlib';
 import Lexer, { Token } from '../lexer/lexer';
 import TokenType from '../lexer/tokens';
-import { LogError, LogMessage } from '../lib/log';
+import { LogError } from '../lib/log';
 import {
   AssignmentExpr,
   BinaryExpr,
@@ -74,20 +73,26 @@ export default class Parser {
   }
 
   private parse_stmt(): Stmt {
-
     switch (this.at().type) {
       case TokenType.REKA:
       case TokenType.NTAHINDUKA:
         return this.parse_var_declaration();
       case TokenType.NIBA:
         return this.parse_if_statement();
-      case TokenType.GERERANYA:
+      case TokenType.GERERANYA: {
         this.eat(); // eat gereranya keyword
         this.expect(TokenType.OPEN_PARANTHESES, `"Expected ( after gereranya"`);
         const determinant = this.parse_primary_expr();
-        this.expect(TokenType.CLOSE_PARANTHESES, `"Expected ) after determinant"`);
-        this.expect(TokenType.OPEN_CURLY_BRACES, `"Expected { before switch body"`)
+        this.expect(
+          TokenType.CLOSE_PARANTHESES,
+          `"Expected ) after determinant"`,
+        );
+        this.expect(
+          TokenType.OPEN_CURLY_BRACES,
+          `"Expected { before switch body"`,
+        );
         return this.parse_case_statement(determinant);
+      }
       case TokenType.SUBIRAMO_NIBA:
         return this.parse_loop_statement();
       case TokenType.HAGARARA:
@@ -101,62 +106,66 @@ export default class Parser {
     }
   }
 
-
   private parse_case_statement(determinant: Expr): Stmt {
-	let root: ConditionalStmt | undefined;
-	let cur: ConditionalStmt | undefined;
+    let root: ConditionalStmt | undefined;
+    let cur: ConditionalStmt | undefined;
 
-	while (this.not_eof() && this.at().type !== TokenType.CLOSE_CURLY_BRACES) {
-		if (this.at().type === TokenType.USANZE) {
-			this.eat(); // usanze
-			const node: ConditionalStmt = {
-				kind: 'ConditionalStatement',
-				condition: {
-          kind: "BinaryExpr",
-          left: determinant,
-          operator: "==",
-          right: this.parse_primary_expr()
+    while (this.not_eof() && this.at().type !== TokenType.CLOSE_CURLY_BRACES) {
+      if (this.at().type === TokenType.USANZE) {
+        this.eat(); // usanze
+        const node: ConditionalStmt = {
+          kind: 'ConditionalStatement',
+          condition: {
+            kind: 'BinaryExpr',
+            left: determinant,
+            operator: '==',
+            right: this.parse_primary_expr(),
           } as BinaryExpr,
-				body: this.parse_case_block(),
-				alternate: [],
-			};
-			if (!root) root = node;
-			else (cur!.alternate as Stmt[]).push(node);
-			cur = node;
-		} else if (this.at().type === TokenType.IBINDI) {
-      this.eat();
-			const defBody = this.parse_case_block(); // Stmt[]
-			if (cur) (cur.alternate as Stmt[]).push(...defBody);
-			break; // default ends switch arms
-		} else {
-			break;
-		}
-	}
+          body: this.parse_case_block(),
+          alternate: [],
+        };
+        if (!root) root = node;
+        else (cur!.alternate as Stmt[]).push(node);
+        cur = node;
+      } else if (this.at().type === TokenType.IBINDI) {
+        this.eat();
+        const defBody = this.parse_case_block(); // Stmt[]
+        if (cur) (cur.alternate as Stmt[]).push(...defBody);
+        break; // default ends switch arms
+      } else {
+        break;
+      }
+    }
 
-  this.expect(TokenType.CLOSE_CURLY_BRACES, "`Expected } after switch`");
-	if (!root) {
-		return {
-			kind: 'ConditionalStatement',
-			condition: { kind: 'BinaryExpr', left: determinant, operator: '==', right: { kind: 'StringLiteral', value: '' } as StringLiteral } as BinaryExpr,
-			body: [],
-			alternate: [],
-		} as ConditionalStmt;
-	}
-	return root;
-}
-
-  
+    this.expect(TokenType.CLOSE_CURLY_BRACES, '`Expected } after switch`');
+    if (!root) {
+      return {
+        kind: 'ConditionalStatement',
+        condition: {
+          kind: 'BinaryExpr',
+          left: determinant,
+          operator: '==',
+          right: { kind: 'StringLiteral', value: '' } as StringLiteral,
+        } as BinaryExpr,
+        body: [],
+        alternate: [],
+      } as ConditionalStmt;
+    }
+    return root;
+  }
 
   private parse_case_block(): Stmt[] {
-    this.expect(TokenType.COLON, `"Expected : before case block"`)
-    let body: Stmt[] = [];
-    while (this.not_eof() &&
+    this.expect(TokenType.COLON, `"Expected : before case block"`);
+    const body: Stmt[] = [];
+    while (
+      this.not_eof() &&
       this.at().type != TokenType.USANZE &&
       this.at().type != TokenType.IBINDI &&
-      this.at().type != TokenType.CLOSE_CURLY_BRACES) {
+      this.at().type != TokenType.CLOSE_CURLY_BRACES
+    ) {
       body.push(this.parse_stmt());
     }
-    return body
+    return body;
   }
 
   private parse_return_expr(): Expr {
@@ -251,29 +260,32 @@ export default class Parser {
   private parse_primary_expr(): Expr {
     const tk = this.at().type;
     switch (tk) {
-      case TokenType.IDENTIFIER:
+      case TokenType.IDENTIFIER: {
         const identifier_expr = {
           kind: 'Identifier',
           symbol: this.eat().lexeme,
         } as Identifier;
 
         return identifier_expr;
+      }
       case TokenType.INTEGER:
-      case TokenType.FLOAT:
+      case TokenType.FLOAT: {
         const nbr_literal: Expr = {
           kind: 'NumericLiteral',
           value: parseFloat(this.eat().lexeme),
         } as NumericLiteral;
 
         return nbr_literal;
-      case TokenType.STRING:
+      }
+      case TokenType.STRING: {
         const string_literal = {
           kind: 'StringLiteral',
           value: this.eat().lexeme,
         } as StringLiteral;
 
         return string_literal;
-      case TokenType.OPEN_PARANTHESES:
+      }
+      case TokenType.OPEN_PARANTHESES: {
         this.eat(); // eat the opening paren
         const value = this.parse_expr();
 
@@ -283,6 +295,7 @@ export default class Parser {
         ); // closing paren
 
         return value;
+      }
       // ! We'll make arr of unary operators when we get more than one.
       case TokenType.NEGATION:
         return this.parse_negation_expr();
