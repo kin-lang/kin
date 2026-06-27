@@ -51,7 +51,7 @@
     "eslint": "^10.5.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.6",
-    "globals": "^16.5.0",
+    "globals": "^17.0.0",
     "husky": "^9.0.10",
     "pkg": "^5.8.1",
     "prettier": "^3.2.4",
