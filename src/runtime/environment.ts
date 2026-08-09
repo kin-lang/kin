@@ -55,58 +55,55 @@ export default class Environment {
   public lookupOrMutObject(
     expr: MemberExpr,
     value?: RuntimeVal,
-    property?: Identifier,
+    env?: Environment,
   ): RuntimeVal {
+    // Evaluate computed indexes in the environment where the access happens
+    // (not where the object is declared), so loop/function-local variables work.
+    const currentEnv = env ?? this;
+
+    // A nested member expression (e.g. `arr[0][1]` or `obj.a.b`): resolve the
+    // object side first, then read or write the property on the resolved value.
     if (expr.object.kind == 'MemberExpression') {
-      let variable = this.lookupOrMutObject(
+      const obj = this.lookupOrMutObject(
         expr.object as MemberExpr,
-        value,
-        expr.property as Identifier,
+        undefined,
+        currentEnv,
       );
 
-      // For nested properties
-      if (expr.property && variable.type == 'object') {
-        const computed_property =
-          (expr.property as Identifier).symbol ||
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (expr.property as any)?.value.toString();
-        variable = (variable as ObjectVal).properties.get(
-          computed_property,
-        ) as RuntimeVal;
+      const key = this.resolveMemberKey(expr, currentEnv);
+
+      if (value !== undefined) {
+        (obj as ObjectVal).properties.set(key, value);
+        return value;
       }
 
-      return variable;
+      return (obj as ObjectVal).properties.get(key) as RuntimeVal;
     }
 
+    // Base case: expr.object is an identifier that holds the object/array.
     const varname = (expr.object as Identifier).symbol;
-    const env = this.resolve(varname);
+    const ownerEnv = this.resolve(varname);
 
-    let pastVal = env.variables.get(varname) as ObjectVal;
+    const obj = ownerEnv.variables.get(varname) as ObjectVal;
+    const key = this.resolveMemberKey(expr, currentEnv);
 
-    const prop = (
-      property
-        ? property.symbol
-        : !expr.computed
-          ? (expr.property as Identifier).symbol
-          : (Interpreter.evaluate(expr.property, env) as StringVal | NumberVal)
-              .value
-    ).toString();
+    if (value !== undefined) {
+      obj.properties.set(key, value);
+      return value;
+    }
 
-    const currentProp = (
-      expr.property.kind == 'Identifier'
-        ? expr.computed
-          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (Interpreter.evaluate(expr.property, env) as any).value
-          : (expr.property as Identifier).symbol
-        : (Interpreter.evaluate(expr.property, env) as StringVal | NumberVal)
-            .value
-    ).toString();
+    return obj.properties.get(key) as RuntimeVal;
+  }
 
-    if (value) pastVal.properties.set(prop, value);
+  private resolveMemberKey(expr: MemberExpr, env: Environment): string {
+    // Dot access (obj.member): the property is an identifier.
+    if (!expr.computed) return (expr.property as Identifier).symbol;
 
-    if (currentProp) pastVal = pastVal.properties.get(currentProp) as ObjectVal;
+    // Bracket access (obj[expr]): the property is an expression to evaluate.
+    const evaluated = Interpreter.evaluate(expr.property, env) as
+      StringVal | NumberVal;
 
-    return pastVal;
+    return evaluated.value.toString();
   }
 
   public lookupVar(varname: string): RuntimeVal {

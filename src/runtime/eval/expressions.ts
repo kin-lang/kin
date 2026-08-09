@@ -178,12 +178,13 @@ export default class EvalExpr {
     expr?: MemberExpr,
   ): RuntimeVal {
     if (expr) {
-      const variable = env.lookupOrMutObject(expr);
+      const variable = env.lookupOrMutObject(expr, undefined, env);
       return variable;
     } else if (node) {
       const variable = env.lookupOrMutObject(
         node.assigne as MemberExpr,
         Interpreter.evaluate(node.value, env),
+        env,
       );
 
       return variable;
