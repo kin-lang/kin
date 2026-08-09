@@ -6,7 +6,8 @@
 
 import { Interpreter } from '..';
 import { Identifier, MemberExpr } from '../parser/ast';
-import { NumberVal, ObjectVal, RuntimeVal, StringVal } from './values';
+import { LogError } from '../lib/log';
+import { MK_NULL, NumberVal, ObjectVal, RuntimeVal, StringVal } from './values';
 
 export default class Environment {
   private parent?: Environment;
@@ -52,58 +53,71 @@ export default class Environment {
     return value;
   }
 
-  public lookupOrMutObject(
-    expr: MemberExpr,
-    value?: RuntimeVal,
-    env?: Environment,
-  ): RuntimeVal {
-    // Evaluate computed indexes in the environment where the access happens
-    // (not where the object is declared), so loop/function-local variables work.
-    const currentEnv = env ?? this;
+  public lookupMember(expr: MemberExpr): RuntimeVal {
+    const { obj, key } = this.resolveMemberTarget(expr);
 
-    // A nested member expression (e.g. `arr[0][1]` or `obj.a.b`): resolve the
-    // object side first, then read or write the property on the resolved value.
-    if (expr.object.kind == 'MemberExpression') {
-      const obj = this.lookupOrMutObject(
-        expr.object as MemberExpr,
-        undefined,
-        currentEnv,
-      );
-
-      const key = this.resolveMemberKey(expr, currentEnv);
-
-      if (value !== undefined) {
-        (obj as ObjectVal).properties.set(key, value);
-        return value;
-      }
-
-      return (obj as ObjectVal).properties.get(key) as RuntimeVal;
-    }
-
-    // Base case: expr.object is an identifier that holds the object/array.
-    const varname = (expr.object as Identifier).symbol;
-    const ownerEnv = this.resolve(varname);
-
-    const obj = ownerEnv.variables.get(varname) as ObjectVal;
-    const key = this.resolveMemberKey(expr, currentEnv);
-
-    if (value !== undefined) {
-      obj.properties.set(key, value);
-      return value;
-    }
-
-    return obj.properties.get(key) as RuntimeVal;
+    return obj.properties.get(key) ?? MK_NULL();
   }
 
-  private resolveMemberKey(expr: MemberExpr, env: Environment): string {
+  public assignMember(expr: MemberExpr, value: RuntimeVal): RuntimeVal {
+    const { obj, key } = this.resolveMemberTarget(expr);
+
+    obj.properties.set(key, value);
+    return value;
+  }
+
+  /** Reads a member expression; writes via assignMember. Kept for backward
+   *  compatibility with the published @kin-lang/kin API. */
+  public lookupOrMutObject(expr: MemberExpr, value?: RuntimeVal): RuntimeVal {
+    return value === undefined
+      ? this.lookupMember(expr)
+      : this.assignMember(expr, value);
+  }
+
+  /**
+   * Walks a member expression (e.g. `arr[0][1]` or `obj.a.b.c`) down to the
+   * object/array the leaf property belongs to, resolving every computed index
+   * in the current scope. Throws a Kin error when the target is not an object.
+   */
+  private resolveMemberTarget(expr: MemberExpr): {
+    obj: ObjectVal;
+    key: string;
+  } {
+    let obj: RuntimeVal;
+
+    if (expr.object.kind === 'MemberExpression') {
+      obj = this.lookupMember(expr.object as MemberExpr);
+    } else if (expr.object.kind === 'Identifier') {
+      const varname = (expr.object as Identifier).symbol;
+      obj = this.resolve(varname).variables.get(varname) as RuntimeVal;
+    } else {
+      obj = Interpreter.evaluate(expr.object, this);
+    }
+
+    const key = this.resolveMemberKey(expr);
+
+    if (obj === undefined || obj.type !== 'object') {
+      const type =
+        obj === undefined || obj.type === 'null' ? 'ubusa' : obj.type;
+
+      LogError(`Cannot access property '${key}' of ${type}`);
+    }
+
+    return { obj: obj as ObjectVal, key };
+  }
+
+  private resolveMemberKey(expr: MemberExpr): string {
     // Dot access (obj.member): the property is an identifier.
     if (!expr.computed) return (expr.property as Identifier).symbol;
 
     // Bracket access (obj[expr]): the property is an expression to evaluate.
-    const evaluated = Interpreter.evaluate(expr.property, env) as
-      StringVal | NumberVal;
+    const evaluated = Interpreter.evaluate(expr.property, this);
 
-    return evaluated.value.toString();
+    if (evaluated.type !== 'string' && evaluated.type !== 'number') {
+      LogError(`Cannot use ${evaluated.type} as an index/key`);
+    }
+
+    return (evaluated as StringVal | NumberVal).value.toString();
   }
 
   public lookupVar(varname: string): RuntimeVal {

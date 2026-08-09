@@ -178,16 +178,12 @@ export default class EvalExpr {
     expr?: MemberExpr,
   ): RuntimeVal {
     if (expr) {
-      const variable = env.lookupOrMutObject(expr, undefined, env);
-      return variable;
+      return env.lookupMember(expr);
     } else if (node) {
-      const variable = env.lookupOrMutObject(
+      return env.assignMember(
         node.assigne as MemberExpr,
         Interpreter.evaluate(node.value, env),
-        env,
       );
-
-      return variable;
     } else {
       throw new Error(
         `Evaluating a member expression is not possible without a member or assignment expression.`,

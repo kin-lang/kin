@@ -1,4 +1,5 @@
 import { describe, test, expect } from 'vitest';
+import { readFileSync } from 'fs';
 import Parser from '../src/parser/parser';
 import { Interpreter } from '../src/runtime/interpreter';
 import { createGlobalEnv } from '../src/runtime/globals';
@@ -174,6 +175,103 @@ describe('Member Expression (computed + dot access) Tests', () => {
 
       expect(result.type).toBe('number');
       expect((result as NumberVal).value).toBe(5);
+    });
+  });
+
+  describe('Error handling (Kin errors, not host TypeErrors)', () => {
+    test('should throw a Kin error when a null is used as an index', () => {
+      expect(() =>
+        evaluate(`
+          reka arr = [1, 2]
+          arr[ubusa]
+        `),
+      ).toThrow('Cannot use null as an index/key');
+    });
+
+    test('should throw a Kin error when an object is used as an index', () => {
+      expect(() =>
+        evaluate(`
+          reka arr = [1, 2]
+          reka o = { a: 1 }
+          arr[o]
+        `),
+      ).toThrow('Cannot use object as an index/key');
+    });
+
+    test('should throw a Kin error when a boolean is used as an index', () => {
+      expect(() =>
+        evaluate(`
+          reka arr = [1, 2]
+          arr[nibyo]
+        `),
+      ).toThrow('Cannot use boolean as an index/key');
+    });
+
+    test('should throw a Kin error when a function is used as an index', () => {
+      expect(() =>
+        evaluate(`
+          porogaramu_ntoya f() {
+            tanga 1
+          }
+          reka arr = [1, 2]
+          arr[f]
+        `),
+      ).toThrow('Cannot use fn as an index/key');
+    });
+
+    test('should throw a Kin error when walking through a missing nested index', () => {
+      expect(() =>
+        evaluate(`
+          reka arr = [[1, 2]]
+          arr[1][0]
+        `),
+      ).toThrow("Cannot access property '0' of ubusa");
+    });
+
+    test('should throw a Kin error when accessing a property of a number', () => {
+      expect(() =>
+        evaluate(`
+          reka x = 5
+          x.foo
+        `),
+      ).toThrow("Cannot access property 'foo' of number");
+    });
+
+    test('should throw a Kin error when walking through a primitive element', () => {
+      expect(() =>
+        evaluate(`
+          reka arr = [5]
+          arr[0][0]
+        `),
+      ).toThrow("Cannot access property '0' of number");
+    });
+
+    test('should return ubusa (null) for a missing key instead of throwing', () => {
+      const result = evaluate(`
+        reka obj = { a: 1 }
+        obj.missing
+      `);
+
+      expect(result.type).toBe('null');
+    });
+
+    test('should not throw when arithmetic uses an out-of-bounds index', () => {
+      const result = evaluate(`
+        reka arr = [1, 2]
+        reka v = arr[5] + 1
+        v
+      `);
+
+      expect(result.type).toBe('null');
+    });
+
+    test('should run the examples/arrays.kin file without throwing', () => {
+      const source = readFileSync(
+        new URL('../examples/arrays.kin', import.meta.url),
+        'utf-8',
+      );
+
+      expect(() => evaluate(source)).not.toThrow();
     });
   });
 });
