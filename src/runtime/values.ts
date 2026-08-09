@@ -7,13 +7,7 @@ import { Stmt } from '../parser/ast';
 import Environment from './environment';
 
 export type ValueType =
-  | 'null'
-  | 'number'
-  | 'boolean'
-  | 'object'
-  | 'native-fn'
-  | 'fn'
-  | 'string';
+  'null' | 'number' | 'boolean' | 'object' | 'native-fn' | 'fn' | 'string';
 
 export interface RuntimeVal {
   type: ValueType;
