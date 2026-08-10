@@ -6,7 +6,7 @@
 <p align="center">
   <a href="https://kinlang.vercel.app/getting-started">Getting Started</a> .
   <a href="https://kinlang.vercel.app/#why">Why Kin?</a> .
-  <a href="https://kinlang.vercel.app/getting-started#ide-integrations">VS Code support</a> .
+  <a href="https://marketplace.visualstudio.com/items?itemName=pacifiquem.kinlang">VS Code (highlighting, diagnostics, completions)</a> .
   <a href="https://github.com/kin-lang/showcase"> Show us what you did! </a>
 </p>
 
@@ -61,6 +61,10 @@ kin-win-x64.exe run path\to\program.kin
 > You can rename `kin-win-x64.exe` to `kin.exe` for shorter commands.
 
 This executable is built with [pkg](https://github.com/vercel/pkg) and bundles the Kin runtime so you do not need Node.js separately.
+
+### VS Code
+
+Install the official extension from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=pacifiquem.kinlang) (search **kinlang**). It provides syntax highlighting, parser diagnostics, completions, and hover docs for built-ins. Source: [kin-lang/vscode-intellisense](https://github.com/kin-lang/vscode-intellisense).
 
 #### Building the executable yourself
 
