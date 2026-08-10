@@ -1,66 +1,190 @@
 ; Copyright (c) MURANGWA Pacifique. and affiliates.
 ; This source code is licensed under the MIT license found in the
 ; LICENSE file in the root directory of this source tree.
+;
+; Kin Programming Language grammar (BNF)
+;
+; Source of truth: the implementation
+;   lexer  — src/lexer/lexer.ts, src/lexer/tokens.ts
+;   parser — src/parser/parser.ts
+;
+; This file describes what the parser actually accepts, including
+; implementation limits. Comments starting with "Note:" document those
+; limits. Tokens that the lexer produces but the parser never uses
+; (++ -- & lone | ') are listed under Unused tokens and are not part
+; of the language.
 
-; Kin Programming Language's Grammar in BNF (Backus-Naur Form)
+; ========================================
+; Program
+; ========================================
 
 program ::= statement*
+
+; ========================================
+; Statements
+; ========================================
 
 statement ::= variableDeclaration
             | functionDeclaration
             | loopStatement
             | breakStatement
-            | conditionalStatement
-            | expressionStatement
+            | ifStatement
+            | switchStatement
             | returnStatement
+            | expressionStatement
 
-variableDeclaration ::= ("reka" | "ntahinduka") identifier ("=" expression)? ";"
+; Semicolon is required only when the initializer is omitted.
+; Constants (ntahinduka) must have an initializer — the parser rejects
+; "ntahinduka name ;".
+variableDeclaration ::= "reka" identifier (";" | "=" expression)
+                      | "ntahinduka" identifier "=" expression
 
-functionDeclaration ::= "porogaramu_ntoya" identifier "(" (identifier ("," identifier)*)? ")" "{" statement* "}"
+functionDeclaration ::= "porogaramu_ntoya" identifier "(" parameterList? ")" block
 
-loopStatement ::= "subiramo_niba" "(" expression ")" "{" statement* "}"
+parameterList ::= identifier ("," identifier)*
 
+; Note: the parser appends a synthetic FunctionTerminator to the body.
+; That node is not source syntax.
+
+block ::= "{" statement* "}"
+
+loopStatement ::= "subiramo_niba" "(" expression ")" block
+
+; Semicolon after hagarara is optional.
 breakStatement ::= "hagarara" ";"?
 
-conditionalStatement ::= "niba" "(" expression ")" "{" statement* "}" 
-                         ("nanone_niba" "(" expression ")" "{" statement* "}")? 
-                         ("niba_byanze" "{" statement* "}")?
+; nanone_niba may repeat (parser recurses). niba_byanze is optional and last.
+ifStatement ::= "niba" "(" expression ")" block
+                ("nanone_niba" "(" expression ")" block)*
+                ("niba_byanze" block)?
 
-expressionStatement ::= expression ";"
+; Determinant and each case label are primaryExpression only (not a
+; full expression). Each case is desugared to (determinant == label).
+;
+; Note: a switch whose only arm is ibindi is accepted, but the current
+; parser discards that default body and emits an empty dummy conditional.
+switchStatement ::= "gereranya" "(" primaryExpression ")" "{"
+                      caseClause*
+                      defaultClause?
+                    "}"
 
-returnStatement ::= "tanga" (expression | ";")
+caseClause    ::= "usanze" primaryExpression ":" statement*
+defaultClause ::= "ibindi" ":" statement*
+
+; Empty return requires a semicolon. A return with a value does not.
+returnStatement ::= "tanga" ";"
+                  | "tanga" expression
+
+; No required semicolon. Newlines are not statement terminators;
+; the next token starts the next statement.
+expressionStatement ::= expression
 
 ; ========================================
-; Expression Rules
+; Expressions  (low → high precedence)
 ; ========================================
 
 expression ::= assignmentExpression
 
-assignmentExpression ::= objectLiteral ("=" assignmentExpression)?
+; Right-associative.
+assignmentExpression ::= objectLikeExpression ("=" assignmentExpression)?
 
-; Updated Object Literal - Now supports real objects { key: value }
-objectLiteral ::= "{" (property ("," property)*)? "}"
-                | arrayExpression
+; The parser tries '{...}' first, then '[...]', then a logical expression.
+objectLikeExpression ::= objectLiteral
+                       | arrayLiteral
+                       | logicalExpression
 
-; Property definition: key : value
-property ::= (identifier | stringLiteral) ":" expression
+; Keys are identifiers only (not string literals).
+; Shorthand { key } looks up `key` in the current environment at runtime.
+; A trailing comma is accepted.
+objectLiteral ::= "{" (objectProperty ("," objectProperty)* ","?)? "}"
 
-arrayExpression ::= "[" (expression ("," expression)*)? "]"
+objectProperty ::= identifier (":" expression)?
+
+; A trailing comma is accepted. Arrays are represented as objects whose
+; keys are "0", "1", ...
+arrayLiteral ::= "[" (expression ("," expression)* ","?)? "]"
+
+; Note: at most one && or ||. They share a single precedence and do not
+; chain:  a && b || c  is not one logical expression.
+logicalExpression ::= relationalExpression (("&&" | "||") relationalExpression)?
+
+; Note: at most one relational operator. They do not chain:
+;  a < b < c  is not one comparison.
+relationalExpression ::= additiveExpression (relationalOperator additiveExpression)?
+
+relationalOperator ::= "<" | ">" | "==" | "!=" | "<=" | ">="
+
+additiveExpression ::= multiplicativeExpression (additiveOperator multiplicativeExpression)*
+
+additiveOperator ::= "+" | "-"
+
+; * / % ^ are left-associative and share one precedence.
+multiplicativeExpression ::= callMemberExpression (multiplicativeOperator callMemberExpression)*
+
+multiplicativeOperator ::= "*" | "/" | "%" | "^"
+
+; member then zero or more argument lists:  obj.fn()()
+; Note: a call cannot be followed by further member access.
+;   obj.method()     ok
+;   foo()()          ok
+;   foo().bar        not accepted
+callMemberExpression ::= memberExpression ("(" argumentList? ")")*
+
+; Call / function-parameter arguments are assignment expressions.
+argumentList ::= assignmentExpression ("," assignmentExpression)*
+
+memberExpression ::= primaryExpression memberSuffix*
+
+memberSuffix ::= "." identifier
+               | "[" expression "]"
 
 primaryExpression ::= identifier
                     | numericLiteral
                     | stringLiteral
                     | "(" expression ")"
-                    | functionReturn
+                    | unaryNot
 
-functionReturn ::= "tanga" (expression | ";")
+; Note: ! applies only to an identifier, not to a general expression.
+unaryNot ::= "!" identifier
 
 ; ========================================
-; Terminals
+; Lexical
 ; ========================================
 
-identifier ::= [a-zA-Z_] [a-zA-Z0-9_]*
+; # comments run to end of line and are discarded by the lexer.
+comment ::= "#" { anyCharacterExceptNewline }
 
-numericLiteral ::= [0-9]+ ("." [0-9]+)?
+; Whitespace (space, tab, CR, LF) is insignificant.
 
-stringLiteral ::= "\"" .* "\""
+identifier ::= (letter | "_") (letter | digit | "_")*
+
+letter ::= "a"..."z" | "A"..."Z"
+digit  ::= "0"..."9"
+
+; A leading '-' is folded into the number by the lexer when it is
+; immediately followed by a digit. There is no unary-minus expression:
+;  -5   is a numericLiteral
+;  -x   is not accepted
+numericLiteral ::= "-"? digit+ ("." digit+)?
+
+; Double quotes only. Newlines inside a string are a lexer error.
+; No escape sequences are processed.
+stringLiteral ::= '"' { anyCharacterExceptQuoteOrNewline } '"'
+
+; ========================================
+; Keywords
+; ========================================
+;
+; reka  ntahinduka  porogaramu_ntoya  tanga
+; subiramo_niba  hagarara
+; niba  nanone_niba  niba_byanze
+; gereranya  usanze  ibindi
+
+; ========================================
+; Unused tokens  (lexer only — not in this grammar)
+; ========================================
+;
+; ++  --     tokenized (INCREMENT / DECREMENT), never parsed
+; &          tokenized (AMPERSAND), never parsed  (&& is AND and is used)
+; |          lexer error unless it is part of ||
+; '          not recognized; strings use " only

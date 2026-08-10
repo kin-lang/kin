@@ -116,7 +116,7 @@ export function createGlobalEnv(filename: string): Environment {
     'KIN_IMIBARE',
     MK_OBJECT(
       new Map()
-        .set('pi', Math.PI) // PI
+        .set('pi', MK_NUMBER(Math.PI)) // PI
         .set(
           'umuzikare', // sqrt
           MK_NATIVE_FN((args) => {
