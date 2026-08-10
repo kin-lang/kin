@@ -6,7 +6,8 @@
 
 import { Interpreter } from '..';
 import { Identifier, MemberExpr } from '../parser/ast';
-import { NumberVal, ObjectVal, RuntimeVal, StringVal } from './values';
+import { LogError } from '../lib/log';
+import { MK_NULL, NumberVal, ObjectVal, RuntimeVal, StringVal } from './values';
 
 export default class Environment {
   private parent?: Environment;
@@ -52,61 +53,71 @@ export default class Environment {
     return value;
   }
 
-  public lookupOrMutObject(
-    expr: MemberExpr,
-    value?: RuntimeVal,
-    property?: Identifier,
-  ): RuntimeVal {
-    if (expr.object.kind == 'MemberExpression') {
-      let variable = this.lookupOrMutObject(
-        expr.object as MemberExpr,
-        value,
-        expr.property as Identifier,
-      );
+  public lookupMember(expr: MemberExpr): RuntimeVal {
+    const { obj, key } = this.resolveMemberTarget(expr);
 
-      // For nested properties
-      if (expr.property && variable.type == 'object') {
-        const computed_property =
-          (expr.property as Identifier).symbol ||
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (expr.property as any)?.value.toString();
-        variable = (variable as ObjectVal).properties.get(
-          computed_property,
-        ) as RuntimeVal;
-      }
+    return obj.properties.get(key) ?? MK_NULL();
+  }
 
-      return variable;
+  public assignMember(expr: MemberExpr, value: RuntimeVal): RuntimeVal {
+    const { obj, key } = this.resolveMemberTarget(expr);
+
+    obj.properties.set(key, value);
+    return value;
+  }
+
+  /** Reads a member expression; writes via assignMember. Kept for backward
+   *  compatibility with the published @kin-lang/kin API. */
+  public lookupOrMutObject(expr: MemberExpr, value?: RuntimeVal): RuntimeVal {
+    return value === undefined
+      ? this.lookupMember(expr)
+      : this.assignMember(expr, value);
+  }
+
+  /**
+   * Walks a member expression (e.g. `arr[0][1]` or `obj.a.b.c`) down to the
+   * object/array the leaf property belongs to, resolving every computed index
+   * in the current scope. Throws a Kin error when the target is not an object.
+   */
+  private resolveMemberTarget(expr: MemberExpr): {
+    obj: ObjectVal;
+    key: string;
+  } {
+    let obj: RuntimeVal;
+
+    if (expr.object.kind === 'MemberExpression') {
+      obj = this.lookupMember(expr.object as MemberExpr);
+    } else if (expr.object.kind === 'Identifier') {
+      const varname = (expr.object as Identifier).symbol;
+      obj = this.resolve(varname).variables.get(varname) as RuntimeVal;
+    } else {
+      obj = Interpreter.evaluate(expr.object, this);
     }
 
-    const varname = (expr.object as Identifier).symbol;
-    const env = this.resolve(varname);
+    const key = this.resolveMemberKey(expr);
 
-    let pastVal = env.variables.get(varname) as ObjectVal;
+    if (obj === undefined || obj.type !== 'object') {
+      const type =
+        obj === undefined || obj.type === 'null' ? 'ubusa' : obj.type;
 
-    const prop = (
-      property
-        ? property.symbol
-        : !expr.computed
-          ? (expr.property as Identifier).symbol
-          : (Interpreter.evaluate(expr.property, env) as StringVal | NumberVal)
-              .value
-    ).toString();
+      LogError(`Cannot access property '${key}' of ${type}`);
+    }
 
-    const currentProp = (
-      expr.property.kind == 'Identifier'
-        ? expr.computed
-          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (Interpreter.evaluate(expr.property, env) as any).value
-          : (expr.property as Identifier).symbol
-        : (Interpreter.evaluate(expr.property, env) as StringVal | NumberVal)
-            .value
-    ).toString();
+    return { obj: obj as ObjectVal, key };
+  }
 
-    if (value) pastVal.properties.set(prop, value);
+  private resolveMemberKey(expr: MemberExpr): string {
+    // Dot access (obj.member): the property is an identifier.
+    if (!expr.computed) return (expr.property as Identifier).symbol;
 
-    if (currentProp) pastVal = pastVal.properties.get(currentProp) as ObjectVal;
+    // Bracket access (obj[expr]): the property is an expression to evaluate.
+    const evaluated = Interpreter.evaluate(expr.property, this);
 
-    return pastVal;
+    if (evaluated.type !== 'string' && evaluated.type !== 'number') {
+      LogError(`Cannot use ${evaluated.type} as an index/key`);
+    }
+
+    return (evaluated as StringVal | NumberVal).value.toString();
   }
 
   public lookupVar(varname: string): RuntimeVal {
