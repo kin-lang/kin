@@ -6,7 +6,11 @@
 
 import { Interpreter } from '..';
 import { Identifier, MemberExpr } from '../parser/ast';
-import { LogError } from '../lib/log';
+import {
+  KinReferenceError,
+  KinRuntimeError,
+  KinTypeError,
+} from '../lib/errors';
 import { MK_NULL, NumberVal, ObjectVal, RuntimeVal, StringVal } from './values';
 
 export default class Environment {
@@ -26,7 +30,7 @@ export default class Environment {
     constant: boolean,
   ): RuntimeVal {
     if (this.variables.has(varname)) {
-      throw new Error(
+      throw new KinRuntimeError(
         `Cannot declare variable ${varname}. As it already is defined.`,
       );
     }
@@ -43,7 +47,7 @@ export default class Environment {
 
     // Cannot assign to constant
     if (env.constants.has(varname)) {
-      throw new Error(
+      throw new KinRuntimeError(
         `Cannot reassign to variable "${varname}" as it's constant.`,
       );
     }
@@ -100,7 +104,7 @@ export default class Environment {
       const type =
         obj === undefined || obj.type === 'null' ? 'ubusa' : obj.type;
 
-      LogError(`Cannot access property '${key}' of ${type}`);
+      throw new KinTypeError(`Cannot access property '${key}' of ${type}`);
     }
 
     return { obj: obj as ObjectVal, key };
@@ -114,7 +118,7 @@ export default class Environment {
     const evaluated = Interpreter.evaluate(expr.property, this);
 
     if (evaluated.type !== 'string' && evaluated.type !== 'number') {
-      LogError(`Cannot use ${evaluated.type} as an index/key`);
+      throw new KinTypeError(`Cannot use ${evaluated.type} as an index/key`);
     }
 
     return (evaluated as StringVal | NumberVal).value.toString();
@@ -130,7 +134,9 @@ export default class Environment {
     if (this.variables.has(varname)) return this;
 
     if (this.parent == undefined)
-      throw new Error(`Cannot resolve '${varname}' as it does not exist.`);
+      throw new KinReferenceError(
+        `Cannot resolve '${varname}' as it does not exist.`,
+      );
 
     return this.parent.resolve(varname);
   }

@@ -3,7 +3,12 @@
 import { program } from 'commander';
 import pkg from '../package.json';
 import { readFile } from 'fs/promises';
-import { Interpreter, Parser, createGlobalEnv } from '../src/index';
+import {
+  Interpreter,
+  Parser,
+  createGlobalEnv,
+  formatKinError,
+} from '../src/index';
 import * as readline from 'readline/promises';
 
 const rl = readline.createInterface({
@@ -41,12 +46,11 @@ program
         process.exit(1);
       }
 
-      const program = parser.produceAST(input);
-
       try {
+        const program = parser.produceAST(input);
         Interpreter.evaluate(program, env);
       } catch (error: unknown) {
-        console.error(error instanceof Error ? error.message : error);
+        console.error(formatKinError(error));
       }
     }
   });
@@ -62,16 +66,23 @@ program
       const env = createGlobalEnv(file_location); // create global environment for Kin
       Interpreter.evaluate(ast, env); // Evaluate the program
       process.exit(0);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error: unknown) {
+      if (isNodeErrno(error) && error.code === 'ENOENT') {
         console.error(`Kin Error: Can't resolve file at '${file_location}'`);
       } else {
-        const message = error.message ? error.message : error;
-        console.error(`Kin Error: ${message}`);
+        console.error(`Kin Error: ${formatKinError(error)}`);
       }
       process.exit(1);
     }
   });
 
 program.parse();
+
+function isNodeErrno(error: unknown): error is NodeJS.ErrnoException {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof (error as NodeJS.ErrnoException).code === 'string'
+  );
+}

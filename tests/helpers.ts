@@ -1,6 +1,8 @@
+import { expect } from 'vitest';
 import Parser from '../src/parser/parser';
 import { Interpreter } from '../src/runtime/interpreter';
 import { createGlobalEnv } from '../src/runtime/globals';
+import { KinError, KinErrorCode, KinErrorName } from '../src/lib/errors';
 import {
   BooleanVal,
   NativeFnValue,
@@ -73,4 +75,35 @@ export function asObject(value: RuntimeVal): ObjectVal {
     throw new Error(`Expected object, got ${value.type}`);
   }
   return value as ObjectVal;
+}
+
+/** Assert that `fn` throws a Kin error of the given class with matching name/code. */
+export function expectKinError(
+  fn: () => unknown,
+  ErrorClass: new (message: string) => KinError,
+  expected: {
+    ERRNAME: KinErrorName;
+    ERRCODE: KinErrorCode;
+    message?: string | RegExp;
+  },
+): KinError {
+  let thrown: unknown;
+  try {
+    fn();
+  } catch (error) {
+    thrown = error;
+  }
+  expect(thrown, 'expected fn to throw a Kin error').toBeInstanceOf(ErrorClass);
+  const err = thrown as KinError;
+  expect(err.ERRNAME).toBe(expected.ERRNAME);
+  expect(err.ERRCODE).toBe(expected.ERRCODE);
+  expect(err.code).toBe(expected.ERRCODE);
+  if (expected.message !== undefined) {
+    if (typeof expected.message === 'string') {
+      expect(err.message).toContain(expected.message);
+    } else {
+      expect(err.message).toMatch(expected.message);
+    }
+  }
+  return err;
 }

@@ -4,6 +4,7 @@ import Parser from '../src/parser/parser';
 import { Interpreter } from '../src/runtime/interpreter';
 import { createGlobalEnv } from '../src/runtime/globals';
 import { NumberVal } from '../src/runtime/values';
+import { KinTypeError } from '../src/lib/errors';
 
 describe('Member Expression (computed + dot access) Tests', () => {
   function evaluate(sourceCode: string) {
@@ -180,6 +181,12 @@ describe('Member Expression (computed + dot access) Tests', () => {
 
   describe('Error handling (Kin errors, not host TypeErrors)', () => {
     test('should throw a Kin error when a null is used as an index', () => {
+      expect(() =>
+        evaluate(`
+          reka arr = [1, 2]
+          arr[ubusa]
+        `),
+      ).toThrow(KinTypeError);
       expect(() =>
         evaluate(`
           reka arr = [1, 2]

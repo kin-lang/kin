@@ -5,7 +5,7 @@
 
 import Lexer, { Token } from '../lexer/lexer';
 import TokenType from '../lexer/tokens';
-import { LogError } from '../lib/log';
+import { KinSyntaxError } from '../lib/errors';
 import {
   AssignmentExpr,
   BinaryExpr,
@@ -49,7 +49,10 @@ export default class Parser {
     const prev = this.eat();
 
     if (!prev || prev.type != type) {
-      LogError(`On line ${prev.line}: Kin Error: ${err}, found ${prev.lexeme}`);
+      throw new KinSyntaxError(
+        `On line ${prev.line}: Kin Error: ${err}, found ${prev.lexeme}`,
+        { line: prev.line },
+      );
     }
 
     return prev;
@@ -227,7 +230,7 @@ export default class Parser {
       this.eat();
 
       if (isConstant)
-        throw new Error('Constant variables must be assigned a value');
+        throw new KinSyntaxError('Constant variables must be assigned a value');
 
       return {
         kind: 'VariableDeclaration',
@@ -300,8 +303,9 @@ export default class Parser {
       case TokenType.NEGATION:
         return this.parse_negation_expr();
       default:
-        return LogError(
+        throw new KinSyntaxError(
           `On line ${this.at().line}: Kin Error: Unexpected token ${this.at().lexeme}`,
+          { line: this.at().line },
         );
     }
   }
@@ -418,7 +422,7 @@ export default class Parser {
         property = this.parse_primary_expr();
 
         if (property.kind !== 'Identifier') {
-          throw new Error(
+          throw new KinSyntaxError(
             'Dot operator (".") is illegal without right-hand-side (<-) being an Identifier.',
           );
         }
@@ -593,8 +597,9 @@ export default class Parser {
 
     for (const arg of args) {
       if (arg.kind != 'Identifier') {
-        LogError(
+        throw new KinSyntaxError(
           `On line ${this.at().line}: Kin Error: Expected identifier for function parameter`,
+          { line: this.at().line },
         );
       }
 

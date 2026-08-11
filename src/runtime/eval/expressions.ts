@@ -29,6 +29,7 @@ import {
 
 import Environment from '../environment';
 import { Interpreter } from '../interpreter';
+import { KinRuntimeError, KinTypeError } from '../../lib/errors';
 import { LogError } from '../../lib/log';
 
 export default class EvalExpr {
@@ -80,7 +81,7 @@ export default class EvalExpr {
     if (node.assigne.kind === 'MemberExpression')
       return this.eval_member_expr(env, node);
     if (node.assigne.kind !== 'Identifier')
-      throw new Error(
+      throw new KinRuntimeError(
         `Invalid left-hand-side expression: ${JSON.stringify(node.assigne)}.`,
       );
 
@@ -122,7 +123,7 @@ export default class EvalExpr {
       const scope = new Environment(func.declarationEnv);
 
       if (args.length != func.parameters.length) {
-        LogError(
+        throw new KinTypeError(
           "Kin Error: number of function's arguments must equal to it's the parameters",
         );
       }
@@ -154,7 +155,7 @@ export default class EvalExpr {
       return result;
     }
 
-    throw new Error(
+    throw new KinTypeError(
       'Cannot call value that is not a function: ' + JSON.stringify(fn),
     );
   }
@@ -185,7 +186,7 @@ export default class EvalExpr {
         Interpreter.evaluate(node.value, env),
       );
     } else {
-      throw new Error(
+      throw new KinRuntimeError(
         `Evaluating a member expression is not possible without a member or assignment expression.`,
       );
     }
@@ -236,7 +237,7 @@ export default class EvalExpr {
         case '>=':
           return MK_BOOL(llhs.value >= rrhs.value);
         default:
-          throw new Error(
+          throw new KinRuntimeError(
             `Unknown operator provided in operation: ${lhs}, ${rhs}.`,
           );
       }
@@ -282,7 +283,7 @@ export default class EvalExpr {
           compare((lhs as ObjectVal).properties, (rhs as ObjectVal).properties),
         );
       default:
-        throw new Error(
+        throw new KinRuntimeError(
           `RunTime: Unhandled type in equals function: ${lhs}, ${rhs}`,
         );
     }

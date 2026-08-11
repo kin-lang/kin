@@ -4,6 +4,17 @@ import { Interpreter } from './runtime/interpreter';
 import { createGlobalEnv } from './runtime/globals';
 import Environment from './runtime/environment';
 import {
+  KinError,
+  KinSyntaxError,
+  KinTypeError,
+  KinReferenceError,
+  KinRuntimeError,
+  isKinError,
+  formatKinError,
+  KinErrorName,
+  KinErrorCode,
+} from './lib/errors';
+import {
   MK_NUMBER,
   MK_STRING,
   MK_NULL,
@@ -31,6 +42,13 @@ export {
   MK_BOOL,
   MK_OBJECT,
   MK_NATIVE_FN,
+  KinError,
+  KinSyntaxError,
+  KinTypeError,
+  KinReferenceError,
+  KinRuntimeError,
+  isKinError,
+  formatKinError,
 };
 
 export type {
@@ -41,4 +59,6 @@ export type {
   ObjectVal,
   FunctionValue,
   NullVal,
+  KinErrorName,
+  KinErrorCode,
 };

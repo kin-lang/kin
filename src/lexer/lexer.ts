@@ -3,6 +3,7 @@
  *     Produce tokens from the source     *
  ******************************************/
 
+import { KinSyntaxError } from '../lib/errors';
 import TokenType from './tokens';
 
 /* Token structure */
@@ -116,8 +117,9 @@ class Lexer {
     const quote: string = this.consume();
     while (this.peek() !== quote) {
       if (this.peek() === '\n' || this.currentPos === this.sourceCodes.length) {
-        throw new Error(
+        throw new KinSyntaxError(
           `Unterminated string literal at line ${this.currentLine}`,
+          { line: this.currentLine },
         );
       }
       this.advance();
@@ -239,7 +241,10 @@ class Lexer {
           this.advance();
           return this.makeTokenWithLexeme(TokenType.OR, '||');
         }
-        throw new Error(`Unexpected character '|' at line ${this.currentLine}`);
+        throw new KinSyntaxError(
+          `Unexpected character '|' at line ${this.currentLine}`,
+          { line: this.currentLine },
+        );
       case ';':
         this.advance();
         return this.makeTokenWithLexeme(TokenType.SEMI_COLON, ';');
@@ -295,8 +300,9 @@ class Lexer {
         } else if (this.isSingleAlphaCharacter(char) || char === '_') {
           return this.scanIdentifierOrKeyword();
         } else {
-          throw new Error(
+          throw new KinSyntaxError(
             `Unexpected character '${char}' at line ${this.currentLine}`,
+            { line: this.currentLine },
           );
         }
     }

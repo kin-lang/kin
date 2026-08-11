@@ -42,6 +42,13 @@ export default tseslint.config(
   {
     files: ['tests/**/*.ts'],
     ...vitest.configs.recommended,
+    rules: {
+      ...vitest.configs.recommended.rules,
+      'vitest/expect-expect': [
+        'error',
+        { assertFunctionNames: ['expect', 'expectKinError'] },
+      ],
+    },
   },
   eslintPluginPrettierRecommended,
 );

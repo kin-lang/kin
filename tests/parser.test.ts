@@ -1,5 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import Parser from '../src/parser/parser';
+import { KinSyntaxError } from '../src/lib/errors';
+import { expectKinError } from './helpers';
 
 describe('Parser', () => {
   test('should parse numeric and string literals in variable declaration', () => {
@@ -429,6 +431,9 @@ describe('Parser', () => {
   test('should handle syntax errors correctly', () => {
     const sourceCode = 'reka x = ;';
     const parser = new Parser();
-    expect(() => parser.produceAST(sourceCode)).toThrowError();
+    expectKinError(() => parser.produceAST(sourceCode), KinSyntaxError, {
+      ERRNAME: 'SyntaxError',
+      ERRCODE: 'E_SYNTAX',
+    });
   });
 });

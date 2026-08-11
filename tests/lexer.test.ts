@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import TokenType from '../src/lexer/tokens';
 import Lexer from '../src/lexer/lexer';
+import { KinSyntaxError } from '../src/lib/errors';
 
 describe('Lexer', () => {
   test('should tokenize arithmetic expressions correctly', () => {
@@ -91,7 +92,8 @@ describe('Lexer', () => {
   });
   test('should handle errors for unexpected characters', () => {
     const lexer = new Lexer('let x = ~;');
-    expect(() => lexer.tokenize()).toThrowError(
+    expect(() => lexer.tokenize()).toThrow(KinSyntaxError);
+    expect(() => new Lexer('let x = ~;').tokenize()).toThrowError(
       "Unexpected character '~' at line 1",
     );
   });

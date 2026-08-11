@@ -28,7 +28,8 @@ import {
   unlinkSync as deleteFileSync,
 } from 'fs';
 import path from 'path';
-import { LogError } from '../lib/log';
+import { KinRuntimeError } from '../lib/errors';
+import { LogTypeError as LogError } from '../lib/log';
 
 export function createGlobalEnv(filename: string): Environment {
   const env = new Environment();
@@ -64,7 +65,7 @@ export function createGlobalEnv(filename: string): Environment {
       } catch (error: unknown) {
         const message =
           error instanceof Error ? error.toString() : String(error);
-        throw new Error(message, { cause: error });
+        throw new KinRuntimeError(message, { cause: error });
       }
     }),
     true,
@@ -91,7 +92,7 @@ export function createGlobalEnv(filename: string): Environment {
       } catch (error: unknown) {
         const message =
           error instanceof Error ? error.toString() : String(error);
-        throw new Error(message, { cause: error });
+        throw new KinRuntimeError(message, { cause: error });
       }
     }),
     true,
