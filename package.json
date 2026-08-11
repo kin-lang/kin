@@ -24,6 +24,9 @@
     "test": "vitest --no-watch",
     "test:watch": "vitest --watch",
     "test:cov": "vitest --coverage",
+    "test:examples": "vitest --no-watch tests/examples.test.ts",
+    "test:globals": "vitest --no-watch tests/globals.test.ts",
+    "test:examples:cli": "bash scripts/run-examples.sh",
     "bin-script": "ts-node ./bin/kin.ts"
   },
   "pkg": {

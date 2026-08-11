@@ -1,0 +1,55 @@
+name: Examples and globals
+
+# Regression gate for the language implementation on main:
+# 1. unit tests (including full src/runtime/globals.ts coverage)
+# 2. every shipped example, run with the interpreter from this commit
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  globals-and-unit-tests:
+    name: Unit tests (globals + existing)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+  examples:
+    name: Example programs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the language implementation from this commit
+        run: npm run build
+
+      - name: Run non-interactive examples via the built CLI
+        run: npm run test:examples:cli
+
+      - name: Run every example (including interactive) via the interpreter
+        run: npm run test:examples
