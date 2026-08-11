@@ -168,6 +168,8 @@ env.declareVar(
 
 See the file for more examples and implementation details.
 
+**Networking:** `KIN_URUSOBE` (registered from [`src/runtime/network.ts`](src/runtime/network.ts)) exposes HTTP `kubona` (GET), `ohereza` (POST), and `saba` (any method). The HTTP transport is injectable so tests can mock requests without touching the live internet.
+
 ---
 
 ## 5. Adding Features & Contributing

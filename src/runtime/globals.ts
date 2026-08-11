@@ -29,6 +29,7 @@ import {
 } from 'fs';
 import path from 'path';
 import { LogError } from '../lib/log';
+import { createNetworkBuiltins } from './network';
 
 export function createGlobalEnv(filename: string): Environment {
   const env = new Environment();
@@ -624,6 +625,9 @@ export function createGlobalEnv(filename: string): Environment {
     ),
     true,
   );
+
+  // HTTP networking (GET / POST / generic request)
+  env.declareVar('KIN_URUSOBE', createNetworkBuiltins(), true);
 
   return env;
 }

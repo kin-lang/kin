@@ -1,0 +1,30 @@
+# KIN_URUSOBE — native HTTP networking
+#
+#   KIN_URUSOBE.kubona(url)                     HTTP GET
+#   KIN_URUSOBE.kubona(url, imitwe)             GET with headers
+#   KIN_URUSOBE.ohereza(url, inyandiko)         HTTP POST (string or object body)
+#   KIN_URUSOBE.ohereza(url, inyandiko, imitwe) POST with headers
+#   KIN_URUSOBE.saba(uburyo, url, inyandiko?, imitwe?)
+#                                               any method (GET, POST, PUT, ...)
+#
+# Response object:
+#   imiterere   status code   (e.g. 200)
+#   ubutumwa    status text   (e.g. "OK")
+#   imitwe      headers       (object)
+#   inyandiko   body          (string)
+#
+# Live request (needs a network — do not run in CI):
+#   reka igisubizo = KIN_URUSOBE.kubona("https://example.com")
+#   tangaza_amakuru(igisubizo.imiterere)
+#   tangaza_amakuru(igisubizo.inyandiko)
+#
+#   reka yoherejwe = KIN_URUSOBE.ohereza(
+#       "https://example.com/api",
+#       { amazina: "Kin" }
+#   )
+#   tangaza_amakuru(yoherejwe.inyandiko)
+
+tangaza_amakuru("KIN_URUSOBE ", ubwoko(KIN_URUSOBE))
+tangaza_amakuru("kubona ", ubwoko(KIN_URUSOBE.kubona))
+tangaza_amakuru("ohereza ", ubwoko(KIN_URUSOBE.ohereza))
+tangaza_amakuru("saba ", ubwoko(KIN_URUSOBE.saba))

@@ -722,6 +722,7 @@ describe('createGlobalEnv', () => {
         'KIN_URUTONDE',
         'ubwoko',
         'KIN_INYANDIKO',
+        'KIN_URUSOBE',
       ];
 
       for (const name of expected) {
@@ -761,6 +762,7 @@ describe('createGlobalEnv', () => {
           'siba_ahabanza',
         ],
         KIN_INYANDIKO: ['soma', 'andika', 'vugurura', 'siba'],
+        KIN_URUSOBE: ['kubona', 'ohereza', 'saba'],
       };
 
       for (const [objectName, keys] of Object.entries(methods)) {

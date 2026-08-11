@@ -61,6 +61,7 @@ describe('Example programs (current language implementation)', () => {
         'loops.kin',
         'objects.kin',
         'switch.kin',
+        'network.kin',
       ]),
     );
   });
