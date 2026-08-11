@@ -607,7 +607,7 @@ describe('createGlobalEnv', () => {
 
     beforeEach(() => {
       tmpDir = mkdtempSync(path.join(os.tmpdir(), 'kin-globals-'));
-      // globals.ts resolves files as dirname(cwd + filename), so the
+      // File builtins resolve paths as dirname(cwd + filename), so the
       // Kin filename must be relative to process.cwd().
       filename = path.relative(process.cwd(), path.join(tmpDir, 'prog.kin'));
       writeFileSync(path.join(tmpDir, 'prog.kin'), '');

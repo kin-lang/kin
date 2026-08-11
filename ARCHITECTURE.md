@@ -146,27 +146,26 @@ kin/
 
 ## 4.6 Built-in Methods (Native Functions)
 
-- **Location**: [`src/runtime/globals.ts`](https://github.com/kin-lang/kin/blob/main/src/runtime/globals.ts)
+- **Location**: implementations in [`src/runtime/in-built/`](https://github.com/kin-lang/kin/blob/main/src/runtime/in-built/), registered from [`src/runtime/globals.ts`](https://github.com/kin-lang/kin/blob/main/src/runtime/globals.ts)
 - **Responsibility**: Defines Kin's built-in (native) functions, such as system commands, input/output, and utility functions. These are available to all Kin programs by default.
 
 **How it works:**
-- Built-in methods are registered in the global environment during initialization.
-- Each built-in is implemented as a native JavaScript/TypeScript function and bound to a Kin variable name.
-- Contributors can add new built-ins or modify existing ones by editing `src/runtime/globals.ts`.
+- Each built-in (and its associated helpers) lives in `src/runtime/in-built/`, grouped by domain (`io/`, `math.ts`, `strings.ts`, `time.ts`, `arrays.ts`, `files.ts`, `types.ts`).
+- `createGlobalEnv()` in `src/runtime/globals.ts` imports those implementations and registers them on the global environment.
+- Contributors should add or change a built-in in the matching `in-built` file, then register it in `globals.ts` if it is new.
 
 **Example:**
 ```typescript
+// src/runtime/in-built/io/sisitemu.ts
+export const sisitemu: NativeFnValue = MK_NATIVE_FN((args) => {
+  // ...implementation
+});
+
 // src/runtime/globals.ts
-env.declareVar(
-  'sisitemu',
-  MK_NATIVE_FN((args) => {
-    // ...implementation
-  }),
-  true,
-);
+env.declareVar('sisitemu', sisitemu, true);
 ```
 
-See the file for more examples and implementation details.
+See `src/runtime/in-built/` for more examples and implementation details.
 
 ---
 
@@ -176,7 +175,7 @@ If you are looking to contribute to Kin, please make sure to also read the [`con
 
 - **New Syntax**: Update [`lexer.ts`](https://github.com/kin-lang/kin/blob/main/src/lexer/lexer.ts) (for tokens) and [`parser.ts`](https://github.com/kin-lang/kin/blob/main/src/parser/parser.ts) (for AST generation).
 - **New Semantics**: Update [`interpreter.ts`](https://github.com/kin-lang/kin/blob/main/src/runtime/interpreter.ts) and/or evaluation modules.
-- **New Built-ins**: Add to [`src/runtime/globals.ts`](https://github.com/kin-lang/kin/blob/main/src/runtime/globals.ts).
+- **New Built-ins**: Implement in [`src/runtime/in-built/`](https://github.com/kin-lang/kin/blob/main/src/runtime/in-built/) and register in [`src/runtime/globals.ts`](https://github.com/kin-lang/kin/blob/main/src/runtime/globals.ts).
 - **Testing**: Add/modify tests in [`tests/`](https://github.com/kin-lang/kin/tree/main/tests).
 
 **Workflow:** (see [`contributing.md`](https://github.com/kin-lang/kin/blob/main/contributing.md) for more details)
