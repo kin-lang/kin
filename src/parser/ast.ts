@@ -10,6 +10,7 @@ export type NodeType =
   | 'FunctionDeclaration'
   | 'LoopStatement'
   | 'BreakStatement'
+  | 'ContinueStatement'
   | 'ConditionalStatement'
 
   // Expressions
@@ -88,6 +89,14 @@ export interface LoopStatement extends Stmt {
  */
 export interface BreakStatement extends Stmt {
   kind: 'BreakStatement';
+}
+
+/**
+ * Defines a continue statement (komeza) — skips the rest of the current
+ * loop iteration and starts the next one
+ */
+export interface ContinueStatement extends Stmt {
+  kind: 'ContinueStatement';
 }
 
 /**

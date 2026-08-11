@@ -7,3 +7,13 @@ subiramo_niba(i<=100) {
     }
     i = i + 1
 }
+
+# komeza skips the rest of the current iteration (even numbers here)
+reka n = 0
+subiramo_niba(n < 10) {
+    n = n + 1
+    niba(n % 2 == 0) {
+        komeza
+    }
+    tangaza_amakuru(n)
+}

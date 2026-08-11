@@ -28,6 +28,7 @@ statement ::= variableDeclaration
             | functionDeclaration
             | loopStatement
             | breakStatement
+            | continueStatement
             | ifStatement
             | switchStatement
             | returnStatement
@@ -50,8 +51,9 @@ block ::= "{" statement* "}"
 
 loopStatement ::= "subiramo_niba" "(" expression ")" block
 
-; Semicolon after hagarara is optional.
-breakStatement ::= "hagarara" ";"?
+; Semicolon after hagarara / komeza is optional.
+breakStatement    ::= "hagarara" ";"?
+continueStatement ::= "komeza" ";"?
 
 ; nanone_niba may repeat (parser recurses). niba_byanze is optional and last.
 ifStatement ::= "niba" "(" expression ")" block
@@ -176,7 +178,7 @@ stringLiteral ::= '"' { anyCharacterExceptQuoteOrNewline } '"'
 ; ========================================
 ;
 ; reka  ntahinduka  porogaramu_ntoya  tanga
-; subiramo_niba  hagarara
+; subiramo_niba  hagarara  komeza
 ; niba  nanone_niba  niba_byanze
 ; gereranya  usanze  ibindi
 

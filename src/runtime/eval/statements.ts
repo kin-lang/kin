@@ -6,12 +6,14 @@
 import {
   BreakStatement,
   ConditionalStmt,
+  ContinueStatement,
   FunctionDeclaration,
   LoopStatement,
   Program,
   Stmt,
   VariableDeclaration,
 } from '../../parser/ast';
+import { LogError } from '../../lib/log';
 import Environment from '../environment';
 import { Interpreter } from '../interpreter';
 import { BooleanVal, FunctionValue, MK_NULL, RuntimeVal } from '../values';
@@ -19,6 +21,10 @@ import { BooleanVal, FunctionValue, MK_NULL, RuntimeVal } from '../values';
 export default class EvalStmt {
   /** Set when hagarara (break) is evaluated inside a loop body */
   public static loopBroken = false;
+  /** Set when komeza (continue) is evaluated inside a loop body */
+  public static loopContinued = false;
+  /** Number of loops currently being evaluated */
+  public static loopDepth = 0;
 
   public static eval_program(program: Program, env: Environment): RuntimeVal {
     let lastEvaluated: RuntimeVal = MK_NULL();
@@ -77,14 +83,21 @@ export default class EvalStmt {
     let test = Interpreter.evaluate(declaration.condition, env);
 
     if ((test as BooleanVal).value !== true) return MK_NULL(); // The loop didn't start
-    while ((test as BooleanVal).value) {
-      this.eval_body(body, new Environment(env), false);
-      // hagarara was hit — exit the loop
-      if (this.loopBroken) {
-        this.loopBroken = false;
-        break;
+    this.loopDepth++;
+    try {
+      while ((test as BooleanVal).value) {
+        this.eval_body(body, new Environment(env), false);
+        // hagarara was hit — exit the loop
+        if (this.loopBroken) {
+          this.loopBroken = false;
+          break;
+        }
+        // komeza was hit — skip to the next iteration
+        this.loopContinued = false;
+        test = Interpreter.evaluate(declaration.condition, env);
       }
-      test = Interpreter.evaluate(declaration.condition, env);
+    } finally {
+      this.loopDepth--;
     }
 
     return MK_NULL();
@@ -92,6 +105,16 @@ export default class EvalStmt {
 
   public static eval_break_statement(_declaration: BreakStatement): RuntimeVal {
     this.loopBroken = true;
+    return MK_NULL();
+  }
+
+  public static eval_continue_statement(
+    _declaration: ContinueStatement,
+  ): RuntimeVal {
+    if (this.loopDepth === 0) {
+      LogError('Kin Error: komeza can only be used inside a loop');
+    }
+    this.loopContinued = true;
     return MK_NULL();
   }
 
@@ -112,8 +135,8 @@ export default class EvalStmt {
     // Evaluate the body line by line
     for (const stmt of body) {
       result = Interpreter.evaluate(stmt, scope);
-      // stop evaluating remaining statements when hagarara is reached
-      if (this.loopBroken) {
+      // stop evaluating remaining statements when hagarara or komeza is reached
+      if (this.loopBroken || this.loopContinued) {
         return result;
       }
     }

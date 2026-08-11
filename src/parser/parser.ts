@@ -10,6 +10,7 @@ import {
   AssignmentExpr,
   BinaryExpr,
   BreakStatement,
+  ContinueStatement,
   CallExpr,
   ConditionalStmt,
   Expr,
@@ -30,6 +31,8 @@ import {
 
 export default class Parser {
   private tokens: Token[] = [];
+  /** Number of `subiramo_niba` loops currently being parsed */
+  private loopDepth = 0;
 
   private not_eof(): boolean {
     return this.tokens[0].type != TokenType.EOF;
@@ -58,6 +61,7 @@ export default class Parser {
   public produceAST(sourceCodes: string): Program {
     const lexer = new Lexer(sourceCodes);
     this.tokens = lexer.tokenize();
+    this.loopDepth = 0;
 
     const program: Program = {
       kind: 'Program',
@@ -97,6 +101,8 @@ export default class Parser {
         return this.parse_loop_statement();
       case TokenType.HAGARARA:
         return this.parse_break_statement();
+      case TokenType.KOMEZA:
+        return this.parse_continue_statement();
       case TokenType.POROGARAMU_NTOYA:
         return this.parse_function_declaration();
       case TokenType.TANGA:
@@ -195,6 +201,22 @@ export default class Parser {
     return {
       kind: 'BreakStatement',
     } as BreakStatement;
+  }
+
+  private parse_continue_statement(): Stmt {
+    if (this.loopDepth === 0) {
+      LogError(
+        `On line ${this.at().line}: Kin Error: komeza can only be used inside a loop`,
+      );
+    }
+    this.eat(); // eat komeza keyword
+    // optional semi-colon
+    if (this.at().type == TokenType.SEMI_COLON) {
+      this.eat();
+    }
+    return {
+      kind: 'ContinueStatement',
+    } as ContinueStatement;
   }
 
   private parse_block_statement(): Stmt[] {
@@ -572,13 +594,18 @@ export default class Parser {
     this.expect(TokenType.OPEN_PARANTHESES, `"Expected ( after subiramo_niba"`);
     const condition: Stmt = this.parse_expr();
     this.expect(TokenType.CLOSE_PARANTHESES, `"Expected ) after condition"`);
-    const body: Stmt[] = this.parse_block_statement();
+    this.loopDepth++;
+    try {
+      const body: Stmt[] = this.parse_block_statement();
 
-    return {
-      kind: 'LoopStatement',
-      body,
-      condition,
-    } as LoopStatement;
+      return {
+        kind: 'LoopStatement',
+        body,
+        condition,
+      } as LoopStatement;
+    } finally {
+      this.loopDepth--;
+    }
   }
 
   private parse_function_declaration(): Stmt {
@@ -601,7 +628,15 @@ export default class Parser {
       params.push((arg as Identifier).symbol);
     }
 
-    const body = this.parse_block_statement();
+    // continue/break inside a function are not tied to an enclosing loop
+    const savedLoopDepth = this.loopDepth;
+    this.loopDepth = 0;
+    let body: Stmt[];
+    try {
+      body = this.parse_block_statement();
+    } finally {
+      this.loopDepth = savedLoopDepth;
+    }
 
     // Add a function terminator
     body.push({ kind: 'FunctionTerminator' });
