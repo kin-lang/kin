@@ -311,21 +311,21 @@ export default class Parser {
       TokenType.NEGATION,
       'Expected ! Operator',
     ).lexeme;
-    const variable = this.expect(
-      TokenType.IDENTIFIER,
-      `Expected identifier after unary operator ${operator}`,
-    ).lexeme;
+    // Allow !ident, !(expr), and stacked !!x via primary expressions.
+    const operand = this.parse_primary_expr();
     return {
       kind: 'UnaryExpr',
       operator,
-      variable,
+      operand,
     } as UnaryExpr;
   }
 
   private parse_logical_expr(): Expr {
     let left = this.parse_relational_expr();
 
-    if (['&&', '||'].includes(this.at().lexeme)) {
+    // Chain && and || (same precedence, left-associative) so a grouped
+    // expression like (a && b || c) consumes every operator before ')'.
+    while (['&&', '||'].includes(this.at().lexeme)) {
       const operator = this.eat().lexeme;
       const right = this.parse_relational_expr();
       left = {

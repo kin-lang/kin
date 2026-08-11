@@ -104,9 +104,9 @@ objectProperty ::= identifier (":" expression)?
 ; keys are "0", "1", ...
 arrayLiteral ::= "[" (expression ("," expression)* ","?)? "]"
 
-; Note: at most one && or ||. They share a single precedence and do not
-; chain:  a && b || c  is not one logical expression.
-logicalExpression ::= relationalExpression (("&&" | "||") relationalExpression)?
+; && and || share a single precedence and are left-associative.
+; They chain so grouped expressions consume every operator before ')'.
+logicalExpression ::= relationalExpression (("&&" | "||") relationalExpression)*
 
 ; Note: at most one relational operator. They do not chain:
 ;  a < b < c  is not one comparison.
@@ -144,8 +144,9 @@ primaryExpression ::= identifier
                     | "(" expression ")"
                     | unaryNot
 
-; Note: ! applies only to an identifier, not to a general expression.
-unaryNot ::= "!" identifier
+; ! applies to a primary expression: identifier, literal, or grouped expr.
+; This allows both !flag and !(a != b).
+unaryNot ::= "!" primaryExpression
 
 ; ========================================
 ; Lexical

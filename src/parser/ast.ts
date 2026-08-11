@@ -135,7 +135,7 @@ export interface BinaryExpr extends Expr {
 export interface UnaryExpr extends Expr {
   kind: 'UnaryExpr';
   operator: string;
-  variable: string;
+  operand: Expr;
 }
 
 // foo["bar"]()  should work
