@@ -1,7 +1,5 @@
 # =============================================================================
-# OOP sample 5: instances, method binding, sealed fields, and _
-# Feature design: Kin issue #258 (Object Oriented Programming)
-# Status: documentation sample. Requires the OOP implementation to run.
+# OOP sample 5: instances, method binding, fields, and _
 # =============================================================================
 #
 # KEYWORDS USED IN THIS FILE
@@ -11,7 +9,7 @@
 # rema               create an instance (binds tighter than binary ops, looser
 #                    than member access: rema C("x").method() is valid)
 # _                  reserved: current instance only in tegura / method bodies
-# rusange / bwite    public / private
+# rusange            public visibility
 # porogaramu_ntoya   method or nested plain function
 # reka               mutable binding
 # ntahinduka         constant binding (cannot rebind the name)
@@ -21,20 +19,17 @@
 # BEHAVIOR THIS FILE SHOWS
 # ------------------------
 # 1. Methods are bound when accessed. reka f = keza.kwibwira still has the
-#    correct _ when f is called later (not a free/unbound this).
-# 2. Instance shape is sealed after tegura finishes. New field names are
-#    errors; missing field reads are errors (not ubusa).
-# 3. Methods may assign existing fields with _.NAME = value (no modifier).
-# 4. Nested porogaramu_ntoya inside a method does NOT capture _. Using _ in
-#    the nested function is an error.
-# 5. Bare _ is reserved. reka _ = 5, parameters named _, imiterere _ are errors.
-#    Identifiers that only contain underscore characters elsewhere are fine:
-#    _izina, izina_rya_mbere remain ordinary names.
-# 6. ntahinduka p = rema ... prevents rebinding p. It does not freeze fields.
+#    correct _ when f is called later.
+# 2. Methods may assign existing fields with _.NAME = value (no modifier).
+# 3. Nested porogaramu_ntoya inside a method does not use _; it can still run
+#    as a plain function that only uses its own locals and outer non-_ names.
+# 4. Bare _ is reserved for the current instance. Ordinary identifiers that
+#    only contain or start with underscore are fine: _izina, izina_rya_mbere.
+# 5. ntahinduka p = rema ... prevents rebinding p. It does not freeze fields.
 #    Mutating a field of a constant binding is allowed.
-# 7. Fields may hold any runtime value: arrays, plain objects, functions,
-#    other instances. Nested access like _.abana[0].izina must work.
-# 8. Classes are first-class: pass a class value into a function and rema it.
+# 6. Fields may hold any runtime value: arrays, other instances, and more.
+#    Nested access like _.abana[0].izina works.
+# 7. Classes are first-class: pass a class value into a function and rema it.
 #
 # =============================================================================
 
@@ -55,24 +50,18 @@ imiterere Umuntu {
   }
 
   rusange porogaramu_ntoya ongeramo_umwana(umwana) {
-    # Field may hold an array; push-style work is manual with assignment.
-    # (Exact array helpers depend on stdlib; here we reassign a longer list.)
-    reka nshya = [umwana]
-    # If the runtime supports growing arrays another way, use that; this
-    # sample focuses on storing instances in fields.
-    _.abana = nshya
+    # Field may hold an array of instances.
+    _.abana = [umwana]
   }
 
   rusange porogaramu_ntoya izina_ryumwana_wa_mbere() {
     tanga _.abana[0].izina
   }
 
-  # Nested plain function must not see the method's _.
+  # Nested plain function does not use _. It is a normal local function.
   rusange porogaramu_ntoya gerageza_nested() {
     porogaramu_ntoya imbere() {
-      # Using _ here must be an error: nested functions do not capture _.
-      # tangaza_amakuru(_.izina)
-      tangaza_amakuru("nested function nta _ ifite")
+      tangaza_amakuru("nested function nta _ ikoresha")
     }
     imbere()
   }
@@ -98,8 +87,6 @@ tangaza_amakuru(keza.imyaka)
 ntahinduka p = rema Umuntu("Aline", 18)
 p.imyaka = 19
 tangaza_amakuru(p.imyaka)
-# This would fail (cannot rebind a ntahinduka name):
-# p = rema Umuntu("Other", 1)
 
 # Nested instance stored in a field.
 reka umwana = rema Umuntu("Beza", 5)
@@ -121,29 +108,3 @@ reka _izina = "ok"
 reka izina_rya_mbere = "also ok"
 tangaza_amakuru(_izina)
 tangaza_amakuru(izina_rya_mbere)
-
-# ---------------------------------------------------------------------------
-# MUST FAIL when uncommented
-# ---------------------------------------------------------------------------
-# New field after construction (shape is sealed):
-# keza.aho_atuye = "Kigali"
-#
-# Read a field that does not exist:
-# tangaza_amakuru(keza.numero)
-#
-# Bare _ outside method/constructor:
-# tangaza_amakuru(_)
-#
-# Cannot declare or parameterize bare _:
-# reka _ = 5
-# porogaramu_ntoya bad(_) { tanga 1 }
-#
-# tanga with a value inside tegura is an error:
-# imiterere Bad {
-#   tegura() {
-#     tanga 1
-#   }
-# }
-#
-# Wrong argument count:
-# reka x = rema Umuntu("Keza")

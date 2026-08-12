@@ -1,7 +1,5 @@
 # =============================================================================
 # OOP sample 1: class basics (classes, constructor, fields, methods)
-# Feature design: Kin issue #258 (Object Oriented Programming)
-# Status: documentation sample. Requires the OOP implementation to run.
 # =============================================================================
 #
 # KEYWORDS USED IN THIS FILE
@@ -14,8 +12,8 @@
 # porogaramu_ntoya   method (same keyword as ordinary functions; needs a
 #                    visibility modifier when declared on a class)
 # reka               bind a name to a value (here: store the instance)
-# tangaza_amakuru    print values (debugging / output)
-# tanga              return from a method (no value returned from tegura)
+# tangaza_amakuru    print values
+# tanga              return from a method
 #
 # BEHAVIOR THIS FILE SHOWS
 # ------------------------
@@ -28,7 +26,7 @@
 # 5. Public methods use _; they can read fields and call other methods.
 # 6. Public fields are readable from top level with dot access.
 # 7. A class with no tegura can still be created with zero arguments and
-#    has no fields (shown at the bottom as an empty shape).
+#    has no fields.
 #
 # =============================================================================
 
@@ -45,8 +43,7 @@ imiterere Umuntu {
     tangaza_amakuru("Nitwa ", _.izina, ", mfite imyaka ", _.imyaka)
   }
 
-  # Method that returns a value with tanga (allowed in methods, not in tegura
-  # when a value is given).
+  # Method that returns a value with tanga.
   rusange porogaramu_ntoya izina_ryose() {
     tanga _.izina
   }

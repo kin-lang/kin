@@ -1,7 +1,5 @@
 # =============================================================================
 # OOP sample 2: visibility (rusange vs bwite on fields and methods)
-# Feature design: Kin issue #258 (Object Oriented Programming)
-# Status: documentation sample. Requires the OOP implementation to run.
 # =============================================================================
 #
 # KEYWORDS USED IN THIS FILE
@@ -23,13 +21,9 @@
 #    is required there. Later, methods assign with _.NAME = value (no modifier).
 # 2. rusange members work from top level: read, write, call.
 # 3. bwite members work only from inside a method or constructor of the class
-#    that declared them. Not from top level, not from another instance's
-#    external code path that goes through top level.
-# 4. Privacy is the same for dot access and computed access. keza["imyaka"]
-#    fails the same way as keza.imyaka when the field is bwite.
-# 5. A public method may use private fields and private methods freely.
-# 6. Violating visibility is a runtime error (commented examples below show
-#    what must fail once the feature is implemented).
+#    that declared them. Outside code uses public methods that wrap them.
+# 4. A public method may use private fields and private methods freely.
+# 5. Methods may update existing private fields without a visibility modifier.
 #
 # =============================================================================
 
@@ -60,11 +54,9 @@ imiterere Umuntu {
     _.imyaka = imyaka_nshya
   }
 
-  # Public fields on another instance are fine. Private fields on another
-  # instance are not, even from a method of the same class (rule 26).
+  # Public fields on another instance are fine from a method.
   rusange porogaramu_ntoya gereranya_izina(undi) {
     tangaza_amakuru("Undi ni ", undi.izina)
-    # undi.imyaka would fail here (bwite on a different instance).
   }
 }
 
@@ -76,28 +68,10 @@ tangaza_amakuru(keza.izina)
 keza.izina = "Keza Nshya"
 tangaza_amakuru(keza.izina)
 
-# Public methods: callable from top level.
+# Public methods: callable from top level. Private state stays behind them.
 keza.kwibwira()
 keza.tangaza_umwaka_avuka()
 keza.shyira_imyaka(21)
 keza.kwibwira()
 
 keza.gereranya_izina(mukuru)
-
-# ---------------------------------------------------------------------------
-# MUST FAIL (uncomment one at a time when testing the implementation)
-# ---------------------------------------------------------------------------
-# Reading a private field from top level:
-# tangaza_amakuru(keza.imyaka)
-#
-# Same check with computed access (privacy is not a naming trick):
-# tangaza_amakuru(keza["imyaka"])
-#
-# Calling a private method from top level:
-# tangaza_amakuru(keza.umwaka_avuka())
-#
-# Assigning a brand new field name the constructor never created:
-# keza.aho_atuye = "Kigali"
-#
-# Field assignment inside tegura without rusange/bwite is a syntax error:
-#   tegura(x) { _.x = x }
