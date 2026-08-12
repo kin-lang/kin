@@ -1,0 +1,130 @@
+# =============================================================================
+# OOP sample 4: types, ubwoko, and how classes fit Kin's type model
+# Feature design: Kin issue #258 (Object Oriented Programming)
+# Status: documentation sample. Requires the OOP implementation to run.
+#
+# NOTE ON TYPE CONSTANT NAMES
+# ---------------------------
+# Section 2.2 of the issue leaves built-in type constant names for maintainer
+# confirmation (e.g. UMUBARE, IJAMBO, UKURI, UBUSA, IKINTU, POROGARAMU,
+# IMITERERE). This file uses the proposed names as documentation. Adjust if
+# the maintainer picks different spellings before implementation.
+# =============================================================================
+#
+# KEYWORDS USED IN THIS FILE
+# --------------------------
+# imiterere          declare a class (also the proposed type of class values)
+# ikomoka            inheritance (shown so type checks can stay exact)
+# tegura / rema      construct and instantiate
+# _                  current instance
+# rusange / bwite    visibility
+# porogaramu_ntoya   method or plain function
+# ubwoko             prefix operator: type of a value (was a builtin function)
+# reka               binding
+# tangaza_amakuru    print
+# == / !=            equality (type values and instances use identity)
+#
+# BEHAVIOR THIS FILE SHOWS
+# ------------------------
+# 1. ubwoko is a prefix operator, tighter than every binary operator.
+#    ubwoko x == Umuntu parses as (ubwoko x) == Umuntu.
+# 2. ubwoko(x) with parentheses still works (source compatible).
+# 3. ubwoko of an instance returns the class value itself (not a string name).
+# 4. That makes: ubwoko keza == Umuntu work by identity.
+# 5. Inheritance does NOT widen type checks. If Umwarimu ikomoka Umuntu, then
+#    for m of Umwarimu: ubwoko m == Umwarimu is true, ubwoko m == Umuntu is false.
+# 6. ubwoko of a class returns the built-in type value for classes, so
+#    ubwoko Umuntu == ubwoko Umwarimu is true.
+# 7. User functions and builtins share one function type value.
+# 8. Plain objects stay a different kind of value from class instances.
+# 9. Instances are compared by identity, not by field contents.
+#
+# WHEN TO USE WHAT (teaching note)
+# --------------------------------
+# Object literal {izina: "K"} is a quick bag of values you make on the spot.
+# imiterere is a named shape that always has the same fields and knows how to
+# do things with them through methods.
+#
+# =============================================================================
+
+imiterere Umuntu {
+  tegura(izina, imyaka) {
+    rusange _.izina = izina
+    rusange _.imyaka = imyaka
+  }
+
+  rusange porogaramu_ntoya kwibwira() {
+    tangaza_amakuru("Nitwa ", _.izina)
+  }
+}
+
+imiterere Umwarimu ikomoka Umuntu {
+  rusange porogaramu_ntoya kwibwira() {
+    tangaza_amakuru("Ndi umwarimu, nitwa ", _.izina)
+  }
+}
+
+reka keza = rema Umuntu("Keza", 20)
+reka mwalimu = rema Umwarimu("Keza", 28)
+reka undi = rema Umuntu("Keza", 20)
+
+# Instance type is the class value (exact match, no ancestor walk).
+tangaza_amakuru(ubwoko keza == Umuntu)
+tangaza_amakuru(ubwoko mwalimu == Umwarimu)
+tangaza_amakuru(ubwoko mwalimu == Umuntu)
+
+# Parentheses form remains valid and equivalent.
+tangaza_amakuru(ubwoko(keza) == Umuntu)
+
+# Precedence: ubwoko binds tighter than ==, so this is (ubwoko keza) == Umuntu
+tangaza_amakuru(ubwoko keza == Umuntu)
+
+# Two separately constructed instances are not equal (identity).
+tangaza_amakuru(keza == undi)
+tangaza_amakuru(keza == keza)
+
+# Classes themselves: ubwoko of a class is the class type value.
+# Both Umuntu and Umwarimu are classes, so their ubwoko values match.
+tangaza_amakuru(ubwoko Umuntu == ubwoko Umwarimu)
+
+# Built-in type values (proposed names; identity equality).
+# ubwoko 5 == ubwoko 10 should be true (same number type value).
+# ubwoko 5 == ubwoko "5" should be false (number vs string).
+tangaza_amakuru(ubwoko 5 == ubwoko 10)
+tangaza_amakuru(ubwoko 5 == ubwoko "5")
+
+# User-defined function and a builtin report the same function type value.
+porogaramu_ntoya ongera(a, b) {
+  tanga a + b
+}
+tangaza_amakuru(ubwoko ongera == ubwoko tangaza_amakuru)
+
+# Plain object is not an instance of Umuntu.
+reka bag = {izina: "K", imyaka: 20}
+tangaza_amakuru(bag.izina)
+# ubwoko bag is the object type value, not Umuntu.
+# tangaza_amakuru(ubwoko bag == Umuntu)  # false once types land
+
+# Printing notes (exact format is fixed in the implementation RFC):
+# - printing a class value prints the class name
+# - printing a type value prints its Kinyarwanda type name
+# - printing an instance shows class name and fields (private fields marked)
+tangaza_amakuru(Umuntu)
+tangaza_amakuru(keza)
+tangaza_amakuru(ubwoko 5)
+
+# ---------------------------------------------------------------------------
+# MUST FAIL when uncommented
+# ---------------------------------------------------------------------------
+# Type values only support == and !=:
+# tangaza_amakuru((ubwoko 5) + 1)
+# tangaza_amakuru((ubwoko 5) < (ubwoko 10))
+#
+# No operator overloading on instances:
+# tangaza_amakuru(keza + 1)
+# tangaza_amakuru(keza < undi)
+#
+# rema requires a class:
+# reka x = rema 5()
+# reka y = rema ongera(1, 2)
+# reka z = rema bag()

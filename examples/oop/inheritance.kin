@@ -1,0 +1,138 @@
+# =============================================================================
+# OOP sample 3: inheritance (ikomoka, override, constructor rules)
+# Feature design: Kin issue #258 (Object Oriented Programming)
+# Status: documentation sample. Requires the OOP implementation to run.
+# =============================================================================
+#
+# KEYWORDS USED IN THIS FILE
+# --------------------------
+# imiterere          declare a class
+# ikomoka            single inheritance: child "comes from" one parent class
+# tegura             constructor (child tegura fully replaces parent tegura)
+# rema               create an instance
+# _                  current instance
+# rusange / bwite    public / private visibility
+# porogaramu_ntoya   method
+# reka               local binding
+# tangaza_amakuru    print
+# tanga              return from a method
+#
+# BEHAVIOR THIS FILE SHOWS
+# ------------------------
+# 1. imiterere Child ikomoka Parent { ... } is single inheritance only.
+# 2. Method lookup starts on the instance's class and walks parents upward.
+# 3. A child method with the same name fully replaces the parent method.
+#    There is no super / parent call form.
+# 4. A child tegura fully replaces the parent constructor. The parent tegura
+#    does not run. If the child does not set fields parent methods need, those
+#    methods fail when they read the missing fields (sharp edge of the design).
+# 5. A child with no tegura inherits the parent's constructor and its params.
+# 6. bwite members of the parent are not accessible from child methods.
+# 7. Inheritance cycles are an error at class declaration time (commented).
+#
+# OUT OF SCOPE (do not expect these in Kin OOP)
+# ---------------------------------------------
+# super, static members, abstract classes, interfaces, mixins, multiple
+# inheritance, operator overloading, getters/setters, metaclasses.
+#
+# =============================================================================
+
+# Parent class: shared shape and default behavior.
+imiterere Umuntu {
+  tegura(izina, imyaka) {
+    rusange _.izina = izina
+    rusange _.imyaka = imyaka
+    bwite _.ibanga = "secret"
+  }
+
+  rusange porogaramu_ntoya kwibwira() {
+    tangaza_amakuru("Nitwa ", _.izina, ", mfite imyaka ", _.imyaka)
+  }
+
+  rusange porogaramu_ntoya imyaka_yose() {
+    tanga _.imyaka
+  }
+
+  bwite porogaramu_ntoya soma_ibanga() {
+    tanga _.ibanga
+  }
+
+  rusange porogaramu_ntoya tangaza_ibanga() {
+    tangaza_amakuru(_.soma_ibanga())
+  }
+}
+
+# Child with no tegura: inherits parent's constructor (izina, imyaka).
+imiterere Umwarimu ikomoka Umuntu {
+  # Overrides parent method completely.
+  rusange porogaramu_ntoya kwibwira() {
+    tangaza_amakuru("Ndi umwarimu, nitwa ", _.izina)
+  }
+
+  # New method only on the child.
+  rusange porogaramu_ntoya yigisha(isomo) {
+    tangaza_amakuru(_.izina, " yigisha ", isomo)
+  }
+
+  # Child may use public parent fields set by the inherited constructor.
+  rusange porogaramu_ntoya imyaka_yigisha() {
+    tangaza_amakuru(_.izina, " afite imyaka ", _.imyaka)
+  }
+
+  # Accessing parent bwite from a child method must fail:
+  # rusange porogaramu_ntoya gerageza_ibanga() {
+  #   tanga _.ibanga
+  # }
+}
+
+# Inherited constructor: same parameters as Umuntu.tegura
+reka mwalimu = rema Umwarimu("Keza", 28)
+mwalimu.kwibwira()
+mwalimu.yigisha("matematiki")
+mwalimu.imyaka_yigisha()
+tangaza_amakuru(mwalimu.imyaka_yose())
+
+# Parent private method still not callable from top level.
+# mwalimu.soma_ibanga()
+
+# Public wrapper on the parent still works if fields exist on the instance.
+mwalimu.tangaza_ibanga()
+
+# ---------------------------------------------------------------------------
+# Child that declares its own tegura: parent tegura does NOT run.
+# If this tegura omits a field a parent method reads, that method fails
+# with an error naming the missing field, the method, and the class.
+# ---------------------------------------------------------------------------
+imiterere Umunyeshuri ikomoka Umuntu {
+  tegura(izina) {
+    # Only sets izina. Does not set imyaka (or ibanga).
+    rusange _.izina = izina
+  }
+
+  rusange porogaramu_ntoya kwibwira() {
+    tangaza_amakuru("Ndi umunyeshuri, nitwa ", _.izina)
+  }
+}
+
+reka umunyeshuri = rema Umunyeshuri("Aline")
+umunyeshuri.kwibwira()
+
+# This would fail: parent method imyaka_yose reads _.imyaka, but this child's
+# tegura never created imyaka.
+# tangaza_amakuru(umunyeshuri.imyaka_yose())
+
+# ---------------------------------------------------------------------------
+# MUST FAIL when uncommented
+# ---------------------------------------------------------------------------
+# Inheritance from a non-class:
+# imiterere Bad ikomoka 5 { }
+#
+# Direct cycle:
+# imiterere A ikomoka B { }
+# imiterere B ikomoka A { }
+#
+# Two tegura in one class body:
+# imiterere Double {
+#   tegura() { }
+#   tegura(x) { rusange _.x = x }
+# }

@@ -1,0 +1,85 @@
+# =============================================================================
+# OOP sample 1: class basics (classes, constructor, fields, methods)
+# Feature design: Kin issue #258 (Object Oriented Programming)
+# Status: documentation sample. Requires the OOP implementation to run.
+# =============================================================================
+#
+# KEYWORDS USED IN THIS FILE
+# --------------------------
+# imiterere          declare a class (named shape with fields and methods)
+# tegura             constructor: runs when you create an instance
+# rema               instantiate a class (create an instance)
+# _                  current instance (only inside tegura or a method body)
+# rusange            public: field or method is visible from anywhere
+# porogaramu_ntoya   method (same keyword as ordinary functions; needs a
+#                    visibility modifier when declared on a class)
+# reka               bind a name to a value (here: store the instance)
+# tangaza_amakuru    print values (debugging / output)
+# tanga              return from a method (no value returned from tegura)
+#
+# BEHAVIOR THIS FILE SHOWS
+# ------------------------
+# 1. imiterere NAME { ... } declares a class bound as a constant, like a
+#    function declaration.
+# 2. tegura(params) sets up the instance. Fields are created only by
+#    assignments of the form: VISIBILITY _.NAME = expression
+# 3. Visibility is required on field assignments inside tegura.
+# 4. rema ClassName(args) builds an instance; argument count must match tegura.
+# 5. Public methods use _; they can read fields and call other methods.
+# 6. Public fields are readable from top level with dot access.
+# 7. A class with no tegura can still be created with zero arguments and
+#    has no fields (shown at the bottom as an empty shape).
+#
+# =============================================================================
+
+# A simple person class with a constructor, two public fields, and methods.
+imiterere Umuntu {
+  tegura(izina, imyaka) {
+    # Field shape is fixed here: only names assigned in tegura exist later.
+    rusange _.izina = izina
+    rusange _.imyaka = imyaka
+  }
+
+  # Public method: anyone can call it. _ is the receiver instance.
+  rusange porogaramu_ntoya kwibwira() {
+    tangaza_amakuru("Nitwa ", _.izina, ", mfite imyaka ", _.imyaka)
+  }
+
+  # Method that returns a value with tanga (allowed in methods, not in tegura
+  # when a value is given).
+  rusange porogaramu_ntoya izina_ryose() {
+    tanga _.izina
+  }
+
+  # Methods may call other methods on the same instance through _.
+  rusange porogaramu_ntoya kwibwira_kabiri() {
+    _.kwibwira()
+    _.kwibwira()
+  }
+}
+
+# Create an instance. rema ClassName(...) constructs it.
+reka keza = rema Umuntu("Keza", 20)
+
+# Call a public method.
+keza.kwibwira()
+
+# Read a public field from top level.
+tangaza_amakuru(keza.izina)
+tangaza_amakuru(keza.imyaka)
+
+# Method return value.
+tangaza_amakuru(keza.izina_ryose())
+
+# Method calling another method via _.
+keza.kwibwira_kabiri()
+
+# Class with no constructor: still instantiable with zero args, no fields.
+imiterere IkintuGito {
+  rusange porogaramu_ntoya jya() {
+    tangaza_amakuru("Ikintu gito nta tegura gifite")
+  }
+}
+
+reka gito = rema IkintuGito()
+gito.jya()
