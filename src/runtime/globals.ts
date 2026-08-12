@@ -29,6 +29,7 @@ import {
 } from 'fs';
 import path from 'path';
 import { LogError } from '../lib/log';
+import { Validator } from '../lib/validator';
 
 export function createGlobalEnv(filename: string): Environment {
   const env = new Environment();
@@ -43,6 +44,7 @@ export function createGlobalEnv(filename: string): Environment {
   env.declareVar(
     'tangaza_amakuru',
     MK_NATIVE_FN((args) => {
+      Validator.requireMinArgs('tangaza_amakuru', args.length, 1);
       printValues(args);
       return MK_NULL();
     }),
@@ -53,9 +55,7 @@ export function createGlobalEnv(filename: string): Environment {
   env.declareVar(
     'sisitemu',
     MK_NATIVE_FN((args) => {
-      const MIN_ARGS_LENGTH = 1;
-      if (args.length < MIN_ARGS_LENGTH)
-        LogError('sisitemu expects at least one argument');
+      Validator.requireMinArgs('sisitemu', args.length, 1);
       const cmd = (args[0] as StringVal).value;
 
       try {
@@ -74,9 +74,7 @@ export function createGlobalEnv(filename: string): Environment {
   env.declareVar(
     'injiza_amakuru',
     MK_NATIVE_FN((args) => {
-      const MIN_ARGS_LENGTH = 1;
-      if (args.length < MIN_ARGS_LENGTH)
-        LogError('injiza_amakuru expects at least one argument');
+      Validator.requireMinArgs('injiza_amakuru', args.length, 1);
       const cmd = makeValues(args).value;
 
       try {
@@ -100,9 +98,7 @@ export function createGlobalEnv(filename: string): Environment {
   env.declareVar(
     'hagarara',
     MK_NATIVE_FN((args) => {
-      const MIN_ARGS_LENGTH = 1;
-      if (args.length < MIN_ARGS_LENGTH)
-        LogError('sisitemu expects atleast one argument');
+      Validator.requireMinArgs('hagarara', args.length, 1);
       const exit_code = (args[0] as NumberVal).value;
       if (exit_code != 0 && exit_code != 1)
         LogError('hagarara expects 1 or 0 as exit codes');
@@ -120,9 +116,7 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'umuzikare', // sqrt
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_IMIBARE.umuzikare expects atleast one argument');
+            Validator.requireMinArgs('KIN_IMIBARE.umuzikare', args.length, 1);
             const arg = (args[0] as NumberVal).value;
             return MK_NUMBER(Math.sqrt(arg));
           }),
@@ -130,11 +124,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'umubare_utazwi', // random
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_IMIBARE.umubare_utazwi expects at least two arguments',
-              );
+            Validator.requireMinArgs(
+              'KIN_IMIBARE.umubare_utazwi',
+              args.length,
+              2,
+            );
             const arg1 = (args[0] as NumberVal).value;
             const arg2 = (args[1] as NumberVal).value;
 
@@ -151,11 +145,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'kuraho_ibice', // round
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_IMIBARE.kuraho_ibice expects at least one argument',
-              );
+            Validator.requireMinArgs(
+              'KIN_IMIBARE.kuraho_ibice',
+              args.length,
+              1,
+            );
             const arg = (args[0] as NumberVal).value;
             if (typeof arg != 'number')
               LogError(
@@ -167,9 +161,7 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'sin',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_IMIBARE.sin expects at least one argument');
+            Validator.requireMinArgs('KIN_IMIBARE.sin', args.length, 1);
             const arg = (args[0] as NumberVal).value;
             if (typeof arg != 'number')
               LogError('KIN_IMIBARE.sin expects a number as an argument');
@@ -179,9 +171,7 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'cos',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_IMIBARE.cos expects at least one argument');
+            Validator.requireMinArgs('KIN_IMIBARE.cos', args.length, 1);
             const arg = (args[0] as NumberVal).value;
             if (typeof arg != 'number')
               LogError('KIN_IMIBARE.cos expects a number as an argument');
@@ -191,9 +181,7 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'tan',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_IMIBARE.tan expects at least one argument');
+            Validator.requireMinArgs('KIN_IMIBARE.tan', args.length, 1);
             const arg = (args[0] as NumberVal).value;
             if (typeof arg != 'number')
               LogError('KIN_IMIBARE.tan expects a number as an argument');
@@ -212,6 +200,7 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'huza', // joining 2 string
           MK_NATIVE_FN((args, env) => {
+            Validator.requireMinArgs('KIN_AMAGAMBO.huza', args.length, 1);
             let res = '';
 
             for (let i = 0; i < args.length; i++) {
@@ -226,9 +215,7 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'ingano',
           MK_NATIVE_FN((args, env) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_AMAGAMBO.ingano expects at least one argument');
+            Validator.requireExactArgs('KIN_AMAGAMBO.ingano', args.length, 1);
             const str = (args[0] as StringVal).value;
             if (typeof str != 'string')
               LogError('KIN_AMAGAMBO.ingano expects string as an argument');
@@ -238,18 +225,16 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'inyuguti',
           MK_NATIVE_FN((args, env) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_AMAGAMBO.inyuguti expects at least two argument');
+            Validator.requireExactArgs('KIN_AMAGAMBO.inyuguti', args.length, 2);
             const str = (args[0] as StringVal).value;
             const charIndex = (args[1] as NumberVal).value;
             if (typeof str != 'string')
               LogError(
-                'first argument of KIN_AMABAMBO.inyuguti must be a string',
+                'first argument of KIN_AMAGAMBO.inyuguti must be a string',
               );
             else if (typeof charIndex != 'number')
               LogError(
-                'second argument of KIN_AMABAMBO.inyuguti must be a number',
+                'second argument of KIN_AMAGAMBO.inyuguti must be a number',
               );
             return MK_STRING(str.charAt(charIndex));
           }),
@@ -257,11 +242,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'inyuguti_nkuru',
           MK_NATIVE_FN((args, env) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_AMAGAMBO.inyuguti_nkuru expects at least one argument',
-              );
+            Validator.requireExactArgs(
+              'KIN_AMAGAMBO.inyuguti_nkuru',
+              args.length,
+              1,
+            );
             const str = (args[0] as StringVal).value;
             if (typeof str != 'string')
               LogError(
@@ -273,11 +258,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'inyuguti_ntoya',
           MK_NATIVE_FN((args, env) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_AMAGAMBO.inyuguti_ntoya expects at least one argument',
-              );
+            Validator.requireExactArgs(
+              'KIN_AMAGAMBO.inyuguti_ntoya',
+              args.length,
+              1,
+            );
             const str = (args[0] as StringVal).value;
             if (typeof str != 'string')
               LogError(
@@ -289,9 +274,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'tandukanya', // splitting a string
           MK_NATIVE_FN((args, env) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_AMAGAMBO.tangukanya expects at least two argument');
+            Validator.requireExactArgs(
+              'KIN_AMAGAMBO.tandukanya',
+              args.length,
+              2,
+            );
             const str = (args[0] as StringVal).value;
             const separator = (args[1] as StringVal).value;
             if (typeof str != 'string' || typeof separator != 'string')
@@ -344,9 +331,7 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'ingano',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_URUTONDE.ingano expects at least one argument');
+            Validator.requireMinArgs('KIN_URUTONDE.ingano', args.length, 1);
             const obj = args[0] as ObjectVal;
             if (typeof obj != 'object')
               LogError('KIN_URUTONDE.ingano expects argument to be an array');
@@ -356,11 +341,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'ongera_kumusozo',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_URUTONDE.ongera_kumusozo expects at least two arguments',
-              );
+            Validator.requireMinArgs(
+              'KIN_URUTONDE.ongera_kumusozo',
+              args.length,
+              2,
+            );
             const obj = args[0] as ObjectVal;
             const val = args[1];
             if (typeof obj != 'object')
@@ -375,11 +360,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'siba_kumusozo',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_URUTONDE.siba_kumusozo expects at least one argument',
-              );
+            Validator.requireMinArgs(
+              'KIN_URUTONDE.siba_kumusozo',
+              args.length,
+              1,
+            );
             const obj = args[0] as ObjectVal;
             if (typeof obj != 'object')
               LogError(
@@ -392,11 +377,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'ifite_ikirango',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_URUTONDE.ifite_ikirango expects at least two arguments',
-              );
+            Validator.requireMinArgs(
+              'KIN_URUTONDE.ifite_ikirango',
+              args.length,
+              2,
+            );
             const arr = args[0] as ObjectVal;
             const val = args[1] as StringVal;
 
@@ -406,9 +391,7 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'ifite',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_URUTONDE.ifite expects at least two arguments');
+            Validator.requireMinArgs('KIN_URUTONDE.ifite', args.length, 2);
             const obj = args[0] as ObjectVal; // map with <key, value>
             const arr = obj.properties.values(); // only map's values
             const val = args[1] as StringVal; // value to check
@@ -423,11 +406,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'kora_ijambo',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_URUTONDE.kora_ijambo expects at least one argument',
-              );
+            Validator.requireMinArgs(
+              'KIN_URUTONDE.kora_ijambo',
+              args.length,
+              1,
+            );
             const obj = args[0] as ObjectVal; // map with <key, value>
             const str = Array.from(obj.properties.values())
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -439,11 +422,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'injiza_ahabanza',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_URUTONDE.injiza_ahabanza expects at least two arguments',
-              );
+            Validator.requireMinArgs(
+              'KIN_URUTONDE.injiza_ahabanza',
+              args.length,
+              2,
+            );
             const obj = args[0] as ObjectVal;
             if (typeof obj != 'object')
               LogError(
@@ -467,11 +450,11 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'siba_ahabanza',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_URUTONDE.siba_ahabanza expects at least one argument',
-              );
+            Validator.requireMinArgs(
+              'KIN_URUTONDE.siba_ahabanza',
+              args.length,
+              1,
+            );
             const obj = args[0] as ObjectVal;
             if (typeof obj != 'object')
               LogError(
@@ -498,9 +481,7 @@ export function createGlobalEnv(filename: string): Environment {
   env.declareVar(
     'ubwoko',
     MK_NATIVE_FN((args) => {
-      const MIN_ARGS_LENGTH = 1;
-      if (args.length < MIN_ARGS_LENGTH)
-        LogError('ubwoko expects at least one argument');
+      Validator.requireMinArgs('ubwoko', args.length, 1);
       return MK_STRING(args[0].type);
     }),
     true,
@@ -513,9 +494,7 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'soma',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_INYANDIKO.soma expects at least one argument');
+            Validator.requireMinArgs('KIN_INYANDIKO.soma', args.length, 1);
             const file_location = path.join(
               path.dirname(
                 path.join(
@@ -540,9 +519,7 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'andika',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_URUTONDE.andika expects at least two arguments');
+            Validator.requireMinArgs('KIN_INYANDIKO.andika', args.length, 2);
             const file_location = path.join(
               path.dirname(
                 path.join(
@@ -568,9 +545,7 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'vugurura',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_URUTONDE.vugurura expects at least two arguments');
+            Validator.requireMinArgs('KIN_INYANDIKO.vugurura', args.length, 2);
             const file_location = path.join(
               path.dirname(
                 path.join(
@@ -596,9 +571,7 @@ export function createGlobalEnv(filename: string): Environment {
         .set(
           'siba',
           MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_URUTONDE.siba expects at least one argument');
+            Validator.requireMinArgs('KIN_INYANDIKO.siba', args.length, 1);
             const file_location = path.join(
               path.dirname(
                 path.join(
