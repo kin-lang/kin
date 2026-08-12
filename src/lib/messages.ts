@@ -24,8 +24,6 @@ export function getLang(): string {
 
 /**
  * Resolve a catalog entry. Missing Kinyarwanda keys fall back to English.
- * Entries that still start with "TODO(rw):" also fall back to English so
- * learners never see a marker in the error output.
  */
 export function formatMessage(
   code: string,
@@ -34,11 +32,7 @@ export function formatMessage(
 ): string {
   const primary = catalogs[lang]?.[code];
   const fallback = catalogs.en?.[code];
-  let template = primary ?? fallback ?? code;
-
-  if (lang === 'rw' && template.startsWith('TODO(rw):')) {
-    template = fallback ?? template;
-  }
+  const template = primary ?? fallback ?? code;
 
   return template.replace(/\{(\w+)\}/g, (_, key: string) => {
     const value = params[key];

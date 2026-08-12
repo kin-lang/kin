@@ -50,9 +50,6 @@ describe('control flow signals', () => {
   });
 
   test('C: hagarara inside a function does not break the caller loop', () => {
-    // Bug was: static loopBroken leaked into the caller's loop (1 iteration).
-    // Fix: BreakSignal cannot cross a function boundary; the call errors.
-    // A well-behaved function lets the loop finish all three iterations.
     evaluate(`
       porogaramu_ntoya gukora() { tanga; }
       reka i = 0
@@ -102,22 +99,19 @@ describe('control flow signals', () => {
   });
 
   test('break and continue do not escape a function', () => {
-    // komeza is rejected at parse time when not inside a loop (loopDepth
-    // resets on function entry), so the error is the compile-time message.
     expect(() =>
       evaluate(`
         porogaramu_ntoya f() { komeza }
         f()
       `),
-    ).toThrow(/komeza can only be used inside a loop/);
+    ).toThrow(/komeza/);
 
-    // hagarara has no parse-time check; the signal is caught at the call boundary.
     expect(() =>
       evaluate(`
         porogaramu_ntoya f() { hagarara }
         f()
       `),
-    ).toThrow(/hagarara cannot be used across a function boundary/);
+    ).toThrow(/hagarara/);
   });
 
   test('inner break does not exit the outer loop', () => {

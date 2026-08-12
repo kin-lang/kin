@@ -727,8 +727,6 @@ export default class Parser {
       this.loopDepth = savedLoopDepth;
     }
 
-    // No FunctionTerminator: returns use ReturnSignal now.
-
     const endSpan =
       body.length > 0 ? body[body.length - 1].span : tokenSpan(nameTok);
     return mkFunction(

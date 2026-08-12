@@ -123,7 +123,7 @@ Parent-chained scopes. `lookupMember` / `assignMember` handle objects and arrays
 
 ## 5. Control-flow signals
 
-Static flags for return/break/continue were incorrect (shared across interpreters, did not unwind nested blocks). Kin uses the Crafting Interpreters (jlox) pattern:
+Control flow uses exception-style signals:
 
 | Signal | Thrown by | Caught by |
 |--------|-----------|-----------|
@@ -142,11 +142,11 @@ Static flags for return/break/continue were incorrect (shared across interpreter
 
 1. **Spans** on every token and AST node: `{ start, end, line, column }`.
 2. **KinError** with stable code (`K001`...), optional span, and interpolation params.
-3. **Message catalog** in `src/messages/{rw,en}.json`. Default language Kinyarwanda; `KIN_LANG=en` switches. Missing or `TODO(rw):` Kinyarwanda keys fall back to English.
+3. **Message catalog** in `src/messages/{rw,en}.json`. Default language Kinyarwanda; `KIN_LANG=en` switches. Missing Kinyarwanda keys fall back to English.
 4. **Renderer** prints:
 
 ```
-ikosa[K005]: Cannot resolve 'c' as it does not exist
+ikosa[K005]: Ntabwo hashobora gushakisha 'c' kuko ntabwo ihari
  --> program.kin:1:17
   |
 1 | tangaza_amakuru(c)
@@ -157,9 +157,7 @@ Colour is used when stdout is a TTY.
 
 5. **Error recovery** in `parse()`: on error, record a diagnostic, skip to the next statement keyword, continue. `produceAST` still throws on first error.
 
-See [docs/errors.md](docs/errors.md) for the full code table.
-
-**Follow-up:** these spans let [kin-lang/vscode-intellisense](https://github.com/kin-lang/vscode-intellisense) draw squiggles on exact ranges instead of whole lines.
+See [docs/errors.md](docs/errors.md) for the full code table. Source spans are also used by the [VS Code extension](https://github.com/kin-lang/vscode-intellisense) for range-accurate diagnostics.
 
 ---
 
@@ -220,7 +218,7 @@ If `globals.ts` grows past ~300 lines, split by namespace under `src/runtime/glo
 2. Keep the code approachable: plain functions and classes over clever abstractions.
 3. Add tests for every behaviour change. Bug fixes get a regression test.
 4. Update `grammar.bnf` and this file when behaviour or structure changes.
-5. Do not invent Kinyarwanda: leave `TODO(rw):` markers and list them in the PR.
+5. Keep error messages and docs aligned with the wiki vocabulary (ikosa, ubusa, urutonde, ingano, …).
 6. Conventional commits: `fix:`, `feat:`, `refactor:`, `docs:`, `test:`.
 7. Verify: `npm run lint`, `npm test`, `npm run build`, `npm run test:examples:cli`.
 

@@ -39,4 +39,4 @@ Kinyarwanda entries fall back to English.
 | K030 | Expected function name following porogaramu_ntoya | `porogaramu_ntoya (){}` | Name the function. |
 | K031 | Variable name expected following reka or ntahinduka | `reka = 1` | Write `reka name = ...`. |
 
-Rows with `TODO(rw):` in `src/messages/rw.json` still need a maintainer translation.
+Messages are loaded from `src/messages/rw.json` (default) and `src/messages/en.json` (`KIN_LANG=en`).

@@ -497,7 +497,6 @@ describe('createGlobalEnv', () => {
     });
 
     test('ifite reports whether any value equals the needle', () => {
-      // Fixed: previously only the first element was checked.
       expect(
         asBool(evaluate('KIN_URUTONDE.ifite(["a", "b"], "a")').result),
       ).toBe(true);

@@ -1,6 +1,6 @@
 /****************************************
  *              Signals                 *
- *   Control-flow exceptions (jlox)     *
+ *   Control-flow exceptions            *
  ****************************************/
 
 import { RuntimeVal } from './values';

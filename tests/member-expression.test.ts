@@ -220,13 +220,12 @@ describe('Member Expression (computed + dot access) Tests', () => {
     });
 
     test('should throw a Kin error when walking through a missing nested index', () => {
-      // Arrays raise on out-of-range index instead of returning ubusa.
       expect(() =>
         evaluate(`
           reka arr = [[1, 2]]
           arr[1][0]
         `),
-      ).toThrow(/Array index 1 is out of range/);
+      ).toThrow(/out of range|hanze y'ingano/);
     });
 
     test('should throw a Kin error when accessing a property of a number', () => {
@@ -257,14 +256,13 @@ describe('Member Expression (computed + dot access) Tests', () => {
     });
 
     test('should throw when arithmetic uses an out-of-bounds index', () => {
-      // Behaviour change: out-of-range array access is now an error, not ubusa.
       expect(() =>
         evaluate(`
           reka arr = [1, 2]
           reka v = arr[5] + 1
           v
         `),
-      ).toThrow(/Array index 5 is out of range/);
+      ).toThrow(/out of range|hanze y'ingano/);
     });
 
     test('should run the examples/arrays.kin file without throwing', () => {

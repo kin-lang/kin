@@ -41,7 +41,6 @@ describe('Parser', () => {
   });
 
   test('should parse function declaration with parameters and block statement', () => {
-    // FunctionTerminator removed: returns use ReturnSignal now.
     expect(parse('porogaramu_ntoya add(a, b) { tanga a + b }')).toEqual({
       kind: 'Program',
       body: [
@@ -218,7 +217,6 @@ describe('Parser', () => {
   });
 
   test('should parse array literal with elements', () => {
-    // Arrays are ArrayLiteral nodes (not ObjectLiteral with string keys).
     expect(parse('reka arr = [1, "two", 3]')).toEqual({
       kind: 'Program',
       body: [

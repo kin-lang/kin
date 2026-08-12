@@ -121,9 +121,7 @@ describe('Lexer', () => {
     expect(x.lexeme).toBe('x');
   });
 
-  test('x -5 lexes as identifier, minus, number (not a negative literal)', () => {
-    // Behaviour change: the lexer no longer folds '-' into the number.
-    // Unary minus and subtraction are decided by the parser.
+  test('x -5 lexes as identifier, minus, number', () => {
     const tokens = types(new Lexer('x -5').tokenize());
     expect(tokens).toEqual([
       { line: 1, type: TokenType.IDENTIFIER, lexeme: 'x' },
