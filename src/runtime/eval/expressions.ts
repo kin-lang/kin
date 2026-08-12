@@ -57,11 +57,11 @@ export default class EvalExpr {
   }
 
   public static eval_unary_expr(node: UnaryExpr, env: Environment): RuntimeVal {
-    const ident: RuntimeVal = env.lookupVar(node.variable);
+    const operand: RuntimeVal = Interpreter.evaluate(node.operand, env);
     let value;
     switch (node.operator) {
       case '!':
-        value = MK_BOOL(!(ident as BooleanVal).value);
+        value = MK_BOOL(!(operand as BooleanVal).value);
         break;
       default:
         LogError(

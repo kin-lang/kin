@@ -431,4 +431,143 @@ describe('Parser', () => {
     const parser = new Parser();
     expect(() => parser.produceAST(sourceCode)).toThrowError();
   });
+
+  // Issue #58: nested parentheses with chained logical ops and !(expr)
+  test('should parse nested parenthesized logical and comparison expression (issue #58)', () => {
+    const sourceCode =
+      'reka result = ((var > var2) && !(var3 != var4) || (var5 == var6))';
+    const parser = new Parser();
+    const ast = parser.produceAST(sourceCode);
+
+    const expectedAst = {
+      kind: 'Program',
+      body: [
+        {
+          kind: 'VariableDeclaration',
+          constant: false,
+          identifier: 'result',
+          value: {
+            kind: 'BinaryExpr',
+            operator: '||',
+            left: {
+              kind: 'BinaryExpr',
+              operator: '&&',
+              left: {
+                kind: 'BinaryExpr',
+                operator: '>',
+                left: { kind: 'Identifier', symbol: 'var' },
+                right: { kind: 'Identifier', symbol: 'var2' },
+              },
+              right: {
+                kind: 'UnaryExpr',
+                operator: '!',
+                operand: {
+                  kind: 'BinaryExpr',
+                  operator: '!=',
+                  left: { kind: 'Identifier', symbol: 'var3' },
+                  right: { kind: 'Identifier', symbol: 'var4' },
+                },
+              },
+            },
+            right: {
+              kind: 'BinaryExpr',
+              operator: '==',
+              left: { kind: 'Identifier', symbol: 'var5' },
+              right: { kind: 'Identifier', symbol: 'var6' },
+            },
+          },
+        },
+      ],
+    };
+
+    expect(ast).toEqual(expectedAst);
+  });
+
+  test('should parse negation of a parenthesized comparison', () => {
+    const sourceCode = 'reka result = !(a == b)';
+    const parser = new Parser();
+    const ast = parser.produceAST(sourceCode);
+
+    expect(ast).toEqual({
+      kind: 'Program',
+      body: [
+        {
+          kind: 'VariableDeclaration',
+          constant: false,
+          identifier: 'result',
+          value: {
+            kind: 'UnaryExpr',
+            operator: '!',
+            operand: {
+              kind: 'BinaryExpr',
+              operator: '==',
+              left: { kind: 'Identifier', symbol: 'a' },
+              right: { kind: 'Identifier', symbol: 'b' },
+            },
+          },
+        },
+      ],
+    });
+  });
+
+  test('should parse chained logical operators inside parentheses', () => {
+    const sourceCode = 'reka result = (a && b || c)';
+    const parser = new Parser();
+    const ast = parser.produceAST(sourceCode);
+
+    expect(ast).toEqual({
+      kind: 'Program',
+      body: [
+        {
+          kind: 'VariableDeclaration',
+          constant: false,
+          identifier: 'result',
+          value: {
+            kind: 'BinaryExpr',
+            operator: '||',
+            left: {
+              kind: 'BinaryExpr',
+              operator: '&&',
+              left: { kind: 'Identifier', symbol: 'a' },
+              right: { kind: 'Identifier', symbol: 'b' },
+            },
+            right: { kind: 'Identifier', symbol: 'c' },
+          },
+        },
+      ],
+    });
+  });
+
+  test('should parse deeply nested grouped comparisons', () => {
+    const sourceCode = 'reka result = (((a > b) && (c < d)))';
+    const parser = new Parser();
+    const ast = parser.produceAST(sourceCode);
+
+    expect(ast).toEqual({
+      kind: 'Program',
+      body: [
+        {
+          kind: 'VariableDeclaration',
+          constant: false,
+          identifier: 'result',
+          value: {
+            kind: 'BinaryExpr',
+            operator: '&&',
+            left: {
+              kind: 'BinaryExpr',
+              operator: '>',
+              left: { kind: 'Identifier', symbol: 'a' },
+              right: { kind: 'Identifier', symbol: 'b' },
+            },
+            right: {
+              kind: 'BinaryExpr',
+              operator: '<',
+              left: { kind: 'Identifier', symbol: 'c' },
+              right: { kind: 'Identifier', symbol: 'd' },
+            },
+          },
+        },
+      ],
+    });
+  });
 });
