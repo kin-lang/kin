@@ -40,6 +40,7 @@ Then run Kin from any terminal:
 kin --version
 kin repl
 kin run path/to/program.kin
+kin check path/to/program.kin
 ```
 
 ### Option 2: Standalone Windows executable (no Node.js required)
@@ -143,6 +144,39 @@ Some notable **Kin**'s syntax rules are:
     reka x = 5
     reka x=5
     ```
+
+
+
+### Truthiness
+
+In `niba`, `nanone_niba`, and `subiramo_niba`, values are tested for truthiness:
+
+- **false**: `sibyo`, `ubusa`, and the number `0`
+- **true**: everything else (non-zero numbers, non-empty and empty strings, arrays, objects, functions)
+
+### String concatenation
+
+`+` on two strings concatenates them. A string and a number also concatenate (the number is coerced), so beginners can write `"Ufite imyaka " + imyaka`.
+
+### Arrays
+
+Array literals produce a real array value (`urutonde`). Index out of range raises an error.
+
+```Kin
+reka arr = [10, 20, 30]
+tangaza_amakuru(arr[0])              # 10
+tangaza_amakuru(KIN_URUTONDE.ingano(arr))
+tangaza_amakuru(arr.ingano())          # method form
+tangaza_amakuru(KIN_URUTONDE.ifite(arr, 20))  # nibyo
+```
+
+### Checking a file without running it
+
+```shell
+kin check path/to/program.kin
+```
+
+Reports all parse diagnostics (with line, column, and a caret) and exits non-zero when there are errors. Useful for teachers and CI.
 
 ## Fun fact!
 

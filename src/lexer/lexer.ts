@@ -4,76 +4,97 @@
  ******************************************/
 
 import TokenType from './tokens';
+import { KinError } from '../lib/errors';
+import { Span } from '../lib/span';
 
-/* Token structure */
+/* Token structure: full source span plus legacy line field. */
 export interface Token {
   type: TokenType;
   lexeme: string;
   line: number;
+  column: number;
+  start: number;
+  end: number;
+}
+
+export function tokenSpan(token: Token): Span {
+  return {
+    start: token.start,
+    end: token.end,
+    line: token.line,
+    column: token.column,
+  };
 }
 
 class Lexer {
   private sourceCodes: string;
   private currentPos: number = 0;
   private currentLine: number = 1;
+  private currentColumn: number = 1;
 
   constructor(sourceCodes: string) {
     this.sourceCodes = sourceCodes;
   }
 
-  /* Function to advance the current position */
+  /* Advance one character, tracking line and column. */
   private advance(): void {
+    const ch = this.sourceCodes[this.currentPos];
     this.currentPos++;
+    if (ch === '\n') {
+      this.currentLine++;
+      this.currentColumn = 1;
+    } else {
+      this.currentColumn++;
+    }
   }
 
-  /* Function to get current character without advancing */
   private peek(): string {
     return this.sourceCodes[this.currentPos];
   }
 
-  /*Function to get current character and advance*/
   private consume(): string {
     const char: string = this.peek();
     this.advance();
     return char;
   }
 
-  /* Function to create a new token with a lexeme */
-  private makeTokenWithLexeme(type: TokenType, lexeme: string): Token {
+  private makeToken(
+    type: TokenType,
+    lexeme: string,
+    start: number,
+    line: number,
+    column: number,
+  ): Token {
     return {
-      line: this.currentLine,
       type,
       lexeme,
+      line,
+      column,
+      start,
+      end: this.currentPos,
     };
   }
 
-  /* check if a given string represents a single alphabetical character*/
   private isSingleAlphaCharacter(s: string): boolean {
     return /^[a-zA-Z]$/.test(s);
   }
 
-  /* check if a given string represents a single digit*/
   private isDigit(s: string): boolean {
     return /^[0-9]$/.test(s);
   }
 
-  /* check if a given string represent a digit or an alphabetical character */
   private alphaNumeric(s: string): boolean {
     return this.isDigit(s) || this.isSingleAlphaCharacter(s);
   }
 
-  /* Ignore comments and whitespaces */
   private skipWhitespaceAndComments(): void {
     while (true) {
       const c: string = this.peek();
       if (c === ' ' || c === '\t' || c === '\r') {
         this.advance();
       } else if (c === '\n') {
-        /* Newline character */
         this.advance();
-        this.currentLine++;
       } else if (c === '#') {
-        /* Comment, skip until the end of the line */
         while (
           this.peek() !== '\n' &&
           this.sourceCodes.length !== this.currentPos
@@ -86,9 +107,15 @@ class Lexer {
     }
   }
 
-  /* Function to scan a number */
-  private scanNumber(negative = false): Token {
-    const start: number = this.currentPos;
+  /**
+   * Scan a non-negative number. Unary minus is a separate MINUS token
+   * so that `x -5` parses as subtraction, not as `x` followed by `-5`.
+   */
+  private scanNumber(): Token {
+    const start = this.currentPos;
+    const line = this.currentLine;
+    const column = this.currentColumn;
+
     while (this.isDigit(this.peek())) {
       this.advance();
     }
@@ -100,214 +127,282 @@ class Lexer {
       while (this.isDigit(this.peek())) {
         this.advance();
       }
-      let nbr = this.sourceCodes.slice(start, this.currentPos);
-      if (negative) nbr = '-' + nbr; // add sign for negative numbers
-      return this.makeTokenWithLexeme(TokenType.FLOAT, nbr);
+      const nbr = this.sourceCodes.slice(start, this.currentPos);
+      return this.makeToken(TokenType.FLOAT, nbr, start, line, column);
     }
 
-    let nbr = this.sourceCodes.slice(start, this.currentPos);
-    if (negative) nbr = '-' + nbr; // add sign for negative numbers
-    return this.makeTokenWithLexeme(TokenType.INTEGER, nbr);
+    const nbr = this.sourceCodes.slice(start, this.currentPos);
+    return this.makeToken(TokenType.INTEGER, nbr, start, line, column);
   }
 
-  /* Function to scan a string litelar */
   private scanStringLiteral(): Token {
-    const start: number = this.currentPos;
+    const start = this.currentPos;
+    const line = this.currentLine;
+    const column = this.currentColumn;
     const quote: string = this.consume();
     while (this.peek() !== quote) {
       if (this.peek() === '\n' || this.currentPos === this.sourceCodes.length) {
-        throw new Error(
-          `Unterminated string literal at line ${this.currentLine}`,
-        );
+        throw new KinError('K003', {
+          span: {
+            start,
+            end: this.currentPos,
+            line,
+            column,
+          },
+          message: `Unterminated string literal at line ${line}`,
+        });
       }
       this.advance();
     }
 
     this.advance();
-    return this.makeTokenWithLexeme(
+    return this.makeToken(
       TokenType.STRING,
       this.sourceCodes.slice(start + 1, this.currentPos - 1),
+      start,
+      line,
+      column,
     );
   }
 
-  /* Function to scan an identifier or a keyword */
   private scanIdentifierOrKeyword(): Token {
-    const start: number = this.currentPos;
+    const start = this.currentPos;
+    const line = this.currentLine;
+    const column = this.currentColumn;
     while (this.alphaNumeric(this.peek()) || this.peek() === '_') {
       this.advance();
     }
 
     const lexeme: string = this.sourceCodes.slice(start, this.currentPos);
-
-    /* Check if lexeme is a keywork */
-    if (lexeme === 'niba')
-      return this.makeTokenWithLexeme(TokenType.NIBA, lexeme);
-    if (lexeme === 'nanone_niba')
-      return this.makeTokenWithLexeme(TokenType.NANONE_NIBA, lexeme);
-    if (lexeme === 'niba_byanze')
-      return this.makeTokenWithLexeme(TokenType.NIBA_BYANZE, lexeme);
-    if (lexeme === 'subiramo_niba')
-      return this.makeTokenWithLexeme(TokenType.SUBIRAMO_NIBA, lexeme);
-    if (lexeme === 'hagarara')
-      return this.makeTokenWithLexeme(TokenType.HAGARARA, lexeme);
-    if (lexeme === 'komeza')
-      return this.makeTokenWithLexeme(TokenType.KOMEZA, lexeme);
-    if (lexeme === 'tanga')
-      return this.makeTokenWithLexeme(TokenType.TANGA, lexeme);
-    if (lexeme === 'porogaramu_ntoya')
-      return this.makeTokenWithLexeme(TokenType.POROGARAMU_NTOYA, lexeme);
-    if (lexeme === 'reka')
-      return this.makeTokenWithLexeme(TokenType.REKA, lexeme);
-    if (lexeme === 'ntahinduka')
-      return this.makeTokenWithLexeme(TokenType.NTAHINDUKA, lexeme);
-    if (lexeme === 'gereranya')
-      return this.makeTokenWithLexeme(TokenType.GERERANYA, lexeme);
-    if (lexeme === 'usanze')
-      return this.makeTokenWithLexeme(TokenType.USANZE, lexeme);
-    if (lexeme === 'ibindi')
-      return this.makeTokenWithLexeme(TokenType.IBINDI, lexeme);
-
-    /* Not a keywork, it's an identifier */
-    return this.makeTokenWithLexeme(TokenType.IDENTIFIER, lexeme);
+    const keywordType = this.keywordType(lexeme);
+    if (keywordType !== undefined) {
+      return this.makeToken(keywordType, lexeme, start, line, column);
+    }
+    return this.makeToken(TokenType.IDENTIFIER, lexeme, start, line, column);
   }
 
-  /* Function to scan the next token */
-  private scanToken(): Token {
-    this.skipWhitespaceAndComments(); // skip whitespace and comments
+  private keywordType(lexeme: string): TokenType | undefined {
+    switch (lexeme) {
+      case 'niba':
+        return TokenType.NIBA;
+      case 'nanone_niba':
+        return TokenType.NANONE_NIBA;
+      case 'niba_byanze':
+        return TokenType.NIBA_BYANZE;
+      case 'subiramo_niba':
+        return TokenType.SUBIRAMO_NIBA;
+      case 'hagarara':
+        return TokenType.HAGARARA;
+      case 'komeza':
+        return TokenType.KOMEZA;
+      case 'tanga':
+        return TokenType.TANGA;
+      case 'porogaramu_ntoya':
+        return TokenType.POROGARAMU_NTOYA;
+      case 'reka':
+        return TokenType.REKA;
+      case 'ntahinduka':
+        return TokenType.NTAHINDUKA;
+      case 'gereranya':
+        return TokenType.GERERANYA;
+      case 'usanze':
+        return TokenType.USANZE;
+      case 'ibindi':
+        return TokenType.IBINDI;
+      default:
+        return undefined;
+    }
+  }
 
-    /* Check End Of Source Codes */
+  private scanToken(): Token {
+    this.skipWhitespaceAndComments();
+
     if (this.currentPos == this.sourceCodes.length) {
-      return this.makeTokenWithLexeme(TokenType.EOF, 'EOF');
+      return this.makeToken(
+        TokenType.EOF,
+        'EOF',
+        this.currentPos,
+        this.currentLine,
+        this.currentColumn,
+      );
     }
 
+    const start = this.currentPos;
+    const line = this.currentLine;
+    const column = this.currentColumn;
     const char = this.peek();
 
     switch (char) {
-      /* One-Character tokens */
       case '-':
         this.advance();
         if (this.peek() == '-') {
           this.advance();
-          return this.makeTokenWithLexeme(TokenType.DECREMENT, '--');
+          return this.makeToken(TokenType.DECREMENT, '--', start, line, column);
         }
-        if (this.isDigit(this.peek())) {
-          const negative = true;
-          return this.scanNumber(negative); // scan a negative number
-        }
-        return this.makeTokenWithLexeme(TokenType.MINUS, '-');
+        // No longer fold digits into a negative literal; unary minus is
+        // handled in the parser so `x -5` is subtraction.
+        return this.makeToken(TokenType.MINUS, '-', start, line, column);
       case '+':
         this.advance();
         if (this.peek() == '+') {
           this.advance();
-          return this.makeTokenWithLexeme(TokenType.INCREMENT, '++');
+          return this.makeToken(TokenType.INCREMENT, '++', start, line, column);
         }
-        return this.makeTokenWithLexeme(TokenType.PLUS, '+');
+        return this.makeToken(TokenType.PLUS, '+', start, line, column);
       case '*':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.STAR, '*');
+        return this.makeToken(TokenType.STAR, '*', start, line, column);
       case '=':
         this.advance();
         if (this.peek() == '=') {
           this.advance();
-          return this.makeTokenWithLexeme(TokenType.EQUALITY, '==');
+          return this.makeToken(TokenType.EQUALITY, '==', start, line, column);
         }
-        return this.makeTokenWithLexeme(TokenType.EQUAL, '=');
+        return this.makeToken(TokenType.EQUAL, '=', start, line, column);
       case '/':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.DIVISION, '/');
+        return this.makeToken(TokenType.DIVISION, '/', start, line, column);
       case '^':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.EXPONENT, '^');
+        return this.makeToken(TokenType.EXPONENT, '^', start, line, column);
       case '%':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.MODULO, '%');
+        return this.makeToken(TokenType.MODULO, '%', start, line, column);
       case '&':
         this.advance();
         if (this.peek() == '&') {
           this.advance();
-          return this.makeTokenWithLexeme(TokenType.AND, '&&');
+          return this.makeToken(TokenType.AND, '&&', start, line, column);
         }
-        return this.makeTokenWithLexeme(TokenType.AMPERSAND, '&');
+        return this.makeToken(TokenType.AMPERSAND, '&', start, line, column);
       case '!':
         this.advance();
         if (this.peek() == '=') {
           this.advance();
-          return this.makeTokenWithLexeme(TokenType.NOT_EQUAL, '!=');
+          return this.makeToken(TokenType.NOT_EQUAL, '!=', start, line, column);
         }
-        return this.makeTokenWithLexeme(TokenType.NEGATION, '!');
+        return this.makeToken(TokenType.NEGATION, '!', start, line, column);
       case '|':
         this.advance();
         if (this.peek() == '|') {
           this.advance();
-          return this.makeTokenWithLexeme(TokenType.OR, '||');
+          return this.makeToken(TokenType.OR, '||', start, line, column);
         }
-        throw new Error(`Unexpected character '|' at line ${this.currentLine}`);
+        throw new KinError('K004', {
+          span: { start, end: this.currentPos, line, column },
+          params: { char: '|' },
+          message: `Unexpected character '|' at line ${line}`,
+        });
       case ';':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.SEMI_COLON, ';');
+        return this.makeToken(TokenType.SEMI_COLON, ';', start, line, column);
       case ']':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.CLOSE_BRACKET, ']');
+        return this.makeToken(
+          TokenType.CLOSE_BRACKET,
+          ']',
+          start,
+          line,
+          column,
+        );
       case '[':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.OPEN_BRACKET, '[');
+        return this.makeToken(TokenType.OPEN_BRACKET, '[', start, line, column);
       case '(':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.OPEN_PARANTHESES, '(');
+        return this.makeToken(
+          TokenType.OPEN_PARANTHESES,
+          '(',
+          start,
+          line,
+          column,
+        );
       case ')':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.CLOSE_PARANTHESES, ')');
+        return this.makeToken(
+          TokenType.CLOSE_PARANTHESES,
+          ')',
+          start,
+          line,
+          column,
+        );
       case '{':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.OPEN_CURLY_BRACES, '{');
+        return this.makeToken(
+          TokenType.OPEN_CURLY_BRACES,
+          '{',
+          start,
+          line,
+          column,
+        );
       case '}':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.CLOSE_CURLY_BRACES, '}');
+        return this.makeToken(
+          TokenType.CLOSE_CURLY_BRACES,
+          '}',
+          start,
+          line,
+          column,
+        );
       case '"':
         return this.scanStringLiteral();
       case ':':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.COLON, ':');
+        return this.makeToken(TokenType.COLON, ':', start, line, column);
       case '>':
         this.advance();
         if (this.peek() == '=') {
           this.advance();
-          return this.makeTokenWithLexeme(
+          return this.makeToken(
             TokenType.GREATER_THAN_OR_EQUAL,
             '>=',
+            start,
+            line,
+            column,
           );
         }
-        return this.makeTokenWithLexeme(TokenType.GREATER_THAN, '>');
+        return this.makeToken(TokenType.GREATER_THAN, '>', start, line, column);
       case '<':
         this.advance();
         if (this.peek() == '=') {
           this.advance();
-          return this.makeTokenWithLexeme(TokenType.LESS_THAN_OR_EQUAL, '<=');
+          return this.makeToken(
+            TokenType.LESS_THAN_OR_EQUAL,
+            '<=',
+            start,
+            line,
+            column,
+          );
         }
-        return this.makeTokenWithLexeme(TokenType.LESS_THAN, '<');
+        return this.makeToken(TokenType.LESS_THAN, '<', start, line, column);
       case ',':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.COMMA, ',');
+        return this.makeToken(TokenType.COMMA, ',', start, line, column);
       case '.':
         this.advance();
-        return this.makeTokenWithLexeme(TokenType.DOT, '.');
+        return this.makeToken(TokenType.DOT, '.', start, line, column);
       default:
         if (!Number.isNaN(Number(char))) {
           return this.scanNumber();
         } else if (this.isSingleAlphaCharacter(char) || char === '_') {
           return this.scanIdentifierOrKeyword();
         } else {
-          throw new Error(
-            `Unexpected character '${char}' at line ${this.currentLine}`,
-          );
+          throw new KinError('K004', {
+            span: {
+              start,
+              end: start + 1,
+              line,
+              column,
+            },
+            params: { char },
+            message: `Unexpected character '${char}' at line ${line}`,
+          });
         }
     }
   }
 
-  // generate tokens from the source.
   public tokenize(): Token[] {
     const tokens: Token[] = new Array<Token>();
-    /* Loop through source codes, scanning tokens */
     for (;;) {
       const token: Token = this.scanToken();
       tokens.push(token);

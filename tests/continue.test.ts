@@ -1,8 +1,5 @@
 import { describe, test, expect } from 'vitest';
 import { evaluate, asNumber } from './helpers';
-import { Interpreter } from '../src/runtime/interpreter';
-import { createGlobalEnv } from '../src/runtime/globals';
-import { ContinueStatement } from '../src/parser/ast';
 
 describe('komeza (continue)', () => {
   test('should skip the rest of the current iteration in subiramo_niba', () => {
@@ -84,9 +81,8 @@ describe('komeza (continue)', () => {
   });
 
   test('should throw a clear error when komeza is evaluated outside a loop', () => {
-    const env = createGlobalEnv('test.kin');
-    const stmt = { kind: 'ContinueStatement' } as ContinueStatement;
-    expect(() => Interpreter.evaluate(stmt, env)).toThrowError(
+    // Top-level komeza is caught by eval_program and reported with K013.
+    expect(() => evaluate('komeza')).toThrowError(
       'komeza can only be used inside a loop',
     );
   });

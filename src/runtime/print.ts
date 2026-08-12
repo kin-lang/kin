@@ -9,6 +9,7 @@ import {
   NumberVal,
   BooleanVal,
   ObjectVal,
+  ArrayVal,
   FunctionValue,
   MK_STRING,
 } from './values';
@@ -34,7 +35,7 @@ export function makeValues(args: Array<RuntimeVal>) {
   return MK_STRING(output);
 }
 
-export function matchType(arg: RuntimeVal) {
+export function matchType(arg: RuntimeVal): unknown {
   switch (arg.type) {
     case 'string':
       return (arg as StringVal).value;
@@ -44,18 +45,21 @@ export function matchType(arg: RuntimeVal) {
       return (arg as BooleanVal).value ? 'nibyo' : 'sibyo';
     case 'null':
       return 'ubusa';
+    case 'array': {
+      const arr = arg as ArrayVal;
+      const parts = arr.elements.map((el) => matchType(el));
+      return `[${parts.join(', ')}]`;
+    }
     case 'object': {
       const obj: { [key: string]: unknown } = {};
       const aObj = arg as ObjectVal;
       aObj.properties.forEach((value, key) => {
         obj[key] = matchType(value);
       });
-
       return obj;
     }
     case 'fn': {
       const fn = arg as FunctionValue;
-
       return {
         name: fn.name,
         body: fn.body,

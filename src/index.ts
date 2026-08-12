@@ -9,15 +9,19 @@ import {
   MK_NULL,
   MK_BOOL,
   MK_OBJECT,
+  MK_ARRAY,
   MK_NATIVE_FN,
   RuntimeVal,
   StringVal,
   NumberVal,
   BooleanVal,
   ObjectVal,
+  ArrayVal,
   FunctionValue,
   NullVal,
 } from './runtime/values';
+import { KinError, isKinError } from './lib/errors';
+import { renderKinError, renderThrown } from './lib/render-error';
 
 export {
   Parser,
@@ -30,7 +34,12 @@ export {
   MK_NULL,
   MK_BOOL,
   MK_OBJECT,
+  MK_ARRAY,
   MK_NATIVE_FN,
+  KinError,
+  isKinError,
+  renderKinError,
+  renderThrown,
 };
 
 export type {
@@ -39,6 +48,7 @@ export type {
   NumberVal,
   BooleanVal,
   ObjectVal,
+  ArrayVal,
   FunctionValue,
   NullVal,
 };

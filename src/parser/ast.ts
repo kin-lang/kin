@@ -3,8 +3,10 @@
  *     Defines the structure of Kin's AST     *
  **********************************************/
 
+import { Span, emptySpan, mergeSpans } from '../lib/span';
+
 export type NodeType =
-  //Statements
+  // Statements
   | 'Program'
   | 'VariableDeclaration'
   | 'FunctionDeclaration'
@@ -23,20 +25,19 @@ export type NodeType =
 
   // Literals
   | 'ObjectLiteral'
+  | 'ArrayLiteral'
   | 'NumericLiteral'
   | 'StringLiteral'
   | 'Identifier'
-  | 'Property'
-
-  // Special
-  | 'FunctionTerminator'; // Used to terminate function body when it has no return statement
+  | 'Property';
 
 /**
- *  Statements do not result in a value at runtime.
+ * Statements do not result in a value at runtime.
  * They contain expressions internally.
  */
 export interface Stmt {
   kind: NodeType;
+  span: Span;
 }
 
 /**
@@ -66,12 +67,11 @@ export interface VariableDeclaration extends Stmt {
 /**
  * Defines an if statement
  */
-
 export interface ConditionalStmt extends Stmt {
   kind: 'ConditionalStatement';
   condition: Expr;
   body: Stmt[];
-  determinant?: Expr; // if this is present, the condition is a switch statement
+  determinant?: Expr;
   alternate?: Stmt[];
 }
 
@@ -85,14 +85,14 @@ export interface LoopStatement extends Stmt {
 }
 
 /**
- * Defines a break statement (hagarara) — exits the current loop
+ * Defines a break statement (hagarara) - exits the current loop
  */
 export interface BreakStatement extends Stmt {
   kind: 'BreakStatement';
 }
 
 /**
- * Defines a continue statement (komeza) — skips the rest of the current
+ * Defines a continue statement (komeza) - skips the rest of the current
  * loop iteration and starts the next one
  */
 export interface ContinueStatement extends Stmt {
@@ -102,7 +102,6 @@ export interface ContinueStatement extends Stmt {
 /**
  * Defines a function declaration
  */
-
 export interface FunctionDeclaration extends Stmt {
   kind: 'FunctionDeclaration';
   name: string;
@@ -113,18 +112,9 @@ export interface FunctionDeclaration extends Stmt {
 /**
  * Defines a return statement
  */
-
 export interface ReturnExpr extends Expr {
   kind: 'ReturnExpr';
   value?: Expr;
-}
-
-/**
- * Defines a function terminator, used when a function has no return statement
- */
-
-export interface FunctionTerminator extends Stmt {
-  kind: 'FunctionTerminator';
 }
 
 /**
@@ -132,22 +122,20 @@ export interface FunctionTerminator extends Stmt {
  */
 export interface BinaryExpr extends Expr {
   kind: 'BinaryExpr';
-  operator: string; // must be of type BinaryOperator
+  operator: string;
   left: Expr;
   right: Expr;
 }
 
 /**
- * Defines a unary expression
+ * Defines a unary expression (! or unary -)
  */
-
 export interface UnaryExpr extends Expr {
   kind: 'UnaryExpr';
   operator: string;
   operand: Expr;
 }
 
-// foo["bar"]()  should work
 export interface CallExpr extends Expr {
   kind: 'CallExpression';
   caller: Expr;
@@ -176,7 +164,7 @@ export interface Identifier extends Expr {
 }
 
 /**
- * Represents a numeric constant inside the soure code.
+ * Represents a numeric constant inside the source code.
  */
 export interface NumericLiteral extends Expr {
   kind: 'NumericLiteral';
@@ -198,23 +186,146 @@ export interface ObjectLiteral extends Expr {
   kind: 'ObjectLiteral';
   properties: Property[];
 }
-export interface NumericLiteral extends Expr {
-  kind: 'NumericLiteral';
-  value: number;
+
+/** Array literal: [1, 2, 3]. Evaluates to ArrayVal. */
+export interface ArrayLiteral extends Expr {
+  kind: 'ArrayLiteral';
+  elements: Expr[];
 }
 
-export interface StringLiteral extends Expr {
-  kind: 'StringLiteral';
-  value: string;
+// ---------------------------------------------------------------------------
+// Node factories
+// Constructing a node without a span is a type error after this change.
+// ---------------------------------------------------------------------------
+
+export function mkProgram(body: Stmt[], span: Span): Program {
+  return { kind: 'Program', body, span };
 }
 
-export interface Property extends Expr {
-  kind: 'Property';
-  key: string;
-  value?: Expr;
+export function mkVarDecl(
+  identifier: string,
+  constant: boolean,
+  value: Expr | undefined,
+  span: Span,
+): VariableDeclaration {
+  return { kind: 'VariableDeclaration', identifier, constant, value, span };
 }
 
-export interface ObjectLiteral extends Expr {
-  kind: 'ObjectLiteral';
-  properties: Property[];
+export function mkConditional(
+  condition: Expr,
+  body: Stmt[],
+  alternate: Stmt[] | undefined,
+  span: Span,
+): ConditionalStmt {
+  return {
+    kind: 'ConditionalStatement',
+    condition,
+    body,
+    alternate,
+    span,
+  };
 }
+
+export function mkLoop(
+  condition: Expr,
+  body: Stmt[],
+  span: Span,
+): LoopStatement {
+  return { kind: 'LoopStatement', condition, body, span };
+}
+
+export function mkBreak(span: Span): BreakStatement {
+  return { kind: 'BreakStatement', span };
+}
+
+export function mkContinue(span: Span): ContinueStatement {
+  return { kind: 'ContinueStatement', span };
+}
+
+export function mkFunction(
+  name: string,
+  parameters: string[],
+  body: Stmt[],
+  span: Span,
+): FunctionDeclaration {
+  return { kind: 'FunctionDeclaration', name, parameters, body, span };
+}
+
+export function mkReturn(value: Expr | undefined, span: Span): ReturnExpr {
+  return { kind: 'ReturnExpr', value, span };
+}
+
+export function mkBinary(
+  left: Expr,
+  operator: string,
+  right: Expr,
+): BinaryExpr {
+  return {
+    kind: 'BinaryExpr',
+    left,
+    operator,
+    right,
+    span: mergeSpans(left.span, right.span),
+  };
+}
+
+export function mkUnary(
+  operator: string,
+  operand: Expr,
+  span: Span,
+): UnaryExpr {
+  return { kind: 'UnaryExpr', operator, operand, span };
+}
+
+export function mkCall(caller: Expr, args: Expr[], span: Span): CallExpr {
+  return { kind: 'CallExpression', caller, args, span };
+}
+
+export function mkMember(
+  object: Expr,
+  property: Expr,
+  computed: boolean,
+  span: Span,
+): MemberExpr {
+  return { kind: 'MemberExpression', object, property, computed, span };
+}
+
+export function mkAssign(assigne: Expr, value: Expr): AssignmentExpr {
+  return {
+    kind: 'AssignmentExpression',
+    assigne,
+    value,
+    span: mergeSpans(assigne.span, value.span),
+  };
+}
+
+export function mkIdent(symbol: string, span: Span): Identifier {
+  return { kind: 'Identifier', symbol, span };
+}
+
+export function mkNumber(value: number, span: Span): NumericLiteral {
+  return { kind: 'NumericLiteral', value, span };
+}
+
+export function mkString(value: string, span: Span): StringLiteral {
+  return { kind: 'StringLiteral', value, span };
+}
+
+export function mkProperty(
+  key: string,
+  value: Expr | undefined,
+  span: Span,
+): Property {
+  return { kind: 'Property', key, value, span };
+}
+
+export function mkObject(properties: Property[], span: Span): ObjectLiteral {
+  return { kind: 'ObjectLiteral', properties, span };
+}
+
+export function mkArray(elements: Expr[], span: Span): ArrayLiteral {
+  return { kind: 'ArrayLiteral', elements, span };
+}
+
+export { emptySpan, mergeSpans };
+export type { Span };

@@ -6,8 +6,18 @@
 
 import { Interpreter } from '..';
 import { Identifier, MemberExpr } from '../parser/ast';
-import { LogError } from '../lib/log';
-import { MK_NULL, NumberVal, ObjectVal, RuntimeVal, StringVal } from './values';
+import { KinError } from '../lib/errors';
+import {
+  ArrayVal,
+  MK_NATIVE_FN,
+  MK_NULL,
+  NumberVal,
+  ObjectVal,
+  RuntimeVal,
+  StringVal,
+  typeName,
+} from './values';
+import { lookupMethod } from './methods';
 
 export default class Environment {
   private parent?: Environment;
@@ -26,9 +36,10 @@ export default class Environment {
     constant: boolean,
   ): RuntimeVal {
     if (this.variables.has(varname)) {
-      throw new Error(
-        `Cannot declare variable ${varname}. As it already is defined.`,
-      );
+      throw new KinError('K007', {
+        params: { name: varname },
+        message: `Cannot declare variable ${varname}. As it already is defined.`,
+      });
     }
 
     this.variables.set(varname, value);
@@ -41,11 +52,11 @@ export default class Environment {
   public assignVar(varname: string, value: RuntimeVal): RuntimeVal {
     const env = this.resolve(varname);
 
-    // Cannot assign to constant
     if (env.constants.has(varname)) {
-      throw new Error(
-        `Cannot reassign to variable "${varname}" as it's constant.`,
-      );
+      throw new KinError('K006', {
+        params: { name: varname },
+        message: `Cannot reassign to variable "${varname}" as it's constant.`,
+      });
     }
 
     env.variables.set(varname, value);
@@ -54,14 +65,71 @@ export default class Environment {
   }
 
   public lookupMember(expr: MemberExpr): RuntimeVal {
-    const { obj, key } = this.resolveMemberTarget(expr);
+    const { container, key, isArray } = this.resolveMemberTarget(expr);
 
+    if (isArray) {
+      const arr = container as ArrayVal;
+      // Method name via dot: arr.ingano -> native method wrapper is handled
+      // by eval_member_expr when the next node is a call. For bare property
+      // read of a method name we return a bound-style native later; for
+      // numeric index we index the array.
+      if (!expr.computed) {
+        // Dot access on array: only methods make sense; missing -> null.
+        const method = lookupMethod(arr, key);
+        if (method) {
+          return MK_NATIVE_FN((args) => method(arr, args, expr.span));
+        }
+        return MK_NULL();
+      }
+      const index = Number(key);
+      if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index >= arr.elements.length
+      ) {
+        throw new KinError('K016', {
+          span: expr.span,
+          params: { index: key, length: arr.elements.length },
+          message: `Array index ${key} is out of range (length ${arr.elements.length})`,
+        });
+      }
+      return arr.elements[index];
+    }
+
+    const obj = container as ObjectVal;
     return obj.properties.get(key) ?? MK_NULL();
   }
 
   public assignMember(expr: MemberExpr, value: RuntimeVal): RuntimeVal {
-    const { obj, key } = this.resolveMemberTarget(expr);
+    const { container, key, isArray } = this.resolveMemberTarget(expr);
 
+    if (isArray) {
+      const arr = container as ArrayVal;
+      const index = Number(key);
+      if (!Number.isInteger(index) || index < 0) {
+        throw new KinError('K016', {
+          span: expr.span,
+          params: { index: key, length: arr.elements.length },
+          message: `Array index ${key} is out of range (length ${arr.elements.length})`,
+        });
+      }
+      // Allow extending by exactly one past the end (like push via index).
+      if (index > arr.elements.length) {
+        throw new KinError('K016', {
+          span: expr.span,
+          params: { index: key, length: arr.elements.length },
+          message: `Array index ${key} is out of range (length ${arr.elements.length})`,
+        });
+      }
+      if (index === arr.elements.length) {
+        arr.elements.push(value);
+      } else {
+        arr.elements[index] = value;
+      }
+      return value;
+    }
+
+    const obj = container as ObjectVal;
     obj.properties.set(key, value);
     return value;
   }
@@ -76,12 +144,12 @@ export default class Environment {
 
   /**
    * Walks a member expression (e.g. `arr[0][1]` or `obj.a.b.c`) down to the
-   * object/array the leaf property belongs to, resolving every computed index
-   * in the current scope. Throws a Kin error when the target is not an object.
+   * container the leaf property belongs to.
    */
   private resolveMemberTarget(expr: MemberExpr): {
-    obj: ObjectVal;
+    container: ObjectVal | ArrayVal;
     key: string;
+    isArray: boolean;
   } {
     let obj: RuntimeVal;
 
@@ -96,25 +164,53 @@ export default class Environment {
 
     const key = this.resolveMemberKey(expr);
 
-    if (obj === undefined || obj.type !== 'object') {
-      const type =
-        obj === undefined || obj.type === 'null' ? 'ubusa' : obj.type;
-
-      LogError(`Cannot access property '${key}' of ${type}`);
+    // Method lookup on string / array is handled for computed=false by
+    // returning a bound native; still need a container for indexing.
+    if (obj && obj.type === 'array') {
+      return { container: obj as ArrayVal, key, isArray: true };
     }
 
-    return { obj: obj as ObjectVal, key };
+    if (obj && obj.type === 'string' && !expr.computed) {
+      // String methods: return a synthetic object path via lookupMember.
+      // Handled specially: treat as array-like method table.
+      const method = lookupMethod(obj, key);
+      if (method) {
+        // Surface the method via a temporary object so lookupMember works.
+        const fake: ObjectVal = {
+          type: 'object',
+          properties: new Map([
+            [key, MK_NATIVE_FN((args) => method(obj, args, expr.span))],
+          ]),
+        };
+        return { container: fake, key, isArray: false };
+      }
+    }
+
+    if (obj === undefined || obj.type !== 'object') {
+      const type =
+        obj === undefined || obj.type === 'null' ? 'ubusa' : typeName(obj);
+
+      throw new KinError('K008', {
+        span: expr.span,
+        params: { key, type },
+        message: `Cannot access property '${key}' of ${type}`,
+      });
+    }
+
+    return { container: obj as ObjectVal, key, isArray: false };
   }
 
   private resolveMemberKey(expr: MemberExpr): string {
-    // Dot access (obj.member): the property is an identifier.
     if (!expr.computed) return (expr.property as Identifier).symbol;
 
-    // Bracket access (obj[expr]): the property is an expression to evaluate.
     const evaluated = Interpreter.evaluate(expr.property, this);
 
     if (evaluated.type !== 'string' && evaluated.type !== 'number') {
-      LogError(`Cannot use ${evaluated.type} as an index/key`);
+      throw new KinError('K009', {
+        span: expr.property.span,
+        params: { type: typeName(evaluated) },
+        message: `Cannot use ${evaluated.type} as an index/key`,
+      });
     }
 
     return (evaluated as StringVal | NumberVal).value.toString();
@@ -122,15 +218,18 @@ export default class Environment {
 
   public lookupVar(varname: string): RuntimeVal {
     const env = this.resolve(varname);
-
     return env.variables.get(varname) as RuntimeVal;
   }
 
   public resolve(varname: string): Environment {
     if (this.variables.has(varname)) return this;
 
-    if (this.parent == undefined)
-      throw new Error(`Cannot resolve '${varname}' as it does not exist.`);
+    if (this.parent == undefined) {
+      throw new KinError('K005', {
+        params: { name: varname },
+        message: `Cannot resolve '${varname}' as it does not exist.`,
+      });
+    }
 
     return this.parent.resolve(varname);
   }
