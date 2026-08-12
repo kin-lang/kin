@@ -6,20 +6,24 @@
 import {
   BooleanVal,
   FunctionValue,
+  MK_ARRAY,
   MK_BOOL,
   MK_NULL,
   MK_NUMBER,
+  MK_STRING,
   NativeFnValue,
-  NullVal,
   NumberVal,
   ObjectVal,
   RuntimeVal,
   StringVal,
+  typeName,
+  valuesEqual,
 } from '../values';
 import {
   Identifier,
   AssignmentExpr,
   ObjectLiteral,
+  ArrayLiteral,
   MemberExpr,
   BinaryExpr,
   CallExpr,
@@ -29,18 +33,55 @@ import {
 
 import Environment from '../environment';
 import { Interpreter } from '../interpreter';
-import { LogError } from '../../lib/log';
+import { KinError } from '../../lib/errors';
+import { BreakSignal, ContinueSignal, ReturnSignal } from '../signals';
+import { Span } from '../../lib/span';
+
+type BinOp = (lhs: RuntimeVal, rhs: RuntimeVal, span?: Span) => RuntimeVal;
+
+function num(v: RuntimeVal): number {
+  return (v as NumberVal).value;
+}
+
+function str(v: RuntimeVal): string {
+  return (v as StringVal).value;
+}
+
+/** Dispatch table keyed by "leftType::op::rightType". */
+const binaryOps: Record<string, BinOp> = {
+  'number::+::number': (l, r) => MK_NUMBER(num(l) + num(r)),
+  'number::-::number': (l, r) => MK_NUMBER(num(l) - num(r)),
+  'number::*::number': (l, r) => MK_NUMBER(num(l) * num(r)),
+  'number::/::number': (l, r) => MK_NUMBER(num(l) / num(r)),
+  'number::^::number': (l, r) => MK_NUMBER(num(l) ** num(r)),
+  'number::%::number': (l, r) => MK_NUMBER(num(l) % num(r)),
+  'number::<::number': (l, r) => MK_BOOL(num(l) < num(r)),
+  'number::>::number': (l, r) => MK_BOOL(num(l) > num(r)),
+  'number::<=::number': (l, r) => MK_BOOL(num(l) <= num(r)),
+  'number::>=::number': (l, r) => MK_BOOL(num(l) >= num(r)),
+
+  // String concatenation. number is coerced so beginners can write
+  // "Ufite imyaka " + imyaka without an extra conversion step.
+  'string::+::string': (l, r) => MK_STRING(str(l) + str(r)),
+  'string::+::number': (l, r) => MK_STRING(str(l) + String(num(r))),
+  'number::+::string': (l, r) => MK_STRING(String(num(l)) + str(r)),
+
+  // Locale-independent string comparison (UTF-16 code units).
+  'string::<::string': (l, r) => MK_BOOL(str(l) < str(r)),
+  'string::>::string': (l, r) => MK_BOOL(str(l) > str(r)),
+  'string::<=::string': (l, r) => MK_BOOL(str(l) <= str(r)),
+  'string::>=::string': (l, r) => MK_BOOL(str(l) >= str(r)),
+};
+
+// Logical operators use a separate path so the key never collides with
+// the '|' field separator (boolean|||boolean was ambiguous).
 
 export default class EvalExpr {
-  public static functionReturned = false; // flag to check if function returned
-  public static functionReturnValue: RuntimeVal = MK_NULL(); // value to return from function
-
   public static eval_identifier(
     ident: Identifier,
     env: Environment,
   ): RuntimeVal {
-    const val = env.lookupVar(ident.symbol);
-    return val;
+    return env.lookupVar(ident.symbol);
   }
 
   public static eval_binary_expr(
@@ -49,28 +90,38 @@ export default class EvalExpr {
   ): RuntimeVal {
     const lhs = Interpreter.evaluate(node.left, env);
     const rhs = Interpreter.evaluate(node.right, env);
-    return this.eval_numeric_binary_expr(
-      lhs as RuntimeVal,
-      rhs as RuntimeVal,
-      node.operator,
-    );
+    return this.eval_binary_op(lhs, rhs, node.operator, node.span);
   }
 
   public static eval_unary_expr(node: UnaryExpr, env: Environment): RuntimeVal {
     const operand: RuntimeVal = Interpreter.evaluate(node.operand, env);
-    let value;
     switch (node.operator) {
       case '!':
-        value = MK_BOOL(!(operand as BooleanVal).value);
-        break;
+        if (operand.type === 'boolean') {
+          return MK_BOOL(!(operand as BooleanVal).value);
+        }
+        // Truthiness-based not for non-booleans.
+        if (operand.type === 'null') return MK_BOOL(true);
+        if (operand.type === 'number') {
+          return MK_BOOL((operand as NumberVal).value === 0);
+        }
+        return MK_BOOL(false);
+      case '-':
+        if (operand.type !== 'number') {
+          throw new KinError('K024', {
+            span: node.span,
+            params: { op: '-', type: typeName(operand) },
+            message: `Unary operator '-' is not supported on ${typeName(operand)}`,
+          });
+        }
+        return MK_NUMBER(-(operand as NumberVal).value);
       default:
-        LogError(
-          'Unsupported unary operator ',
-          node.operator,
-          ' report this issue to our developers',
-        );
+        throw new KinError('K024', {
+          span: node.span,
+          params: { op: node.operator, type: typeName(operand) },
+          message: `Unsupported unary operator ${node.operator}`,
+        });
     }
-    return value as RuntimeVal;
   }
 
   public static eval_assignment(
@@ -79,13 +130,14 @@ export default class EvalExpr {
   ): RuntimeVal {
     if (node.assigne.kind === 'MemberExpression')
       return this.eval_member_expr(env, node);
-    if (node.assigne.kind !== 'Identifier')
-      throw new Error(
-        `Invalid left-hand-side expression: ${JSON.stringify(node.assigne)}.`,
-      );
+    if (node.assigne.kind !== 'Identifier') {
+      throw new KinError('K023', {
+        span: node.assigne.span,
+        message: `Invalid left-hand-side expression: ${JSON.stringify(node.assigne)}.`,
+      });
+    }
 
     const varname = (node.assigne as Identifier).symbol;
-
     return env.assignVar(varname, Interpreter.evaluate(node.value, env));
   }
 
@@ -107,14 +159,20 @@ export default class EvalExpr {
     return object;
   }
 
+  public static eval_array_expr(
+    arr: ArrayLiteral,
+    env: Environment,
+  ): RuntimeVal {
+    const elements = arr.elements.map((el) => Interpreter.evaluate(el, env));
+    return MK_ARRAY(elements);
+  }
+
   public static eval_call_expr(expr: CallExpr, env: Environment): RuntimeVal {
     const args = expr.args.map((arg) => Interpreter.evaluate(arg, env));
     const fn = Interpreter.evaluate(expr.caller, env);
 
     if (fn.type == 'native-fn') {
-      const result = (fn as NativeFnValue).call(args, env);
-
-      return result;
+      return (fn as NativeFnValue).call(args, env);
     }
 
     if (fn.type == 'fn') {
@@ -122,41 +180,54 @@ export default class EvalExpr {
       const scope = new Environment(func.declarationEnv);
 
       if (args.length != func.parameters.length) {
-        LogError(
-          "Kin Error: number of function's arguments must equal to it's the parameters",
-        );
+        throw new KinError('K011', {
+          span: expr.span,
+          params: {
+            expected: func.parameters.length,
+            got: args.length,
+          },
+          message:
+            "Kin Error: number of function's arguments must equal to it's the parameters",
+        });
       }
 
-      // Create the variables for the parameters list
       for (let i = 0; i < func.parameters.length; i++) {
-        // verify arity of function
-        const varname = func.parameters[i];
-        scope.declareVar(varname, args[i], false);
+        scope.declareVar(func.parameters[i], args[i], false);
       }
 
-      // Evaluate the function body line by line
-      for (const stmt of func.body) {
-        // stop when return statement is reached
-        if (this.functionReturned) {
-          this.functionReturned = false;
-
-          return this.functionReturnValue;
+      try {
+        for (const stmt of func.body) {
+          Interpreter.evaluate(stmt, scope);
         }
-
-        if (stmt.kind === 'FunctionTerminator') break;
-
-        Interpreter.evaluate(stmt, scope);
+      } catch (e) {
+        if (e instanceof ReturnSignal) {
+          return e.value;
+        }
+        if (e instanceof BreakSignal) {
+          throw new KinError('K019', {
+            span: expr.span,
+            params: { name: 'hagarara' },
+            message: 'hagarara cannot be used across a function boundary',
+          });
+        }
+        if (e instanceof ContinueSignal) {
+          throw new KinError('K019', {
+            span: expr.span,
+            params: { name: 'komeza' },
+            message: 'komeza cannot be used across a function boundary',
+          });
+        }
+        throw e;
       }
 
-      // We only reach here when the function did not return hence return null
-      const result: RuntimeVal = MK_NULL();
-
-      return result;
+      return MK_NULL();
     }
 
-    throw new Error(
-      'Cannot call value that is not a function: ' + JSON.stringify(fn),
-    );
+    throw new KinError('K010', {
+      span: expr.span,
+      message:
+        'Cannot call value that is not a function: ' + JSON.stringify(fn),
+    });
   }
 
   public static eval_return_expr(
@@ -166,10 +237,7 @@ export default class EvalExpr {
     const value = expr.value
       ? Interpreter.evaluate(expr.value, env)
       : MK_NULL();
-
-    this.functionReturned = true;
-    this.functionReturnValue = value;
-    return value;
+    throw new ReturnSignal(value);
   }
 
   public static eval_member_expr(
@@ -185,106 +253,58 @@ export default class EvalExpr {
         Interpreter.evaluate(node.value, env),
       );
     } else {
-      throw new Error(
-        `Evaluating a member expression is not possible without a member or assignment expression.`,
-      );
+      throw new KinError('K027', {
+        message:
+          'Evaluating a member expression is not possible without a member or assignment expression.',
+      });
     }
   }
 
-  private static eval_numeric_binary_expr(
+  private static eval_binary_op(
     lhs: RuntimeVal,
     rhs: RuntimeVal,
     operator: string,
+    span?: Span,
   ): RuntimeVal {
+    if (operator === '==') {
+      return MK_BOOL(valuesEqual(lhs, rhs));
+    }
     if (operator === '!=') {
-      return this.equals(lhs, rhs, false);
-    } else if (operator === '==') {
-      return this.equals(lhs, rhs, true);
-    } else if (operator === '&&') {
-      const llhs = lhs as BooleanVal;
-      const rrhs = rhs as BooleanVal;
+      return MK_BOOL(!valuesEqual(lhs, rhs));
+    }
 
-      return MK_BOOL(llhs.value && rrhs.value);
-    } else if (operator === '||') {
-      const llhs = lhs as BooleanVal;
-      const rrhs = rhs as BooleanVal;
-
-      return MK_BOOL(llhs.value || rrhs.value);
-    } else if (lhs.type === 'number' && rhs.type === 'number') {
-      const llhs = lhs as NumberVal;
-      const rrhs = rhs as NumberVal;
-
-      switch (operator) {
-        case '+':
-          return MK_NUMBER(llhs.value + rrhs.value);
-        case '-':
-          return MK_NUMBER(llhs.value - rrhs.value);
-        case '*':
-          return MK_NUMBER(llhs.value * rrhs.value);
-        case '/':
-          return MK_NUMBER(llhs.value / rrhs.value);
-        case '^':
-          return MK_NUMBER(llhs.value ** rrhs.value);
-        case '%':
-          return MK_NUMBER(llhs.value % rrhs.value);
-        case '<':
-          return MK_BOOL(llhs.value < rrhs.value);
-        case '>':
-          return MK_BOOL(llhs.value > rrhs.value);
-        case '<=':
-          return MK_BOOL(llhs.value <= rrhs.value);
-        case '>=':
-          return MK_BOOL(llhs.value >= rrhs.value);
-        default:
-          throw new Error(
-            `Unknown operator provided in operation: ${lhs}, ${rhs}.`,
-          );
+    if (operator === '&&' || operator === '||') {
+      if (lhs.type !== 'boolean' || rhs.type !== 'boolean') {
+        throw new KinError('K012', {
+          span,
+          params: {
+            op: operator,
+            left: typeName(lhs),
+            right: typeName(rhs),
+          },
+          message: `Operator '${operator}' cannot be applied to ${typeName(lhs)} and ${typeName(rhs)}`,
+        });
       }
-    } else {
-      return MK_NULL();
+      const lv = (lhs as BooleanVal).value;
+      const rv = (rhs as BooleanVal).value;
+      return MK_BOOL(operator === '&&' ? lv && rv : lv || rv);
     }
-  }
 
-  private static equals(
-    lhs: RuntimeVal,
-    rhs: RuntimeVal,
-    strict: boolean,
-  ): RuntimeVal {
-    const compare = strict
-      ? (a: unknown, b: unknown) => a === b
-      : (a: unknown, b: unknown) => a !== b;
-
-    switch (lhs.type) {
-      case 'boolean':
-        return MK_BOOL(
-          compare((lhs as BooleanVal).value, (rhs as BooleanVal).value),
-        );
-      case 'number':
-        return MK_BOOL(
-          compare((lhs as NumberVal).value, (rhs as NumberVal).value),
-        );
-      case 'string':
-        return MK_BOOL(
-          compare((lhs as StringVal).value, (rhs as StringVal).value),
-        );
-      case 'fn':
-        return MK_BOOL(
-          compare((lhs as FunctionValue).body, (rhs as FunctionValue).body),
-        );
-      case 'native-fn':
-        return MK_BOOL(
-          compare((lhs as NativeFnValue).call, (rhs as NativeFnValue).call),
-        );
-      case 'null':
-        return MK_BOOL(compare((lhs as NullVal).value, (rhs as NullVal).value));
-      case 'object':
-        return MK_BOOL(
-          compare((lhs as ObjectVal).properties, (rhs as ObjectVal).properties),
-        );
-      default:
-        throw new Error(
-          `RunTime: Unhandled type in equals function: ${lhs}, ${rhs}`,
-        );
+    // Separator is '::' so operators that contain '|' never collide.
+    const key = `${lhs.type}::${operator}::${rhs.type}`;
+    const impl = binaryOps[key];
+    if (impl) {
+      return impl(lhs, rhs, span);
     }
+
+    throw new KinError('K012', {
+      span,
+      params: {
+        op: operator,
+        left: typeName(lhs),
+        right: typeName(rhs),
+      },
+      message: `Operator '${operator}' cannot be applied to ${typeName(lhs)} and ${typeName(rhs)}`,
+    });
   }
 }

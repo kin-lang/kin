@@ -225,7 +225,7 @@ describe('Member Expression (computed + dot access) Tests', () => {
           reka arr = [[1, 2]]
           arr[1][0]
         `),
-      ).toThrow("Cannot access property '0' of ubusa");
+      ).toThrow(/out of range|hanze y'ingano/);
     });
 
     test('should throw a Kin error when accessing a property of a number', () => {
@@ -255,14 +255,14 @@ describe('Member Expression (computed + dot access) Tests', () => {
       expect(result.type).toBe('null');
     });
 
-    test('should not throw when arithmetic uses an out-of-bounds index', () => {
-      const result = evaluate(`
-        reka arr = [1, 2]
-        reka v = arr[5] + 1
-        v
-      `);
-
-      expect(result.type).toBe('null');
+    test('should throw when arithmetic uses an out-of-bounds index', () => {
+      expect(() =>
+        evaluate(`
+          reka arr = [1, 2]
+          reka v = arr[5] + 1
+          v
+        `),
+      ).toThrow(/out of range|hanze y'ingano/);
     });
 
     test('should run the examples/arrays.kin file without throwing', () => {

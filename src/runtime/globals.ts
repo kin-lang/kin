@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 /*************************************************************************************************************
  *                                                    Globals                                                *
  *              Global environment for Kin, it contains it's global env, variables and functions             *
@@ -13,10 +11,12 @@ import {
   MK_STRING,
   MK_OBJECT,
   MK_NUMBER,
+  MK_ARRAY,
   StringVal,
   NumberVal,
   RuntimeVal,
-  ObjectVal,
+  ArrayVal,
+  typeName,
 } from './values';
 import Environment from './environment';
 import { makeValues, printValues } from './print';
@@ -28,7 +28,18 @@ import {
   unlinkSync as deleteFileSync,
 } from 'fs';
 import path from 'path';
-import { LogError } from '../lib/log';
+import { KinError } from '../lib/errors';
+import { defineNative } from './native';
+import { valuesEqual } from './values';
+
+function filePathFrom(env: Environment, relative: string): string {
+  return path.join(
+    path.dirname(
+      path.join(process.cwd(), (env.lookupVar('filename') as StringVal).value),
+    ),
+    relative,
+  );
+}
 
 export function createGlobalEnv(filename: string): Environment {
   const env = new Environment();
@@ -39,7 +50,6 @@ export function createGlobalEnv(filename: string): Environment {
 
   env.declareVar('ikosa', MK_NULL(), false);
 
-  // Define a native builtin method
   env.declareVar(
     'tangaza_amakuru',
     MK_NATIVE_FN((args) => {
@@ -49,288 +59,234 @@ export function createGlobalEnv(filename: string): Environment {
     true,
   );
 
-  // for executing the system commands
   env.declareVar(
     'sisitemu',
-    MK_NATIVE_FN((args) => {
-      const MIN_ARGS_LENGTH = 1;
-      if (args.length < MIN_ARGS_LENGTH)
-        LogError('sisitemu expects at least one argument');
-      const cmd = (args[0] as StringVal).value;
-
-      try {
-        const result = execSync(cmd, { encoding: 'utf-8' });
-        return MK_STRING(result.trim());
-      } catch (error: unknown) {
-        const message =
-          error instanceof Error ? error.toString() : String(error);
-        throw new Error(message, { cause: error });
-      }
+    defineNative({
+      name: 'sisitemu',
+      params: ['string'],
+      fn: (args) => {
+        const cmd = (args[0] as StringVal).value;
+        try {
+          const result = execSync(cmd, { encoding: 'utf-8' });
+          return MK_STRING(result.trim());
+        } catch (error: unknown) {
+          const message =
+            error instanceof Error ? error.toString() : String(error);
+          throw new Error(message, { cause: error });
+        }
+      },
     }),
     true,
   );
 
-  // for getting input from a user
   env.declareVar(
     'injiza_amakuru',
-    MK_NATIVE_FN((args) => {
-      const MIN_ARGS_LENGTH = 1;
-      if (args.length < MIN_ARGS_LENGTH)
-        LogError('injiza_amakuru expects at least one argument');
-      const cmd = makeValues(args).value;
-
-      try {
-        const result = prompt()(cmd);
-        if (result !== null) {
-          const numberRegex = /^-?\d+(\.\d*)?$/; // regex for numbers and floats
-          if (numberRegex.test(result)) return MK_NUMBER(Number(result));
-          return MK_STRING(result);
-        } else {
+    defineNative({
+      name: 'injiza_amakuru',
+      minArgs: 1,
+      fn: (args) => {
+        const cmd = makeValues(args).value;
+        try {
+          const result = prompt()(cmd);
+          if (result !== null) {
+            const numberRegex = /^-?\d+(\.\d*)?$/;
+            if (numberRegex.test(result)) return MK_NUMBER(Number(result));
+            return MK_STRING(result);
+          }
           return MK_NULL();
+        } catch (error: unknown) {
+          const message =
+            error instanceof Error ? error.toString() : String(error);
+          throw new Error(message, { cause: error });
         }
-      } catch (error: unknown) {
-        const message =
-          error instanceof Error ? error.toString() : String(error);
-        throw new Error(message, { cause: error });
-      }
+      },
     }),
     true,
   );
 
+  // Process exit. Named hagarara in the env; the lexer keyword shadows it
+  // in source, so it is only reachable via the JS API.
   env.declareVar(
     'hagarara',
-    MK_NATIVE_FN((args) => {
-      const MIN_ARGS_LENGTH = 1;
-      if (args.length < MIN_ARGS_LENGTH)
-        LogError('sisitemu expects atleast one argument');
-      const exit_code = (args[0] as NumberVal).value;
-      if (exit_code != 0 && exit_code != 1)
-        LogError('hagarara expects 1 or 0 as exit codes');
-      process.exit(exit_code);
+    defineNative({
+      name: 'hagarara',
+      params: ['number'],
+      fn: (args) => {
+        const exit_code = (args[0] as NumberVal).value;
+        if (exit_code != 0 && exit_code != 1) {
+          throw new KinError('K025', {
+            message: 'hagarara expects 1 or 0 as exit codes',
+          });
+        }
+        process.exit(exit_code);
+      },
     }),
     true,
   );
 
-  // Kin mathematics utility functions
   env.declareVar(
     'KIN_IMIBARE',
     MK_OBJECT(
       new Map()
-        .set('pi', MK_NUMBER(Math.PI)) // PI
+        .set('pi', MK_NUMBER(Math.PI))
         .set(
-          'umuzikare', // sqrt
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_IMIBARE.umuzikare expects atleast one argument');
-            const arg = (args[0] as NumberVal).value;
-            return MK_NUMBER(Math.sqrt(arg));
+          'umuzikare',
+          defineNative({
+            name: 'KIN_IMIBARE.umuzikare',
+            params: ['number'],
+            fn: (args) => MK_NUMBER(Math.sqrt((args[0] as NumberVal).value)),
           }),
         )
         .set(
-          'umubare_utazwi', // random
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_IMIBARE.umubare_utazwi expects at least two arguments',
+          'umubare_utazwi',
+          defineNative({
+            name: 'KIN_IMIBARE.umubare_utazwi',
+            params: ['number', 'number'],
+            fn: (args) => {
+              const arg1 = (args[0] as NumberVal).value;
+              const arg2 = (args[1] as NumberVal).value;
+              const min = Math.ceil(arg1);
+              const max = Math.floor(arg2);
+              return MK_NUMBER(
+                Math.floor(Math.random() * (max - min + 1)) + min,
               );
-            const arg1 = (args[0] as NumberVal).value;
-            const arg2 = (args[1] as NumberVal).value;
-
-            if (typeof arg1 != 'number' && typeof arg2 != 'number')
-              LogError(
-                "KIN_IMIBARE.umubare_utazwi expects 2 arguments of type 'number'",
-              );
-
-            const min = Math.ceil(arg1);
-            const max = Math.floor(arg2);
-            return MK_NUMBER(Math.floor(Math.random() * (max - min + 1)) + min);
+            },
           }),
         )
         .set(
-          'kuraho_ibice', // round
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_IMIBARE.kuraho_ibice expects at least one argument',
-              );
-            const arg = (args[0] as NumberVal).value;
-            if (typeof arg != 'number')
-              LogError(
-                'KIN_IMIBARE.kuraho_ibice expects a number as an argument',
-              );
-            return MK_NUMBER(Math.round(arg));
+          'kuraho_ibice',
+          defineNative({
+            name: 'KIN_IMIBARE.kuraho_ibice',
+            params: ['number'],
+            fn: (args) => MK_NUMBER(Math.round((args[0] as NumberVal).value)),
           }),
         )
         .set(
           'sin',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_IMIBARE.sin expects at least one argument');
-            const arg = (args[0] as NumberVal).value;
-            if (typeof arg != 'number')
-              LogError('KIN_IMIBARE.sin expects a number as an argument');
-            return MK_NUMBER(Math.sin(arg));
+          defineNative({
+            name: 'KIN_IMIBARE.sin',
+            params: ['number'],
+            fn: (args) => MK_NUMBER(Math.sin((args[0] as NumberVal).value)),
           }),
         )
         .set(
           'cos',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_IMIBARE.cos expects at least one argument');
-            const arg = (args[0] as NumberVal).value;
-            if (typeof arg != 'number')
-              LogError('KIN_IMIBARE.cos expects a number as an argument');
-            return MK_NUMBER(Math.cos(arg));
+          defineNative({
+            name: 'KIN_IMIBARE.cos',
+            params: ['number'],
+            fn: (args) => MK_NUMBER(Math.cos((args[0] as NumberVal).value)),
           }),
         )
         .set(
           'tan',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_IMIBARE.tan expects at least one argument');
-            const arg = (args[0] as NumberVal).value;
-            if (typeof arg != 'number')
-              LogError('KIN_IMIBARE.tan expects a number as an argument');
-            return MK_NUMBER(Math.tan(arg));
+          defineNative({
+            name: 'KIN_IMIBARE.tan',
+            params: ['number'],
+            fn: (args) => MK_NUMBER(Math.tan((args[0] as NumberVal).value)),
           }),
         ),
     ),
     true,
   );
 
-  // String manipulation utility functions
   env.declareVar(
     'KIN_AMAGAMBO',
     MK_OBJECT(
       new Map()
         .set(
-          'huza', // joining 2 string
-          MK_NATIVE_FN((args, env) => {
-            let res = '';
-
-            for (let i = 0; i < args.length; i++) {
-              const arg = args[i] as StringVal;
-
-              res += arg.value;
-            }
-
-            return MK_STRING(res);
+          'huza',
+          defineNative({
+            name: 'KIN_AMAGAMBO.huza',
+            minArgs: 0,
+            fn: (args) => {
+              let res = '';
+              for (let i = 0; i < args.length; i++) {
+                res += (args[i] as StringVal).value;
+              }
+              return MK_STRING(res);
+            },
           }),
         )
         .set(
           'ingano',
-          MK_NATIVE_FN((args, env) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_AMAGAMBO.ingano expects at least one argument');
-            const str = (args[0] as StringVal).value;
-            if (typeof str != 'string')
-              LogError('KIN_AMAGAMBO.ingano expects string as an argument');
-            return MK_NUMBER(str.length);
+          defineNative({
+            name: 'KIN_AMAGAMBO.ingano',
+            params: ['string'],
+            fn: (args) => MK_NUMBER((args[0] as StringVal).value.length),
           }),
         )
         .set(
           'inyuguti',
-          MK_NATIVE_FN((args, env) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_AMAGAMBO.inyuguti expects at least two argument');
-            const str = (args[0] as StringVal).value;
-            const charIndex = (args[1] as NumberVal).value;
-            if (typeof str != 'string')
-              LogError(
-                'first argument of KIN_AMABAMBO.inyuguti must be a string',
-              );
-            else if (typeof charIndex != 'number')
-              LogError(
-                'second argument of KIN_AMABAMBO.inyuguti must be a number',
-              );
-            return MK_STRING(str.charAt(charIndex));
+          defineNative({
+            name: 'KIN_AMAGAMBO.inyuguti',
+            params: ['string', 'number'],
+            fn: (args) => {
+              const s = (args[0] as StringVal).value;
+              const i = (args[1] as NumberVal).value;
+              return MK_STRING(s.charAt(i));
+            },
           }),
         )
         .set(
           'inyuguti_nkuru',
-          MK_NATIVE_FN((args, env) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_AMAGAMBO.inyuguti_nkuru expects at least one argument',
-              );
-            const str = (args[0] as StringVal).value;
-            if (typeof str != 'string')
-              LogError(
-                'KIN_AMAGAMBO.inyuguti_nkuru expect a string as an argument',
-              );
-            return MK_STRING(str.toUpperCase());
+          defineNative({
+            name: 'KIN_AMAGAMBO.inyuguti_nkuru',
+            params: ['string'],
+            fn: (args) => MK_STRING((args[0] as StringVal).value.toUpperCase()),
           }),
         )
         .set(
           'inyuguti_ntoya',
-          MK_NATIVE_FN((args, env) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_AMAGAMBO.inyuguti_ntoya expects at least one argument',
-              );
-            const str = (args[0] as StringVal).value;
-            if (typeof str != 'string')
-              LogError(
-                'KIN_AMAGAMBO.inyuguti_ntoya expect a string as an argument',
-              );
-            return MK_STRING(str.toLowerCase());
+          defineNative({
+            name: 'KIN_AMAGAMBO.inyuguti_ntoya',
+            params: ['string'],
+            fn: (args) => MK_STRING((args[0] as StringVal).value.toLowerCase()),
           }),
         )
         .set(
-          'tandukanya', // splitting a string
-          MK_NATIVE_FN((args, env) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_AMAGAMBO.tangukanya expects at least two argument');
-            const str = (args[0] as StringVal).value;
-            const separator = (args[1] as StringVal).value;
-            if (typeof str != 'string' || typeof separator != 'string')
-              LogError(
-                'KIN_AMAGAMBO.tandukanya expects 2 arguments to be strings',
+          'tandukanya',
+          defineNative({
+            name: 'KIN_AMAGAMBO.tandukanya',
+            params: ['string', 'string'],
+            fn: (args) => {
+              const s = (args[0] as StringVal).value;
+              const separator = (args[1] as StringVal).value;
+              return MK_ARRAY(
+                s.split(separator).map((part) => MK_STRING(part)),
               );
-            const arr = new Map<string, RuntimeVal>();
-            str.split(separator).map((s, i) => {
-              // s for string and i for index
-              arr.set(i.toString(), MK_STRING(s));
-            });
-            return MK_OBJECT(arr);
+            },
           }),
         ),
     ),
     true,
   );
 
-  // time built in function for KIN
   env.declareVar(
     'KIN_IGIHE',
     MK_OBJECT(
       new Map()
         .set(
           'isaha',
-          MK_NATIVE_FN((args, env) => {
-            return MK_STRING(moment().format('HH:mm:ss'));
+          defineNative({
+            name: 'KIN_IGIHE.isaha',
+            minArgs: 0,
+            fn: () => MK_STRING(moment().format('HH:mm:ss')),
           }),
         )
         .set(
           'umunsi',
-          MK_NATIVE_FN((args, env) => {
-            return MK_STRING(moment().format('dddd'));
+          defineNative({
+            name: 'KIN_IGIHE.umunsi',
+            minArgs: 0,
+            fn: () => MK_STRING(moment().format('dddd')),
           }),
         )
         .set(
           'itariki',
-          MK_NATIVE_FN((args, env) => {
-            return MK_STRING(moment().format('Do MMM YY'));
+          defineNative({
+            name: 'KIN_IGIHE.itariki',
+            minArgs: 0,
+            fn: () => MK_STRING(moment().format('Do MMM YY')),
           }),
         ),
     ),
@@ -343,152 +299,109 @@ export function createGlobalEnv(filename: string): Environment {
       new Map()
         .set(
           'ingano',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_URUTONDE.ingano expects at least one argument');
-            const obj = args[0] as ObjectVal;
-            if (typeof obj != 'object')
-              LogError('KIN_URUTONDE.ingano expects argument to be an array');
-            return MK_NUMBER(obj.properties.size);
+          defineNative({
+            name: 'KIN_URUTONDE.ingano',
+            params: ['array'],
+            fn: (args) => MK_NUMBER((args[0] as ArrayVal).elements.length),
           }),
         )
         .set(
           'ongera_kumusozo',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_URUTONDE.ongera_kumusozo expects at least two arguments',
-              );
-            const obj = args[0] as ObjectVal;
-            const val = args[1];
-            if (typeof obj != 'object')
-              LogError(
-                'KIN_URUTONDE.ongera_kumusozo expects first argument to be an array',
-              );
-            const key = obj.properties.size; // get the size of the map
-            obj.properties.set(key.toString(), val);
-            return MK_NUMBER(obj.properties.size); // return the new size of arr.
+          defineNative({
+            name: 'KIN_URUTONDE.ongera_kumusozo',
+            params: ['array', 'any'],
+            fn: (args) => {
+              const arr = args[0] as ArrayVal;
+              arr.elements.push(args[1]);
+              return MK_NUMBER(arr.elements.length);
+            },
           }),
         )
         .set(
           'siba_kumusozo',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_URUTONDE.siba_kumusozo expects at least one argument',
-              );
-            const obj = args[0] as ObjectVal;
-            if (typeof obj != 'object')
-              LogError(
-                'KIN_URUTONDE.siba_kumusozo expects an argument to be an array',
-              );
-            obj.properties.delete((obj.properties.size - 1).toString()); // remove the last element
-            return MK_NUMBER(obj.properties.size); // return the new size of arr.
+          defineNative({
+            name: 'KIN_URUTONDE.siba_kumusozo',
+            params: ['array'],
+            fn: (args) => {
+              const arr = args[0] as ArrayVal;
+              if (arr.elements.length > 0) arr.elements.pop();
+              return MK_NUMBER(arr.elements.length);
+            },
           }),
         )
         .set(
           'ifite_ikirango',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_URUTONDE.ifite_ikirango expects at least two arguments',
+          defineNative({
+            name: 'KIN_URUTONDE.ifite_ikirango',
+            params: ['array', 'string'],
+            fn: (args) => {
+              const arr = args[0] as ArrayVal;
+              const key = (args[1] as StringVal).value;
+              const idx = Number(key);
+              return MK_BOOL(
+                Number.isInteger(idx) && idx >= 0 && idx < arr.elements.length,
               );
-            const arr = args[0] as ObjectVal;
-            const val = args[1] as StringVal;
-
-            return MK_BOOL(arr.properties.has(val.value));
+            },
           }),
         )
         .set(
           'ifite',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_URUTONDE.ifite expects at least two arguments');
-            const obj = args[0] as ObjectVal; // map with <key, value>
-            const arr = obj.properties.values(); // only map's values
-            const val = args[1] as StringVal; // value to check
-            const nextVal = arr.next()?.value as RuntimeVal | undefined;
-            return MK_BOOL(
-              nextVal !== undefined &&
-                'value' in nextVal &&
-                nextVal.value === val.value,
-            );
+          defineNative({
+            name: 'KIN_URUTONDE.ifite',
+            params: ['array', 'any'],
+            fn: (args) => {
+              const arr = args[0] as ArrayVal;
+              const needle = args[1];
+              for (const el of arr.elements) {
+                if (valuesEqual(el, needle)) return MK_BOOL(true);
+              }
+              return MK_BOOL(false);
+            },
           }),
         )
         .set(
           'kora_ijambo',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_URUTONDE.kora_ijambo expects at least one argument',
-              );
-            const obj = args[0] as ObjectVal; // map with <key, value>
-            const str = Array.from(obj.properties.values())
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              .map((v: any) => v?.value)
-              .join('');
-            return MK_STRING(str);
+          defineNative({
+            name: 'KIN_URUTONDE.kora_ijambo',
+            params: ['array'],
+            fn: (args) => {
+              const arr = args[0] as ArrayVal;
+              const str = arr.elements
+                .map((v: RuntimeVal) => {
+                  if (
+                    'value' in v &&
+                    v.value !== null &&
+                    v.value !== undefined
+                  ) {
+                    return String((v as { value: unknown }).value);
+                  }
+                  return '';
+                })
+                .join('');
+              return MK_STRING(str);
+            },
           }),
         )
         .set(
           'injiza_ahabanza',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_URUTONDE.injiza_ahabanza expects at least two arguments',
-              );
-            const obj = args[0] as ObjectVal;
-            if (typeof obj != 'object')
-              LogError(
-                'KIN_URUTONDE.injiza_ahabanza expects an argument to be an array',
-              );
-            const val = args[1] as RuntimeVal;
-
-            // New array with new value
-            const newArr: ObjectVal = { type: 'object', properties: new Map() };
-
-            // Setting values accordingly && Shift existing elements' keys by 1
-            newArr.properties.set('0', val);
-
-            for (const [key, value] of obj.properties) {
-              newArr.properties.set((parseInt(key) + 1).toString(), value);
-            }
-
-            return newArr;
+          defineNative({
+            name: 'KIN_URUTONDE.injiza_ahabanza',
+            params: ['array', 'any'],
+            fn: (args) => {
+              const arr = args[0] as ArrayVal;
+              return MK_ARRAY([args[1], ...arr.elements]);
+            },
           }),
         )
         .set(
           'siba_ahabanza',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError(
-                'KIN_URUTONDE.siba_ahabanza expects at least one argument',
-              );
-            const obj = args[0] as ObjectVal;
-            if (typeof obj != 'object')
-              LogError(
-                'KIN_URUTONDE.siba_ahabanza expects an argument to be an array',
-              );
-
-            // New array with removed value
-            const newArr: ObjectVal = { type: 'object', properties: new Map() };
-
-            // Skip the first element
-            for (const [key, value] of obj.properties) {
-              if (parseInt(key) !== 0) {
-                newArr.properties.set((parseInt(key) - 1).toString(), value);
-              }
-            }
-
-            return newArr;
+          defineNative({
+            name: 'KIN_URUTONDE.siba_ahabanza',
+            params: ['array'],
+            fn: (args) => {
+              const arr = args[0] as ArrayVal;
+              return MK_ARRAY(arr.elements.slice(1));
+            },
           }),
         ),
     ),
@@ -497,11 +410,10 @@ export function createGlobalEnv(filename: string): Environment {
 
   env.declareVar(
     'ubwoko',
-    MK_NATIVE_FN((args) => {
-      const MIN_ARGS_LENGTH = 1;
-      if (args.length < MIN_ARGS_LENGTH)
-        LogError('ubwoko expects at least one argument');
-      return MK_STRING(args[0].type);
+    defineNative({
+      name: 'ubwoko',
+      minArgs: 1,
+      fn: (args) => MK_STRING(typeName(args[0])),
     }),
     true,
   );
@@ -512,113 +424,92 @@ export function createGlobalEnv(filename: string): Environment {
       new Map()
         .set(
           'soma',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_INYANDIKO.soma expects at least one argument');
-            const file_location = path.join(
-              path.dirname(
-                path.join(
-                  process.cwd(),
-                  (env.lookupVar('filename') as StringVal).value,
-                ),
-              ),
-              (args[0] as StringVal).value,
-            );
-            try {
-              const data = readFileSync(file_location, 'utf-8');
-              return MK_STRING(data);
-            } catch (error) {
-              if (error instanceof Error) {
-                return MK_STRING(error.message);
+          defineNative({
+            name: 'KIN_INYANDIKO.soma',
+            params: ['string'],
+            fn: (args, e) => {
+              const file_location = filePathFrom(
+                e,
+                (args[0] as StringVal).value,
+              );
+              try {
+                const data = readFileSync(file_location, 'utf-8');
+                return MK_STRING(data);
+              } catch (error) {
+                if (error instanceof Error) {
+                  return MK_STRING(error.message);
+                }
+                return MK_STRING(error as string);
               }
-
-              return MK_STRING(error as string);
-            }
+            },
           }),
         )
         .set(
           'andika',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_URUTONDE.andika expects at least two arguments');
-            const file_location = path.join(
-              path.dirname(
-                path.join(
-                  process.cwd(),
-                  (env.lookupVar('filename') as StringVal).value,
-                ),
-              ),
-              (args[0] as StringVal).value,
-            );
-            const data = args[1] as StringVal;
-            try {
-              writeFileSync(file_location, data.value, 'utf-8');
-              return MK_BOOL();
-            } catch (error: unknown) {
-              if (error instanceof Error) {
-                return MK_STRING(error.message);
+          defineNative({
+            name: 'KIN_INYANDIKO.andika',
+            params: ['string', 'string'],
+            fn: (args, e) => {
+              const file_location = filePathFrom(
+                e,
+                (args[0] as StringVal).value,
+              );
+              const data = args[1] as StringVal;
+              try {
+                writeFileSync(file_location, data.value, 'utf-8');
+                return MK_BOOL();
+              } catch (error: unknown) {
+                if (error instanceof Error) {
+                  return MK_STRING(error.message);
+                }
+                return MK_STRING(error as string);
               }
-
-              return MK_STRING(error as string);
-            }
+            },
           }),
         )
         .set(
           'vugurura',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 2;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_URUTONDE.vugurura expects at least two arguments');
-            const file_location = path.join(
-              path.dirname(
-                path.join(
-                  process.cwd(),
-                  (env.lookupVar('filename') as StringVal).value,
-                ),
-              ),
-              (args[0] as StringVal).value,
-            );
-            const data = args[1] as StringVal;
-            try {
-              appendFileSync(file_location, data.value, 'utf-8');
-              return MK_BOOL();
-            } catch (error: unknown) {
-              if (error instanceof Error) {
-                return MK_STRING(error.message);
+          defineNative({
+            name: 'KIN_INYANDIKO.vugurura',
+            params: ['string', 'string'],
+            fn: (args, e) => {
+              const file_location = filePathFrom(
+                e,
+                (args[0] as StringVal).value,
+              );
+              const data = args[1] as StringVal;
+              try {
+                appendFileSync(file_location, data.value, 'utf-8');
+                return MK_BOOL();
+              } catch (error: unknown) {
+                if (error instanceof Error) {
+                  return MK_STRING(error.message);
+                }
+                return MK_STRING(error as string);
               }
-
-              return MK_STRING(error as string);
-            }
+            },
           }),
         )
         .set(
           'siba',
-          MK_NATIVE_FN((args) => {
-            const MIN_ARGS_LENGTH = 1;
-            if (args.length < MIN_ARGS_LENGTH)
-              LogError('KIN_URUTONDE.siba expects at least one argument');
-            const file_location = path.join(
-              path.dirname(
-                path.join(
-                  process.cwd(),
-                  (env.lookupVar('filename') as StringVal).value,
-                ),
-              ),
-              (args[0] as StringVal).value,
-            );
-            const data = args[1] as StringVal;
-            try {
-              deleteFileSync(file_location);
-              return MK_BOOL();
-            } catch (error: unknown) {
-              if (error instanceof Error) {
-                return MK_STRING(error.message);
+          defineNative({
+            name: 'KIN_INYANDIKO.siba',
+            params: ['string'],
+            fn: (args, e) => {
+              const file_location = filePathFrom(
+                e,
+                (args[0] as StringVal).value,
+              );
+              try {
+                deleteFileSync(file_location);
+                return MK_BOOL();
+              } catch (error: unknown) {
+                if (error instanceof Error) {
+                  return MK_STRING(error.message);
+                }
+                return MK_STRING(error as string);
               }
-
-              return MK_STRING(error as string);
-            }
+            },
           }),
         ),
     ),

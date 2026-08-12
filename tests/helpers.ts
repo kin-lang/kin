@@ -2,6 +2,7 @@ import Parser from '../src/parser/parser';
 import { Interpreter } from '../src/runtime/interpreter';
 import { createGlobalEnv } from '../src/runtime/globals';
 import {
+  ArrayVal,
   BooleanVal,
   NativeFnValue,
   NumberVal,
@@ -10,6 +11,7 @@ import {
   StringVal,
 } from '../src/runtime/values';
 import Environment from '../src/runtime/environment';
+import { KinError } from '../src/lib/errors';
 
 export function evaluate(
   sourceCode: string,
@@ -73,4 +75,30 @@ export function asObject(value: RuntimeVal): ObjectVal {
     throw new Error(`Expected object, got ${value.type}`);
   }
   return value as ObjectVal;
+}
+
+export function asArray(value: RuntimeVal): ArrayVal {
+  if (value.type !== 'array') {
+    throw new Error(`Expected array, got ${value.type}`);
+  }
+  return value as ArrayVal;
+}
+
+/** Assert that running source throws a KinError with the given code. */
+export function expectKinError(source: string, code: string): KinError {
+  try {
+    evaluate(source);
+  } catch (e) {
+    if (e instanceof KinError) {
+      if (e.code !== code) {
+        throw new Error(
+          `Expected KinError ${code}, got ${e.code}: ${e.message}`,
+          { cause: e },
+        );
+      }
+      return e;
+    }
+    throw e;
+  }
+  throw new Error(`Expected KinError ${code}, but evaluation succeeded`);
 }

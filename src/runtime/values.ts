@@ -7,7 +7,14 @@ import { Stmt } from '../parser/ast';
 import Environment from './environment';
 
 export type ValueType =
-  'null' | 'number' | 'boolean' | 'object' | 'native-fn' | 'fn' | 'string';
+  | 'null'
+  | 'number'
+  | 'boolean'
+  | 'object'
+  | 'array'
+  | 'native-fn'
+  | 'fn'
+  | 'string';
 
 export interface RuntimeVal {
   type: ValueType;
@@ -36,6 +43,12 @@ export interface StringVal extends RuntimeVal {
 export interface ObjectVal extends RuntimeVal {
   type: 'object';
   properties: Map<string, RuntimeVal>;
+}
+
+/** Contiguous list of values. Replaces the old object-with-string-keys arrays. */
+export interface ArrayVal extends RuntimeVal {
+  type: 'array';
+  elements: RuntimeVal[];
 }
 
 export interface FunctionValue extends RuntimeVal {
@@ -75,4 +88,49 @@ export function MK_STRING(val: string) {
 
 export function MK_OBJECT(obj: Map<string, RuntimeVal>) {
   return { type: 'object', properties: obj } as ObjectVal;
+}
+
+export function MK_ARRAY(elements: RuntimeVal[] = []) {
+  return { type: 'array', elements } as ArrayVal;
+}
+
+/**
+ * Human-facing type name for ubwoko and error messages.
+ * Arrays report as "urutonde"; other types keep their internal name.
+ */
+export function typeName(value: RuntimeVal): string {
+  if (value.type === 'array') return 'urutonde';
+  return value.type;
+}
+
+/** Deep-ish structural equality used by == / != and array.contains. */
+export function valuesEqual(a: RuntimeVal, b: RuntimeVal): boolean {
+  if (a.type !== b.type) return false;
+  switch (a.type) {
+    case 'null':
+      return true;
+    case 'number':
+      return (a as NumberVal).value === (b as NumberVal).value;
+    case 'boolean':
+      return (a as BooleanVal).value === (b as BooleanVal).value;
+    case 'string':
+      return (a as StringVal).value === (b as StringVal).value;
+    case 'array': {
+      const aa = a as ArrayVal;
+      const bb = b as ArrayVal;
+      if (aa.elements.length !== bb.elements.length) return false;
+      for (let i = 0; i < aa.elements.length; i++) {
+        if (!valuesEqual(aa.elements[i], bb.elements[i])) return false;
+      }
+      return true;
+    }
+    case 'object':
+      return (a as ObjectVal).properties === (b as ObjectVal).properties;
+    case 'fn':
+      return (a as FunctionValue).body === (b as FunctionValue).body;
+    case 'native-fn':
+      return (a as NativeFnValue).call === (b as NativeFnValue).call;
+    default:
+      return false;
+  }
 }

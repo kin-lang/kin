@@ -44,9 +44,6 @@ functionDeclaration ::= "porogaramu_ntoya" identifier "(" parameterList? ")" blo
 
 parameterList ::= identifier ("," identifier)*
 
-; Note: the parser appends a synthetic FunctionTerminator to the body.
-; That node is not source syntax.
-
 block ::= "{" statement* "}"
 
 loopStatement ::= "subiramo_niba" "(" expression ")" block
@@ -63,8 +60,7 @@ ifStatement ::= "niba" "(" expression ")" block
 ; Determinant and each case label are primaryExpression only (not a
 ; full expression). Each case is desugared to (determinant == label).
 ;
-; Note: a switch whose only arm is ibindi is accepted, but the current
-; parser discards that default body and emits an empty dummy conditional.
+; A switch whose only arm is ibindi runs the default body unconditionally.
 switchStatement ::= "gereranya" "(" primaryExpression ")" "{"
                       caseClause*
                       defaultClause?
@@ -88,26 +84,9 @@ expressionStatement ::= expression
 expression ::= assignmentExpression
 
 ; Right-associative.
-assignmentExpression ::= objectLikeExpression ("=" assignmentExpression)?
-
-; The parser tries '{...}' first, then '[...]', then a logical expression.
-objectLikeExpression ::= objectLiteral
-                       | arrayLiteral
-                       | logicalExpression
-
-; Keys are identifiers only (not string literals).
-; Shorthand { key } looks up `key` in the current environment at runtime.
-; A trailing comma is accepted.
-objectLiteral ::= "{" (objectProperty ("," objectProperty)* ","?)? "}"
-
-objectProperty ::= identifier (":" expression)?
-
-; A trailing comma is accepted. Arrays are represented as objects whose
-; keys are "0", "1", ...
-arrayLiteral ::= "[" (expression ("," expression)* ","?)? "]"
+assignmentExpression ::= logicalExpression ("=" assignmentExpression)?
 
 ; && and || share a single precedence and are left-associative.
-; They chain so grouped expressions consume every operator before ')'.
 logicalExpression ::= relationalExpression (("&&" | "||") relationalExpression)*
 
 ; Note: at most one relational operator. They do not chain:
@@ -120,10 +99,11 @@ additiveExpression ::= multiplicativeExpression (additiveOperator multiplicative
 
 additiveOperator ::= "+" | "-"
 
-; * / % ^ are left-associative and share one precedence.
-multiplicativeExpression ::= callMemberExpression (multiplicativeOperator callMemberExpression)*
+; * / % are left-associative. ^ is higher and right-associative.
+multiplicativeExpression ::= exponentExpression (("*" | "/" | "%") exponentExpression)*
 
-multiplicativeOperator ::= "*" | "/" | "%" | "^"
+; Right-associative: 2 ^ 3 ^ 2  =>  2 ^ (3 ^ 2)
+exponentExpression ::= callMemberExpression ("^" exponentExpression)?
 
 ; member then zero or more argument lists:  obj.fn()()
 ; Note: a call cannot be followed by further member access.
@@ -132,7 +112,6 @@ multiplicativeOperator ::= "*" | "/" | "%" | "^"
 ;   foo().bar        not accepted
 callMemberExpression ::= memberExpression ("(" argumentList? ")")*
 
-; Call / function-parameter arguments are assignment expressions.
 argumentList ::= assignmentExpression ("," assignmentExpression)*
 
 memberExpression ::= primaryExpression memberSuffix*
@@ -140,15 +119,42 @@ memberExpression ::= primaryExpression memberSuffix*
 memberSuffix ::= "." identifier
                | "[" expression "]"
 
+; Array and object literals are primaries so they accept postfix
+; member / call chains: [1, 2, 3][0], {izina: "K"}.izina
 primaryExpression ::= identifier
                     | numericLiteral
                     | stringLiteral
+                    | arrayLiteral
+                    | objectLiteral
                     | "(" expression ")"
-                    | unaryNot
+                    | unaryExpression
 
-; ! applies to a primary expression: identifier, literal, or grouped expr.
-; This allows both !flag and !(a != b).
-unaryNot ::= "!" primaryExpression
+; ! and unary - apply to a primary expression.
+unaryExpression ::= ("!" | "-") primaryExpression
+
+; Keys are identifiers only (not string literals).
+; Shorthand { key } looks up `key` in the current environment at runtime.
+; A trailing comma is accepted.
+objectLiteral ::= "{" (objectProperty ("," objectProperty)* ","?)? "}"
+
+objectProperty ::= identifier (":" expression)?
+
+; A trailing comma is accepted. Arrays evaluate to ArrayVal (not objects).
+arrayLiteral ::= "[" (expression ("," expression)* ","?)? "]"
+
+; ========================================
+; Operator semantics (runtime)
+; ========================================
+;
+; + on two numbers: arithmetic add
+; + on two strings: concatenation
+; + on string and number: coerce the number to string and concatenate
+; < > <= >= on two strings: locale-independent (UTF-16) comparison
+; Other type combinations for arithmetic / comparison raise a KinError
+;
+; Truthiness (niba, niba_byanze chains, subiramo_niba):
+;   false:  sibyo, ubusa, and the number 0
+;   true:   everything else (including empty strings and empty arrays)
 
 ; ========================================
 ; Lexical
@@ -164,11 +170,12 @@ identifier ::= (letter | "_") (letter | digit | "_")*
 letter ::= "a"..."z" | "A"..."Z"
 digit  ::= "0"..."9"
 
-; A leading '-' is folded into the number by the lexer when it is
-; immediately followed by a digit. There is no unary-minus expression:
-;  -5   is a numericLiteral
-;  -x   is not accepted
-numericLiteral ::= "-"? digit+ ("." digit+)?
+; Numbers are always non-negative in the lexer. Unary minus is a
+; separate expression, so:
+;  -5   is unaryMinus applied to 5
+;  -x   is unaryMinus applied to x
+;  x -5 is subtraction (x minus 5)
+numericLiteral ::= digit+ ("." digit+)?
 
 ; Double quotes only. Newlines inside a string are a lexer error.
 ; No escape sequences are processed.

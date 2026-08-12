@@ -1,45 +1,47 @@
 import { describe, test, expect } from 'vitest';
 import Parser from '../src/parser/parser';
 
+/** Drop span fields so structural AST tests stay readable. */
+function stripSpans(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(stripSpans);
+  if (node && typeof node === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+      if (k === 'span') continue;
+      out[k] = stripSpans(v);
+    }
+    return out;
+  }
+  return node;
+}
+
+function parse(source: string) {
+  return stripSpans(new Parser().produceAST(source));
+}
+
 describe('Parser', () => {
   test('should parse numeric and string literals in variable declaration', () => {
-    const sourceCode = 'reka x = 42 reka y = "hello"';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    const expectedAst = {
+    expect(parse('reka x = 42 reka y = "hello"')).toEqual({
       kind: 'Program',
       body: [
         {
           kind: 'VariableDeclaration',
           constant: false,
           identifier: 'x',
-          value: {
-            kind: 'NumericLiteral',
-            value: 42,
-          },
+          value: { kind: 'NumericLiteral', value: 42 },
         },
         {
           kind: 'VariableDeclaration',
           constant: false,
           identifier: 'y',
-          value: {
-            kind: 'StringLiteral',
-            value: 'hello',
-          },
+          value: { kind: 'StringLiteral', value: 'hello' },
         },
       ],
-    };
-
-    expect(ast).toEqual(expectedAst);
+    });
   });
 
   test('should parse function declaration with parameters and block statement', () => {
-    const sourceCode = 'porogaramu_ntoya add(a, b) { tanga a + b }';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    const expectedAst = {
+    expect(parse('porogaramu_ntoya add(a, b) { tanga a + b }')).toEqual({
       kind: 'Program',
       body: [
         {
@@ -52,33 +54,18 @@ describe('Parser', () => {
               value: {
                 kind: 'BinaryExpr',
                 operator: '+',
-                left: {
-                  kind: 'Identifier',
-                  symbol: 'a',
-                },
-                right: {
-                  kind: 'Identifier',
-                  symbol: 'b',
-                },
+                left: { kind: 'Identifier', symbol: 'a' },
+                right: { kind: 'Identifier', symbol: 'b' },
               },
-            },
-            {
-              kind: 'FunctionTerminator',
             },
           ],
         },
       ],
-    };
-
-    expect(ast).toEqual(expectedAst);
+    });
   });
 
   test('should parse loop statement with condition and block statement', () => {
-    const sourceCode = 'subiramo_niba (i < 10) { tangaza_amakuru(i) }';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    const expectedAst = {
+    expect(parse('subiramo_niba (i < 10) { tangaza_amakuru(i) }')).toEqual({
       kind: 'Program',
       body: [
         {
@@ -86,44 +73,25 @@ describe('Parser', () => {
           condition: {
             kind: 'BinaryExpr',
             operator: '<',
-            left: {
-              kind: 'Identifier',
-              symbol: 'i',
-            },
-            right: {
-              kind: 'NumericLiteral',
-              value: 10,
-            },
+            left: { kind: 'Identifier', symbol: 'i' },
+            right: { kind: 'NumericLiteral', value: 10 },
           },
           body: [
             {
               kind: 'CallExpression',
-              caller: {
-                kind: 'Identifier',
-                symbol: 'tangaza_amakuru',
-              },
-              args: [
-                {
-                  kind: 'Identifier',
-                  symbol: 'i',
-                },
-              ],
+              caller: { kind: 'Identifier', symbol: 'tangaza_amakuru' },
+              args: [{ kind: 'Identifier', symbol: 'i' }],
             },
           ],
         },
       ],
-    };
-
-    expect(ast).toEqual(expectedAst);
+    });
   });
 
   test('should parse hagarara (break) inside loop body', () => {
-    const sourceCode =
-      'subiramo_niba (i < 10) { niba(i == 5) { hagarara } i = i + 1 }';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    const expectedAst = {
+    expect(
+      parse('subiramo_niba (i < 10) { niba(i == 5) { hagarara } i = i + 1 }'),
+    ).toEqual({
       kind: 'Program',
       body: [
         {
@@ -131,14 +99,8 @@ describe('Parser', () => {
           condition: {
             kind: 'BinaryExpr',
             operator: '<',
-            left: {
-              kind: 'Identifier',
-              symbol: 'i',
-            },
-            right: {
-              kind: 'NumericLiteral',
-              value: 10,
-            },
+            left: { kind: 'Identifier', symbol: 'i' },
+            right: { kind: 'NumericLiteral', value: 10 },
           },
           body: [
             {
@@ -146,56 +108,32 @@ describe('Parser', () => {
               condition: {
                 kind: 'BinaryExpr',
                 operator: '==',
-                left: {
-                  kind: 'Identifier',
-                  symbol: 'i',
-                },
-                right: {
-                  kind: 'NumericLiteral',
-                  value: 5,
-                },
+                left: { kind: 'Identifier', symbol: 'i' },
+                right: { kind: 'NumericLiteral', value: 5 },
               },
-              body: [
-                {
-                  kind: 'BreakStatement',
-                },
-              ],
+              body: [{ kind: 'BreakStatement' }],
               alternate: [],
             },
             {
               kind: 'AssignmentExpression',
-              assigne: {
-                kind: 'Identifier',
-                symbol: 'i',
-              },
+              assigne: { kind: 'Identifier', symbol: 'i' },
               value: {
                 kind: 'BinaryExpr',
                 operator: '+',
-                left: {
-                  kind: 'Identifier',
-                  symbol: 'i',
-                },
-                right: {
-                  kind: 'NumericLiteral',
-                  value: 1,
-                },
+                left: { kind: 'Identifier', symbol: 'i' },
+                right: { kind: 'NumericLiteral', value: 1 },
               },
             },
           ],
         },
       ],
-    };
-
-    expect(ast).toEqual(expectedAst);
+    });
   });
 
   test('should parse komeza (continue) inside loop body', () => {
-    const sourceCode =
-      'subiramo_niba (i < 10) { niba(i == 5) { komeza } i = i + 1 }';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    const expectedAst = {
+    expect(
+      parse('subiramo_niba (i < 10) { niba(i == 5) { komeza } i = i + 1 }'),
+    ).toEqual({
       kind: 'Program',
       body: [
         {
@@ -203,14 +141,8 @@ describe('Parser', () => {
           condition: {
             kind: 'BinaryExpr',
             operator: '<',
-            left: {
-              kind: 'Identifier',
-              symbol: 'i',
-            },
-            right: {
-              kind: 'NumericLiteral',
-              value: 10,
-            },
+            left: { kind: 'Identifier', symbol: 'i' },
+            right: { kind: 'NumericLiteral', value: 10 },
           },
           body: [
             {
@@ -218,47 +150,26 @@ describe('Parser', () => {
               condition: {
                 kind: 'BinaryExpr',
                 operator: '==',
-                left: {
-                  kind: 'Identifier',
-                  symbol: 'i',
-                },
-                right: {
-                  kind: 'NumericLiteral',
-                  value: 5,
-                },
+                left: { kind: 'Identifier', symbol: 'i' },
+                right: { kind: 'NumericLiteral', value: 5 },
               },
-              body: [
-                {
-                  kind: 'ContinueStatement',
-                },
-              ],
+              body: [{ kind: 'ContinueStatement' }],
               alternate: [],
             },
             {
               kind: 'AssignmentExpression',
-              assigne: {
-                kind: 'Identifier',
-                symbol: 'i',
-              },
+              assigne: { kind: 'Identifier', symbol: 'i' },
               value: {
                 kind: 'BinaryExpr',
                 operator: '+',
-                left: {
-                  kind: 'Identifier',
-                  symbol: 'i',
-                },
-                right: {
-                  kind: 'NumericLiteral',
-                  value: 1,
-                },
+                left: { kind: 'Identifier', symbol: 'i' },
+                right: { kind: 'NumericLiteral', value: 1 },
               },
             },
           ],
         },
       ],
-    };
-
-    expect(ast).toEqual(expectedAst);
+    });
   });
 
   test('should reject komeza (continue) outside a loop', () => {
@@ -278,11 +189,7 @@ describe('Parser', () => {
   });
 
   test('should parse object literal with properties', () => {
-    const sourceCode = 'reka obj = { key: "value", num: 42 }';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    const expectedAst = {
+    expect(parse('reka obj = { key: "value", num: 42 }')).toEqual({
       kind: 'Program',
       body: [
         {
@@ -306,17 +213,11 @@ describe('Parser', () => {
           },
         },
       ],
-    };
-
-    expect(ast).toEqual(expectedAst);
+    });
   });
 
-  test('should parse literal with elements', () => {
-    const sourceCode = 'reka arr = [1, "two", 3]';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    const expectedAst = {
+  test('should parse array literal with elements', () => {
+    expect(parse('reka arr = [1, "two", 3]')).toEqual({
       kind: 'Program',
       body: [
         {
@@ -324,38 +225,20 @@ describe('Parser', () => {
           constant: false,
           identifier: 'arr',
           value: {
-            kind: 'ObjectLiteral',
-            properties: [
-              {
-                kind: 'Property',
-                key: '0',
-                value: { kind: 'NumericLiteral', value: 1 },
-              },
-              {
-                kind: 'Property',
-                key: '1',
-                value: { kind: 'StringLiteral', value: 'two' },
-              },
-              {
-                kind: 'Property',
-                key: '2',
-                value: { kind: 'NumericLiteral', value: 3 },
-              },
+            kind: 'ArrayLiteral',
+            elements: [
+              { kind: 'NumericLiteral', value: 1 },
+              { kind: 'StringLiteral', value: 'two' },
+              { kind: 'NumericLiteral', value: 3 },
             ],
           },
         },
       ],
-    };
-
-    expect(ast).toEqual(expectedAst);
+    });
   });
 
   test('should parse complex expressions with binary operators', () => {
-    const sourceCode = 'reka result = (x + y) * (z - 1)';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    const expectedAst = {
+    expect(parse('reka result = (x + y) * (z - 1)')).toEqual({
       kind: 'Program',
       body: [
         {
@@ -380,18 +263,15 @@ describe('Parser', () => {
           },
         },
       ],
-    };
-
-    expect(ast).toEqual(expectedAst);
+    });
   });
 
   test('should parse member expression', () => {
-    const sourceCode =
-      'reka obj = { key_one: 1, key_two: "Key 2" } \n tanga_amakuru(obj.key_one)';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    const expectedAst = {
+    expect(
+      parse(
+        'reka obj = { key_one: 1, key_two: "Key 2" } \n tanga_amakuru(obj.key_one)',
+      ),
+    ).toEqual({
       kind: 'Program',
       body: [
         {
@@ -422,26 +302,20 @@ describe('Parser', () => {
               computed: false,
               kind: 'MemberExpression',
               object: { kind: 'Identifier', symbol: 'obj' },
-              property: {
-                kind: 'Identifier',
-                symbol: 'key_one',
-              },
+              property: { kind: 'Identifier', symbol: 'key_one' },
             },
           ],
         },
       ],
-    };
-
-    expect(ast).toEqual(expectedAst);
+    });
   });
 
   test('should parse conditional statement with multiple conditions', () => {
-    const sourceCode =
-      'reka x = 10 \n niba (x > 5) { tangaza_amakuru("X is greater than 5") } nanone_niba (x > 5 && x < 10) { tangaza_amakuru("X is between 5 and 10") } niba_byanze { tangaza_amakuru("X might be less than 5 or greater than 10") }';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    const expectedAst = {
+    expect(
+      parse(
+        'reka x = 10 \n niba (x > 5) { tangaza_amakuru("X is greater than 5") } nanone_niba (x > 5 && x < 10) { tangaza_amakuru("X is between 5 and 10") } niba_byanze { tangaza_amakuru("X might be less than 5 or greater than 10") }',
+      ),
+    ).toEqual({
       kind: 'Program',
       body: [
         {
@@ -509,25 +383,20 @@ describe('Parser', () => {
           ],
         },
       ],
-    };
-
-    expect(ast).toEqual(expectedAst);
+    });
   });
 
   test('should handle syntax errors correctly', () => {
-    const sourceCode = 'reka x = ;';
     const parser = new Parser();
-    expect(() => parser.produceAST(sourceCode)).toThrowError();
+    expect(() => parser.produceAST('reka x = ;')).toThrowError();
   });
 
-  // Issue #58: nested parentheses with chained logical ops and !(expr)
   test('should parse nested parenthesized logical and comparison expression (issue #58)', () => {
-    const sourceCode =
-      'reka result = ((var > var2) && !(var3 != var4) || (var5 == var6))';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    const expectedAst = {
+    expect(
+      parse(
+        'reka result = ((var > var2) && !(var3 != var4) || (var5 == var6))',
+      ),
+    ).toEqual({
       kind: 'Program',
       body: [
         {
@@ -566,17 +435,11 @@ describe('Parser', () => {
           },
         },
       ],
-    };
-
-    expect(ast).toEqual(expectedAst);
+    });
   });
 
   test('should parse negation of a parenthesized comparison', () => {
-    const sourceCode = 'reka result = !(a == b)';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    expect(ast).toEqual({
+    expect(parse('reka result = !(a == b)')).toEqual({
       kind: 'Program',
       body: [
         {
@@ -599,11 +462,7 @@ describe('Parser', () => {
   });
 
   test('should parse chained logical operators inside parentheses', () => {
-    const sourceCode = 'reka result = (a && b || c)';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    expect(ast).toEqual({
+    expect(parse('reka result = (a && b || c)')).toEqual({
       kind: 'Program',
       body: [
         {
@@ -627,11 +486,7 @@ describe('Parser', () => {
   });
 
   test('should parse deeply nested grouped comparisons', () => {
-    const sourceCode = 'reka result = (((a > b) && (c < d)))';
-    const parser = new Parser();
-    const ast = parser.produceAST(sourceCode);
-
-    expect(ast).toEqual({
+    expect(parse('reka result = (((a > b) && (c < d)))')).toEqual({
       kind: 'Program',
       body: [
         {
@@ -654,6 +509,67 @@ describe('Parser', () => {
               right: { kind: 'Identifier', symbol: 'd' },
             },
           },
+        },
+      ],
+    });
+  });
+
+  test('should parse unary minus and exponentiation', () => {
+    expect(parse('reka y = -x')).toEqual({
+      kind: 'Program',
+      body: [
+        {
+          kind: 'VariableDeclaration',
+          constant: false,
+          identifier: 'y',
+          value: {
+            kind: 'UnaryExpr',
+            operator: '-',
+            operand: { kind: 'Identifier', symbol: 'x' },
+          },
+        },
+      ],
+    });
+
+    expect(parse('reka r = 2 ^ 3 ^ 2')).toEqual({
+      kind: 'Program',
+      body: [
+        {
+          kind: 'VariableDeclaration',
+          constant: false,
+          identifier: 'r',
+          value: {
+            kind: 'BinaryExpr',
+            operator: '^',
+            left: { kind: 'NumericLiteral', value: 2 },
+            right: {
+              kind: 'BinaryExpr',
+              operator: '^',
+              left: { kind: 'NumericLiteral', value: 3 },
+              right: { kind: 'NumericLiteral', value: 2 },
+            },
+          },
+        },
+      ],
+    });
+  });
+
+  test('should parse indexing of array literals', () => {
+    expect(parse('[1, 2, 3][0]')).toEqual({
+      kind: 'Program',
+      body: [
+        {
+          kind: 'MemberExpression',
+          computed: true,
+          object: {
+            kind: 'ArrayLiteral',
+            elements: [
+              { kind: 'NumericLiteral', value: 1 },
+              { kind: 'NumericLiteral', value: 2 },
+              { kind: 'NumericLiteral', value: 3 },
+            ],
+          },
+          property: { kind: 'NumericLiteral', value: 0 },
         },
       ],
     });

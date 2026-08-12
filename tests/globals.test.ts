@@ -20,9 +20,9 @@ import {
   ObjectVal,
 } from '../src/runtime/values';
 import {
+  asArray,
   asBool,
   asNumber,
-  asObject,
   asString,
   evaluate,
   nativeFn,
@@ -204,9 +204,7 @@ describe('createGlobalEnv', () => {
     test('rejects missing arguments', () => {
       const env = createGlobalEnv('test.kin');
       const exit = nativeFn(env, 'hagarara');
-      expect(() => exit.call([], env)).toThrow(
-        'sisitemu expects atleast one argument',
-      );
+      expect(() => exit.call([], env)).toThrow(/hagarara expects at least/);
     });
 
     test('rejects exit codes other than 0 or 1', () => {
@@ -231,7 +229,7 @@ describe('createGlobalEnv', () => {
 
     test('umuzikare requires a number argument', () => {
       expect(() => evaluate('KIN_IMIBARE.umuzikare()')).toThrow(
-        'KIN_IMIBARE.umuzikare expects atleast one argument',
+        /KIN_IMIBARE.umuzikare expects at least/,
       );
     });
 
@@ -256,7 +254,7 @@ describe('createGlobalEnv', () => {
       const env = createGlobalEnv('test.kin');
       const random = objectMethod(env, 'KIN_IMIBARE', 'umubare_utazwi');
       expect(() => random.call([MK_STRING('a'), MK_STRING('b')], env)).toThrow(
-        "KIN_IMIBARE.umubare_utazwi expects 2 arguments of type 'number'",
+        /KIN_IMIBARE.umubare_utazwi expects argument/,
       );
     });
 
@@ -271,10 +269,10 @@ describe('createGlobalEnv', () => {
 
     test('kuraho_ibice validates arguments', () => {
       expect(() => evaluate('KIN_IMIBARE.kuraho_ibice()')).toThrow(
-        'KIN_IMIBARE.kuraho_ibice expects at least one argument',
+        /KIN_IMIBARE.kuraho_ibice expects at least/,
       );
       expect(() => evaluate('KIN_IMIBARE.kuraho_ibice("x")')).toThrow(
-        'KIN_IMIBARE.kuraho_ibice expects a number as an argument',
+        /KIN_IMIBARE.kuraho_ibice expects argument/,
       );
     });
 
@@ -289,22 +287,22 @@ describe('createGlobalEnv', () => {
 
     test('trig functions validate arguments', () => {
       expect(() => evaluate('KIN_IMIBARE.sin()')).toThrow(
-        'KIN_IMIBARE.sin expects at least one argument',
+        /KIN_IMIBARE.sin expects at least/,
       );
       expect(() => evaluate('KIN_IMIBARE.sin("x")')).toThrow(
-        'KIN_IMIBARE.sin expects a number as an argument',
+        /KIN_IMIBARE.sin expects argument/,
       );
       expect(() => evaluate('KIN_IMIBARE.cos()')).toThrow(
-        'KIN_IMIBARE.cos expects at least one argument',
+        /KIN_IMIBARE.cos expects at least/,
       );
       expect(() => evaluate('KIN_IMIBARE.cos("x")')).toThrow(
-        'KIN_IMIBARE.cos expects a number as an argument',
+        /KIN_IMIBARE.cos expects argument/,
       );
       expect(() => evaluate('KIN_IMIBARE.tan()')).toThrow(
-        'KIN_IMIBARE.tan expects at least one argument',
+        /KIN_IMIBARE.tan expects at least/,
       );
       expect(() => evaluate('KIN_IMIBARE.tan("x")')).toThrow(
-        'KIN_IMIBARE.tan expects a number as an argument',
+        /KIN_IMIBARE.tan expects argument/,
       );
     });
   });
@@ -326,10 +324,10 @@ describe('createGlobalEnv', () => {
 
     test('ingano validates arguments', () => {
       expect(() => evaluate('KIN_AMAGAMBO.ingano()')).toThrow(
-        'KIN_AMAGAMBO.ingano expects at least one argument',
+        /KIN_AMAGAMBO.ingano expects at least/,
       );
       expect(() => evaluate('KIN_AMAGAMBO.ingano(1)')).toThrow(
-        'KIN_AMAGAMBO.ingano expects string as an argument',
+        /KIN_AMAGAMBO.ingano expects argument/,
       );
     });
 
@@ -347,13 +345,13 @@ describe('createGlobalEnv', () => {
 
     test('inyuguti validates arguments', () => {
       expect(() => evaluate('KIN_AMAGAMBO.inyuguti("kin")')).toThrow(
-        'KIN_AMAGAMBO.inyuguti expects at least two argument',
+        /KIN_AMAGAMBO.inyuguti expects at least/,
       );
       expect(() => evaluate('KIN_AMAGAMBO.inyuguti(1, 0)')).toThrow(
-        'first argument of KIN_AMABAMBO.inyuguti must be a string',
+        /KIN_AMAGAMBO.inyuguti expects argument/,
       );
       expect(() => evaluate('KIN_AMAGAMBO.inyuguti("kin", "0")')).toThrow(
-        'second argument of KIN_AMABAMBO.inyuguti must be a number',
+        /KIN_AMAGAMBO.inyuguti expects argument/,
       );
     });
 
@@ -371,26 +369,26 @@ describe('createGlobalEnv', () => {
 
     test('case helpers validate arguments', () => {
       expect(() => evaluate('KIN_AMAGAMBO.inyuguti_nkuru()')).toThrow(
-        'KIN_AMAGAMBO.inyuguti_nkuru expects at least one argument',
+        /KIN_AMAGAMBO.inyuguti_nkuru expects at least/,
       );
       expect(() => evaluate('KIN_AMAGAMBO.inyuguti_nkuru(1)')).toThrow(
-        'KIN_AMAGAMBO.inyuguti_nkuru expect a string as an argument',
+        /KIN_AMAGAMBO.inyuguti_nkuru expects argument/,
       );
       expect(() => evaluate('KIN_AMAGAMBO.inyuguti_ntoya()')).toThrow(
-        'KIN_AMAGAMBO.inyuguti_ntoya expects at least one argument',
+        /KIN_AMAGAMBO.inyuguti_ntoya expects at least/,
       );
       expect(() => evaluate('KIN_AMAGAMBO.inyuguti_ntoya(1)')).toThrow(
-        'KIN_AMAGAMBO.inyuguti_ntoya expect a string as an argument',
+        /KIN_AMAGAMBO.inyuguti_ntoya expects argument/,
       );
     });
 
-    test('tandukanya splits a string into an object keyed by index', () => {
+    test('tandukanya splits a string into an array', () => {
       const { result } = evaluate('KIN_AMAGAMBO.tandukanya("a,b,c", ",")');
-      const obj = asObject(result);
-      expect(obj.properties.size).toBe(3);
-      expect(asString(obj.properties.get('0')!)).toBe('a');
-      expect(asString(obj.properties.get('1')!)).toBe('b');
-      expect(asString(obj.properties.get('2')!)).toBe('c');
+      const arr = asArray(result);
+      expect(arr.elements.length).toBe(3);
+      expect(asString(arr.elements[0])).toBe('a');
+      expect(asString(arr.elements[1])).toBe('b');
+      expect(asString(arr.elements[2])).toBe('c');
     });
 
     test('tandukanya result is readable from Kin with numeric indexes', () => {
@@ -406,10 +404,10 @@ describe('createGlobalEnv', () => {
 
     test('tandukanya validates arguments', () => {
       expect(() => evaluate('KIN_AMAGAMBO.tandukanya("a")')).toThrow(
-        'KIN_AMAGAMBO.tangukanya expects at least two argument',
+        /KIN_AMAGAMBO.tandukanya expects at least/,
       );
       expect(() => evaluate('KIN_AMAGAMBO.tandukanya(1, ",")')).toThrow(
-        'KIN_AMAGAMBO.tandukanya expects 2 arguments to be strings',
+        /KIN_AMAGAMBO.tandukanya expects argument/,
       );
     });
   });
@@ -457,9 +455,9 @@ describe('createGlobalEnv', () => {
         KIN_URUTONDE.ongera_kumusozo(arr, 3)
         arr
       `);
-      const arr = asObject(result);
-      expect(arr.properties.size).toBe(3);
-      expect(asNumber(arr.properties.get('2')!)).toBe(3);
+      const arr = asArray(result);
+      expect(arr.elements.length).toBe(3);
+      expect(asNumber(arr.elements[2])).toBe(3);
     });
 
     test('ongera_kumusozo requires two arguments', () => {
@@ -498,14 +496,19 @@ describe('createGlobalEnv', () => {
       );
     });
 
-    test('ifite reports whether the first value equals the needle', () => {
-      // Current implementation only inspects the first element.
+    test('ifite reports whether any value equals the needle', () => {
       expect(
         asBool(evaluate('KIN_URUTONDE.ifite(["a", "b"], "a")').result),
       ).toBe(true);
       expect(
         asBool(evaluate('KIN_URUTONDE.ifite(["a", "b"], "b")').result),
+      ).toBe(true);
+      expect(
+        asBool(evaluate('KIN_URUTONDE.ifite(["a", "b"], "c")').result),
       ).toBe(false);
+      expect(asBool(evaluate('KIN_URUTONDE.ifite([1, 2, 3], 3)').result)).toBe(
+        true,
+      );
     });
 
     test('ifite requires two arguments', () => {
@@ -535,10 +538,10 @@ describe('createGlobalEnv', () => {
         reka next = KIN_URUTONDE.injiza_ahabanza(arr, 1)
         next
       `);
-      const next = asObject(result);
-      expect(asNumber(next.properties.get('0')!)).toBe(1);
-      expect(asNumber(next.properties.get('1')!)).toBe(2);
-      expect(asNumber(next.properties.get('2')!)).toBe(3);
+      const next = asArray(result);
+      expect(asNumber(next.elements[0])).toBe(1);
+      expect(asNumber(next.elements[1])).toBe(2);
+      expect(asNumber(next.elements[2])).toBe(3);
     });
 
     test('injiza_ahabanza does not mutate the original array', () => {
@@ -561,10 +564,10 @@ describe('createGlobalEnv', () => {
         reka arr = [1, 2, 3]
         KIN_URUTONDE.siba_ahabanza(arr)
       `);
-      const next = asObject(result);
-      expect(next.properties.size).toBe(2);
-      expect(asNumber(next.properties.get('0')!)).toBe(2);
-      expect(asNumber(next.properties.get('1')!)).toBe(3);
+      const next = asArray(result);
+      expect(next.elements.length).toBe(2);
+      expect(asNumber(next.elements[0])).toBe(2);
+      expect(asNumber(next.elements[1])).toBe(3);
     });
 
     test('siba_ahabanza requires an argument', () => {
@@ -580,7 +583,7 @@ describe('createGlobalEnv', () => {
       expect(asString(evaluate('ubwoko("kin")').result)).toBe('string');
       expect(asString(evaluate('ubwoko(nibyo)').result)).toBe('boolean');
       expect(asString(evaluate('ubwoko(ubusa)').result)).toBe('null');
-      expect(asString(evaluate('ubwoko([1])').result)).toBe('object');
+      expect(asString(evaluate('ubwoko([1])').result)).toBe('urutonde');
       expect(asString(evaluate('ubwoko(tangaza_amakuru)').result)).toBe(
         'native-fn',
       );
@@ -683,16 +686,16 @@ describe('createGlobalEnv', () => {
 
     test('validates argument counts', () => {
       expect(() => evaluate('KIN_INYANDIKO.soma()', filename)).toThrow(
-        'KIN_INYANDIKO.soma expects at least one argument',
+        /KIN_INYANDIKO.soma expects at least/,
       );
       expect(() => evaluate('KIN_INYANDIKO.andika("f.txt")', filename)).toThrow(
-        'KIN_URUTONDE.andika expects at least two arguments',
+        /KIN_INYANDIKO.andika expects at least/,
       );
       expect(() =>
         evaluate('KIN_INYANDIKO.vugurura("f.txt")', filename),
-      ).toThrow('KIN_URUTONDE.vugurura expects at least two arguments');
+      ).toThrow(/KIN_INYANDIKO.vugurura expects at least/);
       expect(() => evaluate('KIN_INYANDIKO.siba()', filename)).toThrow(
-        'KIN_URUTONDE.siba expects at least one argument',
+        /KIN_INYANDIKO.siba expects at least/,
       );
     });
 

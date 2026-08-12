@@ -3,77 +3,204 @@
  *       Produces Kin's AST             *
  ****************************************/
 
-import Lexer, { Token } from '../lexer/lexer';
+import Lexer, { Token, tokenSpan } from '../lexer/lexer';
 import TokenType from '../lexer/tokens';
-import { LogError } from '../lib/log';
+import { KinError } from '../lib/errors';
+import { Span, emptySpan, mergeSpans } from '../lib/span';
 import {
-  AssignmentExpr,
-  BinaryExpr,
-  BreakStatement,
-  ContinueStatement,
-  CallExpr,
-  ConditionalStmt,
   Expr,
-  FunctionDeclaration,
-  Identifier,
-  LoopStatement,
-  MemberExpr,
-  NumericLiteral,
-  ObjectLiteral,
   Program,
-  Property,
   Stmt,
-  StringLiteral,
-  VariableDeclaration,
-  ReturnExpr,
-  UnaryExpr,
+  mkArray,
+  mkAssign,
+  mkBinary,
+  mkBreak,
+  mkCall,
+  mkConditional,
+  mkContinue,
+  mkFunction,
+  mkIdent,
+  mkLoop,
+  mkMember,
+  mkNumber,
+  mkObject,
+  mkProgram,
+  mkProperty,
+  mkReturn,
+  mkString,
+  mkUnary,
+  mkVarDecl,
+  Identifier,
 } from './ast';
 
+export interface Diagnostic {
+  severity: 'error' | 'warning';
+  error: KinError;
+}
+
+export interface ParseResult {
+  program: Program;
+  diagnostics: Diagnostic[];
+}
+
+/**
+ * Recursive-descent parser.
+ *
+ * Token stream is an array plus a cursor (`pos`). eat() advances the cursor
+ * in O(1); it never advances past the EOF token.
+ */
 export default class Parser {
   private tokens: Token[] = [];
-  /** Number of `subiramo_niba` loops currently being parsed */
+  private pos = 0;
   private loopDepth = 0;
+  private diagnostics: Diagnostic[] = [];
+  /** When true, the first error is thrown (produceAST). When false, recover. */
+  private throwOnError = true;
+  private source = '';
 
   private not_eof(): boolean {
-    return this.tokens[0].type != TokenType.EOF;
+    return this.at().type != TokenType.EOF;
   }
 
-  private at() {
-    return this.tokens[0] as Token;
+  private at(): Token {
+    return this.tokens[this.pos];
   }
 
-  private eat() {
-    const prev = this.tokens.shift() as Token;
-
-    return prev;
-  }
-
-  private expect(type: TokenType, err: string) {
-    const prev = this.eat();
-
-    if (!prev || prev.type != type) {
-      LogError(`On line ${prev.line}: Kin Error: ${err}, found ${prev.lexeme}`);
+  /** Look ahead `offset` tokens without consuming. offset=0 is at(). */
+  private peek(offset = 1): Token {
+    const i = this.pos + offset;
+    if (i >= this.tokens.length) {
+      return this.tokens[this.tokens.length - 1];
     }
+    return this.tokens[i];
+  }
 
+  /**
+   * Consume the current token and return it.
+   * Does not advance past EOF so repeated eat() at end is safe.
+   */
+  private eat(): Token {
+    const prev = this.at();
+    if (prev.type !== TokenType.EOF) {
+      this.pos++;
+    }
     return prev;
   }
 
+  private expect(type: TokenType, expected: string): Token {
+    const prev = this.eat();
+    if (!prev || prev.type != type) {
+      this.fail(
+        'K002',
+        tokenSpan(prev),
+        {
+          expected,
+          lexeme: prev.lexeme,
+        },
+        `Expected ${expected}, found ${prev.lexeme}`,
+      );
+    }
+    return prev;
+  }
+
+  private fail(
+    code: string,
+    span: Span,
+    params: Record<string, string | number> = {},
+    message?: string,
+  ): never {
+    const error = new KinError(code, { span, params, message });
+    if (this.throwOnError) {
+      throw error;
+    }
+    this.diagnostics.push({ severity: 'error', error });
+    // Throw a special recovery signal so the caller can synchronize.
+    throw new ParseRecovery(error);
+  }
+
+  /**
+   * Backwards-compatible entry: throws on the first error.
+   * Existing callers and tests keep this behaviour.
+   */
   public produceAST(sourceCodes: string): Program {
-    const lexer = new Lexer(sourceCodes);
-    this.tokens = lexer.tokenize();
+    const result = this.parseInternal(sourceCodes, true);
+    if (result.diagnostics.length > 0) {
+      throw result.diagnostics[0].error;
+    }
+    return result.program;
+  }
+
+  /**
+   * Parse with error recovery. Returns the (possibly partial) AST plus
+   * every diagnostic collected. The CLI refuses to evaluate when any
+   * error diagnostic is present.
+   */
+  public parse(sourceCodes: string): ParseResult {
+    return this.parseInternal(sourceCodes, false);
+  }
+
+  private parseInternal(
+    sourceCodes: string,
+    throwOnError: boolean,
+  ): ParseResult {
+    this.source = sourceCodes;
+    this.throwOnError = throwOnError;
+    this.diagnostics = [];
+    this.pos = 0;
     this.loopDepth = 0;
 
-    const program: Program = {
-      kind: 'Program',
-      body: [],
-    };
+    const lexer = new Lexer(sourceCodes);
+    this.tokens = lexer.tokenize();
 
-    // Parse until the EOF
+    const body: Stmt[] = [];
     while (this.not_eof()) {
-      program.body.push(this.parse_stmt());
+      try {
+        body.push(this.parse_stmt());
+      } catch (e) {
+        if (e instanceof ParseRecovery) {
+          this.synchronize();
+          continue;
+        }
+        throw e;
+      }
     }
 
-    return program;
+    const span =
+      body.length > 0
+        ? mergeSpans(body[0].span, body[body.length - 1].span)
+        : emptySpan();
+
+    return {
+      program: mkProgram(body, span),
+      diagnostics: this.diagnostics,
+    };
+  }
+
+  /**
+   * Skip tokens until a plausible statement boundary so the parser can
+   * report more than one error per run.
+   */
+  private synchronize(): void {
+    // Always advance at least one token to avoid infinite loops.
+    if (this.not_eof()) this.eat();
+    while (this.not_eof()) {
+      const t = this.at().type;
+      if (
+        t === TokenType.REKA ||
+        t === TokenType.NTAHINDUKA ||
+        t === TokenType.NIBA ||
+        t === TokenType.SUBIRAMO_NIBA ||
+        t === TokenType.POROGARAMU_NTOYA ||
+        t === TokenType.GERERANYA ||
+        t === TokenType.TANGA ||
+        t === TokenType.CLOSE_CURLY_BRACES ||
+        t === TokenType.HAGARARA ||
+        t === TokenType.KOMEZA
+      ) {
+        return;
+      }
+      this.eat();
+    }
   }
 
   private parse_stmt(): Stmt {
@@ -83,20 +210,8 @@ export default class Parser {
         return this.parse_var_declaration();
       case TokenType.NIBA:
         return this.parse_if_statement();
-      case TokenType.GERERANYA: {
-        this.eat(); // eat gereranya keyword
-        this.expect(TokenType.OPEN_PARANTHESES, `"Expected ( after gereranya"`);
-        const determinant = this.parse_primary_expr();
-        this.expect(
-          TokenType.CLOSE_PARANTHESES,
-          `"Expected ) after determinant"`,
-        );
-        this.expect(
-          TokenType.OPEN_CURLY_BRACES,
-          `"Expected { before switch body"`,
-        );
-        return this.parse_case_statement(determinant);
-      }
+      case TokenType.GERERANYA:
+        return this.parse_switch_statement();
       case TokenType.SUBIRAMO_NIBA:
         return this.parse_loop_statement();
       case TokenType.HAGARARA:
@@ -112,56 +227,80 @@ export default class Parser {
     }
   }
 
-  private parse_case_statement(determinant: Expr): Stmt {
-    let root: ConditionalStmt | undefined;
-    let cur: ConditionalStmt | undefined;
+  private parse_switch_statement(): Stmt {
+    const startTok = this.eat(); // gereranya
+    this.expect(TokenType.OPEN_PARANTHESES, '(');
+    const determinant = this.parse_primary_expr();
+    this.expect(TokenType.CLOSE_PARANTHESES, ')');
+    this.expect(TokenType.OPEN_CURLY_BRACES, '{');
+    return this.parse_case_statement(determinant, tokenSpan(startTok));
+  }
+
+  /**
+   * Desugar gereranya into nested conditionals.
+   * A switch with only ibindi runs the default body unconditionally
+   * (condition is always true).
+   */
+  private parse_case_statement(determinant: Expr, startSpan: Span): Stmt {
+    let root: ReturnType<typeof mkConditional> | undefined;
+    let cur: ReturnType<typeof mkConditional> | undefined;
+    let onlyDefault: Stmt[] | undefined;
 
     while (this.not_eof() && this.at().type !== TokenType.CLOSE_CURLY_BRACES) {
       if (this.at().type === TokenType.USANZE) {
         this.eat(); // usanze
-        const node: ConditionalStmt = {
-          kind: 'ConditionalStatement',
-          condition: {
-            kind: 'BinaryExpr',
-            left: determinant,
-            operator: '==',
-            right: this.parse_primary_expr(),
-          } as BinaryExpr,
-          body: this.parse_case_block(),
-          alternate: [],
-        };
+        const label = this.parse_primary_expr();
+        const body = this.parse_case_block();
+        const condition = mkBinary(determinant, '==', label);
+        const node = mkConditional(
+          condition,
+          body,
+          [],
+          mergeSpans(
+            condition.span,
+            body.length ? body[body.length - 1].span : condition.span,
+          ),
+        );
         if (!root) root = node;
         else (cur!.alternate as Stmt[]).push(node);
         cur = node;
       } else if (this.at().type === TokenType.IBINDI) {
         this.eat();
-        const defBody = this.parse_case_block(); // Stmt[]
-        if (cur) (cur.alternate as Stmt[]).push(...defBody);
-        break; // default ends switch arms
+        const defBody = this.parse_case_block();
+        if (cur) {
+          (cur.alternate as Stmt[]).push(...defBody);
+        } else {
+          // Default-only switch: run the body unconditionally.
+          onlyDefault = defBody;
+        }
+        break;
       } else {
         break;
       }
     }
 
-    this.expect(TokenType.CLOSE_CURLY_BRACES, '`Expected } after switch`');
-    if (!root) {
-      return {
-        kind: 'ConditionalStatement',
-        condition: {
-          kind: 'BinaryExpr',
-          left: determinant,
-          operator: '==',
-          right: { kind: 'StringLiteral', value: '' } as StringLiteral,
-        } as BinaryExpr,
-        body: [],
-        alternate: [],
-      } as ConditionalStmt;
+    const endTok = this.expect(TokenType.CLOSE_CURLY_BRACES, '}');
+    const span = mergeSpans(startSpan, tokenSpan(endTok));
+
+    if (onlyDefault) {
+      // niba (nibyo) { default body }
+      return mkConditional(mkIdent('nibyo', startSpan), onlyDefault, [], span);
     }
+
+    if (!root) {
+      return mkConditional(
+        mkBinary(determinant, '==', mkString('', startSpan)),
+        [],
+        [],
+        span,
+      );
+    }
+    root.span = span;
     return root;
   }
 
   private parse_case_block(): Stmt[] {
-    this.expect(TokenType.COLON, `"Expected : before case block"`);
+    this.expect(TokenType.COLON, ':');
     const body: Stmt[] = [];
     while (
       this.not_eof() &&
@@ -175,187 +314,164 @@ export default class Parser {
   }
 
   private parse_return_expr(): Expr {
-    this.eat(); // eat tanga keyword
+    const startTok = this.eat(); // tanga
 
-    // nothing returned
     if (this.at().type == TokenType.SEMI_COLON) {
-      this.eat(); // eat semi-colon
-      return {
-        kind: 'ReturnExpr',
-        value: undefined,
-      } as ReturnExpr;
+      const semi = this.eat();
+      return mkReturn(
+        undefined,
+        mergeSpans(tokenSpan(startTok), tokenSpan(semi)),
+      );
     }
 
-    return {
-      kind: 'ReturnExpr',
-      value: this.parse_expr(),
-    } as ReturnExpr;
+    const value = this.parse_expr();
+    return mkReturn(value, mergeSpans(tokenSpan(startTok), value.span));
   }
 
   private parse_break_statement(): Stmt {
-    this.eat(); // eat hagarara keyword
-    // optional semi-colon
+    const tok = this.eat(); // hagarara
+    let span = tokenSpan(tok);
     if (this.at().type == TokenType.SEMI_COLON) {
-      this.eat();
+      span = mergeSpans(span, tokenSpan(this.eat()));
     }
-    return {
-      kind: 'BreakStatement',
-    } as BreakStatement;
+    return mkBreak(span);
   }
 
   private parse_continue_statement(): Stmt {
     if (this.loopDepth === 0) {
-      LogError(
-        `On line ${this.at().line}: Kin Error: komeza can only be used inside a loop`,
+      this.fail(
+        'K013',
+        tokenSpan(this.at()),
+        {},
+        'komeza can only be used inside a loop',
       );
     }
-    this.eat(); // eat komeza keyword
-    // optional semi-colon
+    const tok = this.eat(); // komeza
+    let span = tokenSpan(tok);
     if (this.at().type == TokenType.SEMI_COLON) {
-      this.eat();
+      span = mergeSpans(span, tokenSpan(this.eat()));
     }
-    return {
-      kind: 'ContinueStatement',
-    } as ContinueStatement;
+    return mkContinue(span);
   }
 
   private parse_block_statement(): Stmt[] {
-    this.expect(
-      TokenType.OPEN_CURLY_BRACES,
-      `"Expected { starting a code block"`,
-    );
+    this.expect(TokenType.OPEN_CURLY_BRACES, '{');
     const body: Stmt[] = [];
     while (this.not_eof() && this.at().type != TokenType.CLOSE_CURLY_BRACES) {
-      body.push(this.parse_stmt());
+      try {
+        body.push(this.parse_stmt());
+      } catch (e) {
+        if (e instanceof ParseRecovery) {
+          this.synchronize();
+          continue;
+        }
+        throw e;
+      }
     }
-
-    this.expect(
-      TokenType.CLOSE_CURLY_BRACES,
-      `"Expected } while parsing code block"`,
-    );
-
+    this.expect(TokenType.CLOSE_CURLY_BRACES, '}');
     return body;
   }
 
   private parse_var_declaration(): Stmt {
+    const startTok = this.at();
     const isConstant = this.eat().type == TokenType.NTAHINDUKA;
-    const identifier = this.expect(
-      TokenType.IDENTIFIER,
-      `"Variable name expected following "reka" "ntahinduka" statements."`,
-    ).lexeme;
+    const nameTok = this.expect(TokenType.IDENTIFIER, 'variable name');
+    const identifier = nameTok.lexeme;
 
-    // Un initialized variable
     if (this.at().type == TokenType.SEMI_COLON) {
-      this.eat();
-
-      if (isConstant)
-        throw new Error('Constant variables must be assigned a value');
-
-      return {
-        kind: 'VariableDeclaration',
-        constant: false,
+      const semi = this.eat();
+      if (isConstant) {
+        this.fail(
+          'K020',
+          mergeSpans(tokenSpan(startTok), tokenSpan(semi)),
+          {},
+          'Constant variables must be assigned a value',
+        );
+      }
+      return mkVarDecl(
         identifier,
-        value: undefined,
-      } as VariableDeclaration;
+        false,
+        undefined,
+        mergeSpans(tokenSpan(startTok), tokenSpan(semi)),
+      );
     }
 
-    this.eat(); // eat =
-
-    // Initialized variable
-    const declaration = {
-      kind: 'VariableDeclaration',
-      constant: isConstant,
+    this.eat(); // =
+    const value = this.parse_expr();
+    return mkVarDecl(
       identifier,
-      value: this.parse_expr(),
-    } as VariableDeclaration;
-
-    return declaration;
+      isConstant,
+      value,
+      mergeSpans(tokenSpan(startTok), value.span),
+    );
   }
 
-  // ! reka obj.key = value  : will work
-  // ! reka obj["key"] = value : will not work
-  // ! This is to avoid assigning values to undefined indexes in arrays, since arrays are objects
   private parse_expr(): Expr {
     return this.parse_assignment_expr();
   }
 
+  /**
+   * Primary atoms: identifiers, literals, grouping, unary ! / -.
+   * Array and object literals also live here so they can take postfix
+   * member / call chains: [1,2,3][0], {a:1}.a
+   */
   private parse_primary_expr(): Expr {
     const tk = this.at().type;
     switch (tk) {
       case TokenType.IDENTIFIER: {
-        const identifier_expr = {
-          kind: 'Identifier',
-          symbol: this.eat().lexeme,
-        } as Identifier;
-
-        return identifier_expr;
+        const tok = this.eat();
+        return mkIdent(tok.lexeme, tokenSpan(tok));
       }
       case TokenType.INTEGER:
       case TokenType.FLOAT: {
-        const nbr_literal: Expr = {
-          kind: 'NumericLiteral',
-          value: parseFloat(this.eat().lexeme),
-        } as NumericLiteral;
-
-        return nbr_literal;
+        const tok = this.eat();
+        return mkNumber(parseFloat(tok.lexeme), tokenSpan(tok));
       }
       case TokenType.STRING: {
-        const string_literal = {
-          kind: 'StringLiteral',
-          value: this.eat().lexeme,
-        } as StringLiteral;
-
-        return string_literal;
+        const tok = this.eat();
+        return mkString(tok.lexeme, tokenSpan(tok));
       }
       case TokenType.OPEN_PARANTHESES: {
-        this.eat(); // eat the opening paren
+        this.eat();
         const value = this.parse_expr();
-
-        this.expect(
-          TokenType.CLOSE_PARANTHESES,
-          'Unexpected token (?) found while parsing arguments.',
-        ); // closing paren
-
+        this.expect(TokenType.CLOSE_PARANTHESES, ')');
         return value;
       }
-      // ! We'll make arr of unary operators when we get more than one.
+      case TokenType.OPEN_BRACKET:
+        return this.parse_array_literal();
+      case TokenType.OPEN_CURLY_BRACES:
+        return this.parse_object_literal();
       case TokenType.NEGATION:
-        return this.parse_negation_expr();
+        return this.parse_unary_expr();
+      case TokenType.MINUS:
+        return this.parse_unary_expr();
       default:
-        return LogError(
-          `On line ${this.at().line}: Kin Error: Unexpected token ${this.at().lexeme}`,
+        return this.fail(
+          'K001',
+          tokenSpan(this.at()),
+          { lexeme: this.at().lexeme },
+          `Unexpected token ${this.at().lexeme}`,
         );
     }
   }
 
-  private parse_negation_expr(): Expr {
-    const operator = this.expect(
-      TokenType.NEGATION,
-      'Expected ! Operator',
-    ).lexeme;
-    // Allow !ident, !(expr), and stacked !!x via primary expressions.
+  private parse_unary_expr(): Expr {
+    const opTok = this.eat(); // ! or -
     const operand = this.parse_primary_expr();
-    return {
-      kind: 'UnaryExpr',
-      operator,
+    return mkUnary(
+      opTok.lexeme,
       operand,
-    } as UnaryExpr;
+      mergeSpans(tokenSpan(opTok), operand.span),
+    );
   }
 
   private parse_logical_expr(): Expr {
     let left = this.parse_relational_expr();
 
-    // Chain && and || (same precedence, left-associative) so a grouped
-    // expression like (a && b || c) consumes every operator before ')'.
     while (['&&', '||'].includes(this.at().lexeme)) {
       const operator = this.eat().lexeme;
       const right = this.parse_relational_expr();
-      left = {
-        kind: 'BinaryExpr',
-        left,
-        right,
-        operator,
-      } as BinaryExpr;
+      left = mkBinary(left, operator, right);
     }
 
     return left;
@@ -367,13 +483,7 @@ export default class Parser {
     if (['<', '>', '==', '!=', '<=', '>='].includes(this.at().lexeme)) {
       const operator = this.eat().lexeme;
       const right = this.parse_additive_expr();
-
-      left = {
-        kind: 'BinaryExpr',
-        left,
-        right,
-        operator,
-      } as BinaryExpr;
+      left = mkBinary(left, operator, right);
     }
 
     return left;
@@ -385,18 +495,40 @@ export default class Parser {
     while (['+', '-'].includes(this.at().lexeme)) {
       const operator = this.eat().lexeme;
       const right = this.parse_multiplicative_expr();
-      left = {
-        kind: 'BinaryExpr',
-        left,
-        right,
-        operator,
-      } as BinaryExpr;
+      left = mkBinary(left, operator, right);
     }
 
     return left;
   }
 
-  // foo.x()
+  private parse_multiplicative_expr(): Expr {
+    let left = this.parse_exponent_expr();
+
+    while (['/', '*', '%'].includes(this.at().lexeme)) {
+      const operator = this.eat().lexeme;
+      const right = this.parse_exponent_expr();
+      left = mkBinary(left, operator, right);
+    }
+
+    return left;
+  }
+
+  /**
+   * Exponentiation: right-associative, higher precedence than * / %.
+   * 2 ^ 3 ^ 2  =>  2 ^ (3 ^ 2)  = 512
+   */
+  private parse_exponent_expr(): Expr {
+    const left = this.parse_call_member_expr();
+
+    if (this.at().lexeme === '^') {
+      const operator = this.eat().lexeme;
+      const right = this.parse_exponent_expr(); // right-assoc
+      return mkBinary(left, operator, right);
+    }
+
+    return left;
+  }
+
   private parse_call_member_expr(): Expr {
     const member = this.parse_member_expr();
 
@@ -408,13 +540,15 @@ export default class Parser {
   }
 
   private parse_call_expr(caller: Expr): Expr {
-    let call_expr: Expr = {
-      kind: 'CallExpression',
+    const args = this.parse_args();
+    // Span ends at the ')' we just consumed (pos-1).
+    const endTok = this.tokens[this.pos - 1];
+    let call_expr: Expr = mkCall(
       caller,
-      args: this.parse_args(),
-    } as CallExpr;
+      args,
+      mergeSpans(caller.span, tokenSpan(endTok)),
+    );
 
-    // allow chaining: foo.x()()
     if (this.at().type == TokenType.OPEN_PARANTHESES) {
       call_expr = this.parse_call_expr(call_expr);
     }
@@ -432,199 +566,154 @@ export default class Parser {
       const operator = this.eat();
       let property: Expr;
       let computed: boolean;
+      let endSpan: Span;
 
-      // non-computed values (obj.expr)
       if (operator.type == TokenType.DOT) {
         computed = false;
-        // get identifier
         property = this.parse_primary_expr();
-
         if (property.kind !== 'Identifier') {
-          throw new Error(
-            'Dot operator (".") is illegal without right-hand-side (<-) being an Identifier.',
+          this.fail(
+            'K021',
+            property.span,
+            {},
+            'Dot operator requires an identifier on the right-hand side',
           );
         }
-      } // computed values (obj[computedVal])
-      else {
+        endSpan = property.span;
+      } else {
         computed = true;
         property = this.parse_expr();
-
-        this.expect(
-          TokenType.CLOSE_BRACKET,
-          'Closing bracket ("}") expected following "computed value" in "Member" expression.',
-        );
+        const close = this.expect(TokenType.CLOSE_BRACKET, ']');
+        endSpan = tokenSpan(close);
       }
 
-      object = {
-        kind: 'MemberExpression',
+      object = mkMember(
         object,
         property,
         computed,
-      } as MemberExpr;
+        mergeSpans(object.span, endSpan),
+      );
     }
 
     return object;
   }
 
-  private parse_multiplicative_expr(): Expr {
-    let left = this.parse_call_member_expr();
+  private parse_array_literal(): Expr {
+    const startTok = this.eat(); // [
+    const elements: Expr[] = [];
 
-    while (['/', '*', '%', '^'].includes(this.at().lexeme)) {
-      const operator = this.eat().lexeme;
-      const right = this.parse_call_member_expr();
-      left = {
-        kind: 'BinaryExpr',
-        left,
-        right,
-        operator,
-      } as BinaryExpr;
-    }
-
-    return left;
-  }
-
-  private parse_array_expr(): Expr {
-    if (this.at().type !== TokenType.OPEN_BRACKET) {
-      return this.parse_logical_expr();
-    }
-    this.eat(); // eat [ token
-    const properties = new Array<Property>();
-    let index = 0; // arr index starts at 0;
     while (this.not_eof() && this.at().type != TokenType.CLOSE_BRACKET) {
-      // [val, val2]
-      const value: Expr = this.parse_expr();
-      const property: Property = {
-        key: index.toString(),
-        value,
-        kind: 'Property',
-      } as Property;
-      properties.push(property);
-
-      index += 1; // increment the index
-
+      elements.push(this.parse_expr());
       if (this.at().type != TokenType.CLOSE_BRACKET) {
-        this.expect(
-          TokenType.COMMA,
-          `"Closing bracket ']' expected at the end of array expression"`,
-        );
+        this.expect(TokenType.COMMA, ',');
       }
     }
 
-    this.expect(
-      TokenType.CLOSE_BRACKET,
-      `"Closing bracket ']' expected at the end of array expression"`,
+    const endTok = this.expect(TokenType.CLOSE_BRACKET, ']');
+    return mkArray(
+      elements,
+      mergeSpans(tokenSpan(startTok), tokenSpan(endTok)),
     );
-
-    return { kind: 'ObjectLiteral', properties } as ObjectLiteral;
   }
 
-  private parse_object_expr(): Expr {
-    if (this.at().type !== TokenType.OPEN_CURLY_BRACES) {
-      return this.parse_array_expr();
-    }
-
-    this.eat(); // advance past {
-
-    const properties = new Array<Property>();
+  private parse_object_literal(): Expr {
+    const startTok = this.eat(); // {
+    const properties = [];
 
     while (this.not_eof() && this.at().type != TokenType.CLOSE_CURLY_BRACES) {
-      // {key: val, key2: val}
-      const key = this.expect(
-        TokenType.IDENTIFIER,
-        `"Identifier Expected for object key"`,
-      ).lexeme;
+      const keyTok = this.expect(TokenType.IDENTIFIER, 'object key');
+      const key = keyTok.lexeme;
 
-      // Allow shorthand key: pair -> {key, }
       if (this.at().type == TokenType.COMMA) {
-        this.eat(); // advance past comma (,)
-        properties.push({ key, kind: 'Property' });
+        this.eat();
+        properties.push(mkProperty(key, undefined, tokenSpan(keyTok)));
         continue;
       } else if (this.at().type == TokenType.CLOSE_CURLY_BRACES) {
-        properties.push({ key, kind: 'Property' });
+        properties.push(mkProperty(key, undefined, tokenSpan(keyTok)));
         continue;
       }
 
-      // {key: val}
-      this.expect(TokenType.COLON, `"Expected colon (:) after key ${key}"`);
+      this.expect(TokenType.COLON, ':');
       const value = this.parse_expr();
-
-      properties.push({ key, value, kind: 'Property' });
+      properties.push(
+        mkProperty(key, value, mergeSpans(tokenSpan(keyTok), value.span)),
+      );
 
       if (this.at().type != TokenType.CLOSE_CURLY_BRACES) {
-        this.expect(
-          TokenType.COMMA,
-          `"Closing brace '}' expected at the end of object expression"`,
-        );
+        this.expect(TokenType.COMMA, ',');
       }
     }
 
-    this.expect(
-      TokenType.CLOSE_CURLY_BRACES,
-      `"Closing brace '}' expected at the end of object expression"`,
+    const endTok = this.expect(TokenType.CLOSE_CURLY_BRACES, '}');
+    return mkObject(
+      properties,
+      mergeSpans(tokenSpan(startTok), tokenSpan(endTok)),
     );
-
-    return { kind: 'ObjectLiteral', properties } as ObjectLiteral;
   }
 
   private parse_if_statement(): Stmt {
-    this.eat(); // advance past niba or nanone_niba
-    this.expect(TokenType.OPEN_PARANTHESES, `"Expected ( after niba"`);
-    const condition: Stmt = this.parse_expr();
-    this.expect(TokenType.CLOSE_PARANTHESES, `"Expected ) after condition"`);
-    const body: Stmt[] = this.parse_block_statement();
+    const startTok = this.eat(); // niba or nanone_niba
+    this.expect(TokenType.OPEN_PARANTHESES, '(');
+    const condition = this.parse_expr();
+    this.expect(TokenType.CLOSE_PARANTHESES, ')');
+    const body = this.parse_block_statement();
     let alternate: Stmt[] = [];
 
     if (this.at().type == TokenType.NANONE_NIBA) {
       alternate = [this.parse_if_statement()];
     } else if (this.at().type == TokenType.NIBA_BYANZE) {
-      this.eat(); // advance past niba_byanze
+      this.eat();
       alternate = this.parse_block_statement();
     }
 
-    return {
-      kind: 'ConditionalStatement',
-      body,
+    const endSpan =
+      alternate.length > 0
+        ? alternate[alternate.length - 1].span
+        : body.length > 0
+          ? body[body.length - 1].span
+          : condition.span;
+
+    return mkConditional(
       condition,
+      body,
       alternate,
-    } as ConditionalStmt;
+      mergeSpans(tokenSpan(startTok), endSpan),
+    );
   }
 
   private parse_loop_statement(): Stmt {
-    this.eat(); // advance past subiramo_niba
-    this.expect(TokenType.OPEN_PARANTHESES, `"Expected ( after subiramo_niba"`);
-    const condition: Stmt = this.parse_expr();
-    this.expect(TokenType.CLOSE_PARANTHESES, `"Expected ) after condition"`);
+    const startTok = this.eat(); // subiramo_niba
+    this.expect(TokenType.OPEN_PARANTHESES, '(');
+    const condition = this.parse_expr();
+    this.expect(TokenType.CLOSE_PARANTHESES, ')');
     this.loopDepth++;
     try {
-      const body: Stmt[] = this.parse_block_statement();
-
-      return {
-        kind: 'LoopStatement',
-        body,
-        condition,
-      } as LoopStatement;
+      const body = this.parse_block_statement();
+      const endSpan =
+        body.length > 0 ? body[body.length - 1].span : condition.span;
+      return mkLoop(condition, body, mergeSpans(tokenSpan(startTok), endSpan));
     } finally {
       this.loopDepth--;
     }
   }
 
   private parse_function_declaration(): Stmt {
-    this.eat(); // eat porogaramu_ntoya keyword
-    const name = this.expect(
-      TokenType.IDENTIFIER,
-      `"Expected function name following porogaramu_ntoya keyword"`,
-    ).lexeme;
+    const startTok = this.eat(); // porogaramu_ntoya
+    const nameTok = this.expect(TokenType.IDENTIFIER, 'function name');
+    const name = nameTok.lexeme;
 
     const args = this.parse_args();
-    const params: string[] = new Array<string>();
+    const params: string[] = [];
 
     for (const arg of args) {
       if (arg.kind != 'Identifier') {
-        LogError(
-          `On line ${this.at().line}: Kin Error: Expected identifier for function parameter`,
+        this.fail(
+          'K022',
+          arg.span,
+          {},
+          'Expected identifier for function parameter',
         );
       }
-
       params.push((arg as Identifier).symbol);
     }
 
@@ -638,35 +727,28 @@ export default class Parser {
       this.loopDepth = savedLoopDepth;
     }
 
-    // Add a function terminator
-    body.push({ kind: 'FunctionTerminator' });
-
-    return {
-      kind: 'FunctionDeclaration',
+    const endSpan =
+      body.length > 0 ? body[body.length - 1].span : tokenSpan(nameTok);
+    return mkFunction(
       name,
-      parameters: params,
+      params,
       body,
-    } as FunctionDeclaration;
+      mergeSpans(tokenSpan(startTok), endSpan),
+    );
   }
 
   private parse_args(): Expr[] {
-    this.expect(TokenType.OPEN_PARANTHESES, `"Expected ( after function name"`);
+    this.expect(TokenType.OPEN_PARANTHESES, '(');
     const args =
       this.at().type == TokenType.CLOSE_PARANTHESES
-        ? new Array<Expr>()
+        ? []
         : this.parse_args_list();
-
-    this.expect(
-      TokenType.CLOSE_PARANTHESES,
-      `"Expected ) after function parameters"`,
-    );
-
+    this.expect(TokenType.CLOSE_PARANTHESES, ')');
     return args;
   }
 
-  private parse_args_list() {
+  private parse_args_list(): Expr[] {
     const args: Expr[] = [this.parse_assignment_expr()];
-
     while (this.at().type == TokenType.COMMA && this.eat()) {
       args.push(this.parse_assignment_expr());
     }
@@ -674,18 +756,22 @@ export default class Parser {
   }
 
   private parse_assignment_expr(): Expr {
-    const left = this.parse_object_expr();
+    // Assignment binds less tightly than everything else.
+    // Left side starts at call/member (which includes literals with postfix).
+    const left = this.parse_logical_expr();
     if (this.at().type == TokenType.EQUAL) {
-      this.eat(); // advance past the equals
+      this.eat();
       const value = this.parse_assignment_expr();
-
-      return {
-        kind: 'AssignmentExpression',
-        value,
-        assigne: left,
-      } as AssignmentExpr;
+      return mkAssign(left, value);
     }
-
     return left;
+  }
+}
+
+/** Internal signal used only for error recovery inside parse(). */
+class ParseRecovery {
+  readonly error: KinError;
+  constructor(error: KinError) {
+    this.error = error;
   }
 }

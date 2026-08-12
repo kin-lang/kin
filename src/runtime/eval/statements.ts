@@ -13,33 +13,53 @@ import {
   Stmt,
   VariableDeclaration,
 } from '../../parser/ast';
-import { LogError } from '../../lib/log';
+import { KinError } from '../../lib/errors';
 import Environment from '../environment';
 import { Interpreter } from '../interpreter';
-import { BooleanVal, FunctionValue, MK_NULL, RuntimeVal } from '../values';
+import { FunctionValue, MK_NULL, RuntimeVal } from '../values';
+import { isTruthy } from '../truthy';
+import {
+  BreakSignal,
+  ContinueSignal,
+  isBreakSignal,
+  isContinueSignal,
+  isReturnSignal,
+} from '../signals';
 
 export default class EvalStmt {
-  /** Set when hagarara (break) is evaluated inside a loop body */
-  public static loopBroken = false;
-  /** Set when komeza (continue) is evaluated inside a loop body */
-  public static loopContinued = false;
-  /** Number of loops currently being evaluated */
-  public static loopDepth = 0;
-
   public static eval_program(program: Program, env: Environment): RuntimeVal {
     let lastEvaluated: RuntimeVal = MK_NULL();
 
-    for (const statement of program.body) {
-      lastEvaluated = Interpreter.evaluate(statement, env);
+    try {
+      for (const statement of program.body) {
+        lastEvaluated = Interpreter.evaluate(statement, env);
+      }
+    } catch (e) {
+      if (isContinueSignal(e)) {
+        throw new KinError('K013', {
+          message: 'komeza can only be used inside a loop',
+        });
+      }
+      if (isBreakSignal(e)) {
+        throw new KinError('K014', {
+          message: 'hagarara can only be used inside a loop',
+        });
+      }
+      if (isReturnSignal(e)) {
+        throw new KinError('K015', {
+          message: 'tanga can only be used inside a function',
+        });
+      }
+      throw e;
     }
 
     return lastEvaluated;
   }
+
   public static eval_function_declaration(
     declaration: FunctionDeclaration,
     env: Environment,
   ): RuntimeVal {
-    // Create new function scope
     const fn = {
       type: 'fn',
       name: declaration.name,
@@ -50,6 +70,7 @@ export default class EvalStmt {
 
     return env.declareVar(declaration.name, fn, true);
   }
+
   public static eval_val_declaration(
     declaration: VariableDeclaration,
     env: Environment,
@@ -60,12 +81,13 @@ export default class EvalStmt {
 
     return env.declareVar(declaration.identifier, value, declaration.constant);
   }
+
   public static eval_conditional_statement(
     declaration: ConditionalStmt,
     env: Environment,
   ): RuntimeVal {
     const test = Interpreter.evaluate(declaration.condition, env);
-    if ((test as BooleanVal).value === true) {
+    if (isTruthy(test)) {
       return this.eval_body(declaration.body, env);
     } else if (declaration.alternate) {
       return this.eval_body(declaration.alternate, env);
@@ -73,6 +95,7 @@ export default class EvalStmt {
       return MK_NULL();
     }
   }
+
   public static eval_loop_statement(
     declaration: LoopStatement,
     env: Environment,
@@ -81,41 +104,35 @@ export default class EvalStmt {
     const body = declaration.body;
 
     let test = Interpreter.evaluate(declaration.condition, env);
+    if (!isTruthy(test)) return MK_NULL();
 
-    if ((test as BooleanVal).value !== true) return MK_NULL(); // The loop didn't start
-    this.loopDepth++;
-    try {
-      while ((test as BooleanVal).value) {
+    while (isTruthy(test)) {
+      try {
         this.eval_body(body, new Environment(env), false);
-        // hagarara was hit — exit the loop
-        if (this.loopBroken) {
-          this.loopBroken = false;
+      } catch (e) {
+        if (e instanceof BreakSignal) {
           break;
         }
-        // komeza was hit — skip to the next iteration
-        this.loopContinued = false;
-        test = Interpreter.evaluate(declaration.condition, env);
+        if (e instanceof ContinueSignal) {
+          // Fall through to the next condition check.
+        } else {
+          throw e;
+        }
       }
-    } finally {
-      this.loopDepth--;
+      test = Interpreter.evaluate(declaration.condition, env);
     }
 
     return MK_NULL();
   }
 
   public static eval_break_statement(_declaration: BreakStatement): RuntimeVal {
-    this.loopBroken = true;
-    return MK_NULL();
+    throw new BreakSignal();
   }
 
   public static eval_continue_statement(
     _declaration: ContinueStatement,
   ): RuntimeVal {
-    if (this.loopDepth === 0) {
-      LogError('Kin Error: komeza can only be used inside a loop');
-    }
-    this.loopContinued = true;
-    return MK_NULL();
+    throw new ContinueSignal();
   }
 
   public static eval_body(
@@ -123,22 +140,11 @@ export default class EvalStmt {
     env: Environment,
     newEnv: boolean = true,
   ): RuntimeVal {
-    let scope: Environment;
-
-    if (newEnv) {
-      scope = new Environment(env);
-    } else {
-      scope = env;
-    }
+    const scope = newEnv ? new Environment(env) : env;
     let result: RuntimeVal = MK_NULL();
 
-    // Evaluate the body line by line
     for (const stmt of body) {
       result = Interpreter.evaluate(stmt, scope);
-      // stop evaluating remaining statements when hagarara or komeza is reached
-      if (this.loopBroken || this.loopContinued) {
-        return result;
-      }
     }
 
     return result;

@@ -12,6 +12,7 @@ import {
   Identifier,
   VariableDeclaration,
 } from '../src/parser/ast';
+// Identifier used by default-only switch condition (nibyo).
 import { StringVal, NumberVal } from '../src/runtime/values';
 
 describe('Switch Case (Gereranya) Tests', () => {
@@ -36,7 +37,13 @@ describe('Switch Case (Gereranya) Tests', () => {
         { line: 1, type: TokenType.EOF, lexeme: 'EOF' },
       ];
 
-      expect(tokens).toEqual(expectedTokens);
+      expect(
+        tokens.map((tok) => ({
+          line: tok.line,
+          type: tok.type,
+          lexeme: tok.lexeme,
+        })),
+      ).toEqual(expectedTokens);
     });
 
     test('should tokenize complex switch statement with multiple cases', () => {
@@ -68,40 +75,17 @@ describe('Switch Case (Gereranya) Tests', () => {
       const parser = new Parser();
       const ast = parser.produceAST(sourceCode);
 
-      const expectedAst = {
-        kind: 'Program',
-        body: [
-          {
-            kind: 'ConditionalStatement',
-            condition: {
-              kind: 'BinaryExpr',
-              operator: '==',
-              left: {
-                kind: 'Identifier',
-                symbol: 'x',
-              },
-              right: {
-                kind: 'NumericLiteral',
-                value: 1,
-              },
-            },
-            body: [
-              {
-                kind: 'VariableDeclaration',
-                constant: false,
-                identifier: 'a',
-                value: {
-                  kind: 'NumericLiteral',
-                  value: 1,
-                },
-              },
-            ],
-            alternate: [],
-          },
-        ],
-      };
-
-      expect(ast).toEqual(expectedAst);
+      expect(ast.kind).toBe('Program');
+      const stmt = ast.body[0] as ConditionalStmt;
+      expect(stmt.kind).toBe('ConditionalStatement');
+      const condition = stmt.condition as BinaryExpr;
+      expect(condition.operator).toBe('==');
+      expect((condition.left as Identifier).symbol).toBe('x');
+      expect((condition.right as NumericLiteral).value).toBe(1);
+      expect(stmt.body).toHaveLength(1);
+      expect((stmt.body[0] as VariableDeclaration).identifier).toBe('a');
+      expect(stmt.alternate).toHaveLength(0);
+      expect(stmt.span).toBeDefined();
     });
 
     test('should parse switch statement with multiple cases', () => {
@@ -201,14 +185,9 @@ describe('Switch Case (Gereranya) Tests', () => {
 
       const defaultSwitch = ast.body[0] as ConditionalStmt;
       expect(defaultSwitch.kind).toBe('ConditionalStatement');
-      // When there's only a default case, the parser creates a fallback structure
-      // with empty body and alternate, and a condition comparing to empty string
-      expect(defaultSwitch.body).toHaveLength(0);
-      expect(defaultSwitch.alternate).toHaveLength(0);
-      const condition = defaultSwitch.condition as BinaryExpr;
-      expect(condition.kind).toBe('BinaryExpr');
-      expect(condition.operator).toBe('==');
-      expect((condition.right as StringLiteral).value).toBe('');
+      // Default-only switch now runs the default body (condition is always true).
+      expect(defaultSwitch.body.length).toBeGreaterThan(0);
+      expect((defaultSwitch.condition as Identifier).symbol).toBe('nibyo');
     });
   });
 
