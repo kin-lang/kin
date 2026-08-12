@@ -8,6 +8,7 @@ import {
   AssignmentExpr,
   BinaryExpr,
   BreakStatement,
+  ContinueStatement,
   CallExpr,
   LoopStatement,
   FunctionDeclaration,
@@ -68,6 +69,8 @@ export class Interpreter {
         return EvalStmt.eval_loop_statement(astNode as LoopStatement, env);
       case 'BreakStatement':
         return EvalStmt.eval_break_statement(astNode as BreakStatement);
+      case 'ContinueStatement':
+        return EvalStmt.eval_continue_statement(astNode as ContinueStatement);
       case 'VariableDeclaration':
         return EvalStmt.eval_val_declaration(
           astNode as VariableDeclaration,

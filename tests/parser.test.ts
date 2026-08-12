@@ -189,6 +189,94 @@ describe('Parser', () => {
     expect(ast).toEqual(expectedAst);
   });
 
+  test('should parse komeza (continue) inside loop body', () => {
+    const sourceCode =
+      'subiramo_niba (i < 10) { niba(i == 5) { komeza } i = i + 1 }';
+    const parser = new Parser();
+    const ast = parser.produceAST(sourceCode);
+
+    const expectedAst = {
+      kind: 'Program',
+      body: [
+        {
+          kind: 'LoopStatement',
+          condition: {
+            kind: 'BinaryExpr',
+            operator: '<',
+            left: {
+              kind: 'Identifier',
+              symbol: 'i',
+            },
+            right: {
+              kind: 'NumericLiteral',
+              value: 10,
+            },
+          },
+          body: [
+            {
+              kind: 'ConditionalStatement',
+              condition: {
+                kind: 'BinaryExpr',
+                operator: '==',
+                left: {
+                  kind: 'Identifier',
+                  symbol: 'i',
+                },
+                right: {
+                  kind: 'NumericLiteral',
+                  value: 5,
+                },
+              },
+              body: [
+                {
+                  kind: 'ContinueStatement',
+                },
+              ],
+              alternate: [],
+            },
+            {
+              kind: 'AssignmentExpression',
+              assigne: {
+                kind: 'Identifier',
+                symbol: 'i',
+              },
+              value: {
+                kind: 'BinaryExpr',
+                operator: '+',
+                left: {
+                  kind: 'Identifier',
+                  symbol: 'i',
+                },
+                right: {
+                  kind: 'NumericLiteral',
+                  value: 1,
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(ast).toEqual(expectedAst);
+  });
+
+  test('should reject komeza (continue) outside a loop', () => {
+    const parser = new Parser();
+    expect(() => parser.produceAST('komeza')).toThrowError(
+      'komeza can only be used inside a loop',
+    );
+  });
+
+  test('should reject komeza (continue) inside a function even when the function is nested in a loop', () => {
+    const parser = new Parser();
+    expect(() =>
+      parser.produceAST(
+        'subiramo_niba (nibyo) { porogaramu_ntoya foo() { komeza } }',
+      ),
+    ).toThrowError('komeza can only be used inside a loop');
+  });
+
   test('should parse object literal with properties', () => {
     const sourceCode = 'reka obj = { key: "value", num: 42 }';
     const parser = new Parser();

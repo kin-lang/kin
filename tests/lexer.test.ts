@@ -47,6 +47,16 @@ describe('Lexer', () => {
     expect(tokens).toEqual(expectedTokens);
   });
 
+  test('should tokenize komeza (continue) keyword', () => {
+    const lexer = new Lexer('komeza');
+    const tokens = lexer.tokenize();
+    const expectedTokens = [
+      { line: 1, type: TokenType.KOMEZA, lexeme: 'komeza' },
+      { line: 1, type: TokenType.EOF, lexeme: 'EOF' },
+    ];
+    expect(tokens).toEqual(expectedTokens);
+  });
+
   test('should tokenize string literals correctly', () => {
     const lexer = new Lexer('"Hello, world!"');
     const tokens = lexer.tokenize();
