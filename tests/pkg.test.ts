@@ -226,7 +226,9 @@ describe('path dependencies', () => {
     expect(lock.packages.helper.integrity).toMatch(/^sha256-/);
     expect(lock.packages.helper.integrity).toBe(hashDirectory(depA));
 
-    expect(resolveInstalledPackage('helper', project)).toBe(installed);
+    expect(fs.realpathSync(resolveInstalledPackage('helper', project)!)).toBe(
+      fs.realpathSync(installed),
+    );
 
     const listed = listPackagesNamed({ cwd: project });
     expect(listed).toHaveLength(1);
@@ -364,7 +366,10 @@ describe('security: path containment', () => {
       fs.writeFileSync(path.join(outside, 'secret.txt'), 'do not delete\n');
       // Valid package name only installs under kin_modules.
       const dest = packageInstallPath(project, 'legit');
-      expect(dest.startsWith(path.join(project, MODULES_DIR))).toBe(true);
+      const modulesReal = fs.realpathSync(path.join(project, MODULES_DIR));
+      expect(dest === path.join(modulesReal, 'legit') || dest.startsWith(modulesReal + path.sep)).toBe(
+        true,
+      );
       expect(fs.existsSync(path.join(outside, 'secret.txt'))).toBe(true);
     } finally {
       fs.rmSync(outside, { recursive: true, force: true });
@@ -531,5 +536,89 @@ describe('hashDirectory stability', () => {
       fs.rmSync(a, { recursive: true, force: true });
       fs.rmSync(b, { recursive: true, force: true });
     }
+  });
+});
+
+describe('security: kin_modules symlink refused', () => {
+  it('refuses install when kin_modules is a symlink outside the project', () => {
+    const project = makeTempDir('kin-mod-sym-proj-');
+    const victim = makeTempDir('kin-mod-sym-victim-');
+    const dep = makeTempDir('kin-mod-sym-dep-');
+    try {
+      initProject({ cwd: project, name: 'mod-sym-app' });
+      writePackage(dep, 'legit', '1.0.0');
+      fs.writeFileSync(path.join(victim, 'keep.txt'), 'safe\n');
+      // Point kin_modules at an external directory.
+      fs.symlinkSync(victim, path.join(project, MODULES_DIR));
+
+      expect(() =>
+        addDependency(`path:${dep}`, { cwd: project, name: 'legit' }),
+      ).toThrow(PathError);
+
+      expect(fs.existsSync(path.join(victim, 'legit'))).toBe(false);
+      expect(fs.existsSync(path.join(victim, 'keep.txt'))).toBe(true);
+      // Failed add must not leave a dangling dependency in kin.json.
+      expect(readManifest(project).dependencies?.legit).toBeUndefined();
+    } finally {
+      fs.rmSync(project, { recursive: true, force: true });
+      fs.rmSync(victim, { recursive: true, force: true });
+      fs.rmSync(dep, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('security: git source allowlist', () => {
+  it('rejects dashed locations, ext::, and leading-dash refs', () => {
+    expect(() => parseSource('git+--upload-pack=evil')).toThrow(SourceError);
+    expect(() => parseSource('git+ext::sh -c evil')).toThrow(SourceError);
+    expect(() =>
+      parseSource('git+https://github.com/org/pkg.git#--output=/tmp/x'),
+    ).toThrow(SourceError);
+  });
+
+  it('classifies bare filesystem paths ending in .git as path, not git', () => {
+    const root = '/tmp/project';
+    const a = parseSource('/tmp/helpers.git', root);
+    expect(a.type).toBe('path');
+    expect(a.location).toBe(path.normalize('/tmp/helpers.git'));
+
+    const b = parseSource('./vendor/pkg.git', root);
+    expect(b.type).toBe('path');
+    expect(b.location).toBe(path.resolve(root, 'vendor/pkg.git'));
+  });
+});
+
+describe('addDependency transactional manifest write', () => {
+  it('does not persist a dependency when materialize fails', () => {
+    const project = makeTempDir('kin-add-tx-');
+    const dep = makeTempDir('kin-add-tx-dep-');
+    try {
+      initProject({ cwd: project, name: 'tx-app' });
+      writePackage(dep, 'helper', '1.0.0');
+      // Block installs by making kin_modules a regular file.
+      fs.writeFileSync(path.join(project, MODULES_DIR), 'not a dir');
+
+      expect(() =>
+        addDependency(`path:${dep}`, { cwd: project, name: 'helper' }),
+      ).toThrow();
+
+      expect(readManifest(project).dependencies?.helper).toBeUndefined();
+      expect(readLockfile(project).packages.helper).toBeUndefined();
+    } finally {
+      fs.rmSync(project, { recursive: true, force: true });
+      fs.rmSync(dep, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('manifest main containment', () => {
+  it('rejects main paths that escape the project', () => {
+    expect(() =>
+      validateManifest({
+        name: 'x',
+        version: '1.0.0',
+        main: '../../../etc/passwd',
+      }),
+    ).toThrow(ManifestError);
   });
 });

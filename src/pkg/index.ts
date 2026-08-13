@@ -42,6 +42,8 @@ export {
   parseSource,
   formatPathSource,
   formatGitSource,
+  validateGitLocation,
+  validateGitRef,
 } from './source';
 export { hashDirectory, IntegrityError } from './integrity';
 export {

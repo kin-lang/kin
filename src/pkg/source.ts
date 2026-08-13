@@ -8,6 +8,15 @@ export class SourceError extends Error {
   }
 }
 
+const ALLOWED_GIT_PREFIXES = [
+  'https://',
+  'http://',
+  'ssh://',
+  'git://',
+  'file://',
+  'git@',
+];
+
 /**
  * Parse a dependency source string into a PackageSource.
  *
@@ -40,41 +49,53 @@ export function parseSource(raw: string, projectRoot?: string): PackageSource {
     return parseGitSource(trimmed.slice('git+'.length), trimmed);
   }
 
-  // Bare git-ish URLs
-  if (
-    /^(https?:\/\/|git@|ssh:\/\/|git:\/\/|file:\/\/)/.test(trimmed) ||
-    trimmed.endsWith('.git') ||
-    trimmed.includes('.git#')
-  ) {
+  // Filesystem paths take precedence over the ".git" suffix heuristic so that
+  // ./vendor/helpers.git and /abs/pkg.git install as path deps, not git clones.
+  if (isFilesystemPathForm(trimmed)) {
+    return {
+      type: 'path',
+      location: resolvePathLocation(trimmed, projectRoot),
+      raw: trimmed,
+    };
+  }
+
+  // URL-like git forms (scheme or git@ host syntax).
+  if (looksLikeGitUrl(trimmed)) {
     return parseGitSource(trimmed, trimmed);
-  }
-
-  // Windows drive-letter paths are only valid on Windows.
-  if (/^[A-Za-z]:[\\/]/.test(trimmed)) {
-    if (process.platform !== 'win32') {
-      throw new SourceError(
-        `Windows drive path "${trimmed}" is not supported on this platform. Use a POSIX path under path: or a git URL.`,
-      );
-    }
-    return {
-      type: 'path',
-      location: resolvePathLocation(trimmed, projectRoot),
-      raw: trimmed,
-    };
-  }
-
-  // Relative / absolute filesystem path
-  if (trimmed.startsWith('.') || trimmed.startsWith('/')) {
-    return {
-      type: 'path',
-      location: resolvePathLocation(trimmed, projectRoot),
-      raw: trimmed,
-    };
   }
 
   throw new SourceError(
     `Unrecognized dependency source "${raw}". Use path:./dir, a filesystem path, or a git URL (git+https://... or https://...git).`,
   );
+}
+
+function isFilesystemPathForm(value: string): boolean {
+  if (value.startsWith('.') || value.startsWith('/')) return true;
+  if (/^[A-Za-z]:[\\/]/.test(value)) {
+    if (process.platform !== 'win32') {
+      throw new SourceError(
+        `Windows drive path "${value}" is not supported on this platform. Use a POSIX path under path: or a git URL.`,
+      );
+    }
+    return true;
+  }
+  return false;
+}
+
+function looksLikeGitUrl(value: string): boolean {
+  const withoutRef = value.replace(/#.*$/, '');
+  if (ALLOWED_GIT_PREFIXES.some((p) => withoutRef.startsWith(p))) {
+    return true;
+  }
+  // Bare host/path ending in .git only when it does not look like a local path
+  // (already handled above). Reject ambiguous registry-style names.
+  if (
+    withoutRef.endsWith('.git') &&
+    (withoutRef.includes('://') || withoutRef.startsWith('git@'))
+  ) {
+    return true;
+  }
+  return false;
 }
 
 function resolvePathLocation(location: string, projectRoot?: string): string {
@@ -104,12 +125,49 @@ function parseGitSource(urlWithMaybeRef: string, raw: string): PackageSource {
     throw new SourceError(`Invalid git source: ${raw}`);
   }
 
+  validateGitLocation(location);
+  if (ref !== undefined) {
+    validateGitRef(ref);
+  }
+
   return {
     type: 'git',
     location,
     ref,
     raw,
   };
+}
+
+/** Reject dashed args, ext::, and other non-URL git locations. */
+export function validateGitLocation(location: string): void {
+  if (!location || location.startsWith('-')) {
+    throw new SourceError(
+      `Invalid git location "${location}": must not be empty or start with "-"`,
+    );
+  }
+  if (location.startsWith('ext::') || location.includes('ext::')) {
+    throw new SourceError(
+      `Git protocol "ext::" is not allowed. Use https, ssh, git, or file URLs.`,
+    );
+  }
+  const allowed = ALLOWED_GIT_PREFIXES.some((p) => location.startsWith(p));
+  if (!allowed) {
+    throw new SourceError(
+      `Unsupported git location "${location}". Allowed prefixes: ${ALLOWED_GIT_PREFIXES.join(', ')}`,
+    );
+  }
+}
+
+export function validateGitRef(ref: string): void {
+  if (!ref || ref.startsWith('-')) {
+    throw new SourceError(
+      `Invalid git ref "${ref}": must not be empty or start with "-"`,
+    );
+  }
+  // Conservative: reject shell metacharacters and path traversal in refs.
+  if (/[\0\n\r]/.test(ref) || ref.includes('..')) {
+    throw new SourceError(`Invalid git ref "${ref}"`);
+  }
 }
 
 /** Format a path source relative to project root when possible. */

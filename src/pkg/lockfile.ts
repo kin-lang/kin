@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { KinLockfile, LockedPackage } from './types';
-import { lockfilePath } from './paths';
+import { lockfilePath, writeJsonAtomic } from './paths';
 import { isValidPackageName } from './names';
 
 export class LockfileError extends Error {
@@ -39,17 +39,16 @@ export function readLockfile(root: string): KinLockfile {
 }
 
 export function writeLockfile(root: string, lock: KinLockfile): void {
-  validateLockfile(lock, lockfilePath(root));
+  const validated = validateLockfile(lock, lockfilePath(root));
   // Stable key order for nicer diffs.
   const ordered: KinLockfile = {
     lockfileVersion: 1,
     packages: {},
   };
-  for (const key of Object.keys(lock.packages).sort()) {
-    ordered.packages[key] = lock.packages[key];
+  for (const key of Object.keys(validated.packages).sort()) {
+    ordered.packages[key] = validated.packages[key];
   }
-  const file = lockfilePath(root);
-  fs.writeFileSync(file, JSON.stringify(ordered, null, 2) + '\n', 'utf-8');
+  writeJsonAtomic(lockfilePath(root), ordered);
 }
 
 export function validateLockfile(

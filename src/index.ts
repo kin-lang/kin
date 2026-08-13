@@ -61,6 +61,9 @@ import {
   LockfileError,
   FetchError,
   PathError,
+  IntegrityError,
+  hashDirectory,
+  containProjectRelativePath,
 } from './pkg';
 
 export {
@@ -116,6 +119,9 @@ export {
   LockfileError,
   FetchError,
   PathError,
+  IntegrityError,
+  hashDirectory,
+  containProjectRelativePath,
 };
 
 export type {

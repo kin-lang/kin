@@ -85,14 +85,19 @@ function fetchPath(source: PackageSource): FetchedPackage {
 
 function fetchGit(source: PackageSource): FetchedPackage {
   assertGitAvailable();
+  // Defense in depth: location/ref already validated in parseSource.
+  if (source.location.startsWith('-') || source.ref?.startsWith('-')) {
+    throw new FetchError('Invalid git location or ref');
+  }
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kin-pkg-'));
   try {
     // Shallow clone; if a specific ref is given, try it as branch/tag first.
+    // Use `--` so location cannot be interpreted as a git option.
     const cloneArgs = ['clone', '--depth', '1'];
     if (source.ref) {
       cloneArgs.push('--branch', source.ref);
     }
-    cloneArgs.push(source.location, tmp);
+    cloneArgs.push('--', source.location, tmp);
 
     try {
       execFileSync('git', cloneArgs, {
@@ -104,11 +109,13 @@ function fetchGit(source: PackageSource): FetchedPackage {
       fs.rmSync(tmp, { recursive: true, force: true });
       fs.mkdirSync(tmp, { recursive: true });
       try {
-        execFileSync('git', ['clone', source.location, tmp], {
+        execFileSync('git', ['clone', '--', source.location, tmp], {
           stdio: ['ignore', 'pipe', 'pipe'],
           encoding: 'utf-8',
         });
         if (source.ref) {
+          // Do not use `checkout -- <ref>` — git treats args after `--` as pathspecs.
+          // Ref is validated to not start with `-` in parseSource.
           execFileSync('git', ['checkout', source.ref], {
             cwd: tmp,
             stdio: ['ignore', 'pipe', 'pipe'],

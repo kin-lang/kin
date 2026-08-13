@@ -1,7 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { KinManifest } from './types';
-import { manifestPath } from './paths';
+import {
+  containProjectRelativePath,
+  manifestPath,
+  PathError,
+  writeJsonAtomic,
+} from './paths';
 import { isValidPackageName } from './names';
 
 export { isValidPackageName } from './names';
@@ -49,8 +54,23 @@ export function validateManifest(
   ) {
     throw new ManifestError(`${fileHint}: "description" must be a string`);
   }
-  if (obj.main !== undefined && typeof obj.main !== 'string') {
-    throw new ManifestError(`${fileHint}: "main" must be a string`);
+  if (obj.main !== undefined) {
+    if (typeof obj.main !== 'string') {
+      throw new ManifestError(`${fileHint}: "main" must be a string`);
+    }
+    try {
+      // Containment relative to a synthetic root; rejects .. and absolute paths.
+      obj.main = containProjectRelativePath(
+        path.sep === '\\' ? 'C:\\kin-project' : '/kin-project',
+        obj.main,
+        'main',
+      );
+    } catch (e) {
+      if (e instanceof PathError) {
+        throw new ManifestError(`${fileHint}: ${e.message}`);
+      }
+      throw e;
+    }
   }
   if (obj.kin !== undefined && typeof obj.kin !== 'string') {
     throw new ManifestError(`${fileHint}: "kin" must be a string`);
@@ -109,10 +129,8 @@ export function readManifest(root: string): KinManifest {
 }
 
 export function writeManifest(root: string, manifest: KinManifest): void {
-  validateManifest(manifest, manifestPath(root));
-  const file = manifestPath(root);
-  const body = JSON.stringify(manifest, null, 2) + '\n';
-  fs.writeFileSync(file, body, 'utf-8');
+  const validated = validateManifest(manifest, manifestPath(root));
+  writeJsonAtomic(manifestPath(root), validated);
 }
 
 /** Create a default manifest for a new project. */

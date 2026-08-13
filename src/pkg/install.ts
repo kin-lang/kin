@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import {
   cleanupFetched,
   copyPackageTree,
@@ -15,6 +14,7 @@ import {
 import { readManifest, writeManifest } from './manifest';
 import { isValidPackageName } from './names';
 import {
+  ensureModulesDir,
   findProjectRoot,
   isInsideDirectory,
   modulesDir,
@@ -112,21 +112,23 @@ export function addDependency(
       );
     }
 
-    if (!manifest.dependencies) {
-      manifest.dependencies = {};
-    }
-
-    // Store a portable source string in the manifest when possible.
+    // Portable source string for the manifest.
     let storedSpec: string;
     if (source.type === 'path') {
       storedSpec = formatPathSource(source.location, root);
     } else {
       storedSpec = formatGitSource(source.location, source.ref);
     }
+
+    // Install first so a failed materialize does not leave a dangling dep
+    // entry in kin.json.
+    const result = materialize(root, name, storedSpec, fetched, lock);
+
+    if (!manifest.dependencies) {
+      manifest.dependencies = {};
+    }
     manifest.dependencies[name] = storedSpec;
     writeManifest(root, manifest);
-
-    const result = materialize(root, name, storedSpec, fetched, lock);
     writeLockfile(root, lock);
     return result;
   } finally {
@@ -272,7 +274,9 @@ function safeRemoveInstalled(root: string, name: string): void {
     return;
   }
   let installed: string;
+  let modulesReal: string;
   try {
+    modulesReal = ensureModulesDir(root);
     installed = packageInstallPath(root, name);
   } catch (e) {
     if (e instanceof PathError) {
@@ -280,19 +284,30 @@ function safeRemoveInstalled(root: string, name: string): void {
     }
     throw e;
   }
-  const modules = pathResolveModules(root);
-  if (!isInsideDirectory(modules, installed) || installed === modules) {
+  if (!isInsideDirectory(modulesReal, installed) || installed === modulesReal) {
     throw new InstallError(
-      `Refusing to remove path outside ${modules}: ${installed}`,
+      `Refusing to remove path outside ${modulesReal}: ${installed}`,
     );
   }
   if (fs.existsSync(installed)) {
-    fs.rmSync(installed, { recursive: true, force: true });
+    // Re-check realpath if the entry already exists (symlink swap defense).
+    try {
+      const realInstalled = fs.realpathSync(installed);
+      if (
+        !isInsideDirectory(modulesReal, realInstalled) ||
+        realInstalled === modulesReal
+      ) {
+        throw new InstallError(
+          `Refusing to remove path outside ${modulesReal}: ${realInstalled}`,
+        );
+      }
+      fs.rmSync(realInstalled, { recursive: true, force: true });
+    } catch (e) {
+      if (e instanceof InstallError) throw e;
+      // Fall back to lexical remove if realpath fails (broken link, etc.).
+      fs.rmSync(installed, { recursive: true, force: true });
+    }
   }
-}
-
-function pathResolveModules(root: string): string {
-  return path.resolve(modulesDir(root));
 }
 
 function requireRoot(cwd?: string): string {

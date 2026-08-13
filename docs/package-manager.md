@@ -99,6 +99,13 @@ Written/updated by `kin pkg install` and `kin pkg add`. Example entry:
   machines. Prefer in-tree paths like `path:./vendor/foo`.
 - Lock package names are validated like dependency names (no `..`, no path
   separators). Install/remove never operate outside `kin_modules/<name>/`.
+- `kin_modules` must be a **real directory** under the project (symlinks that
+  redirect outside the project are refused).
+- Git locations are allowlisted (`https://`, `http://`, `ssh://`, `git://`,
+  `file://`, `git@…`). Leading-dash args, `ext::`, and dashed refs are rejected.
+  Clones use `git … -- <url> <dir>` so URLs cannot be mistaken for options.
+- `kin pkg add` installs first, then writes `kin.json` / lockfile so a failed
+  install does not leave a dangling dependency entry.
 
 ### Package shape
 
