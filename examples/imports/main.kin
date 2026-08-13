@@ -1,0 +1,8 @@
+# Multi-file import example (issue #169)
+# Run: kin run examples/imports/main.kin
+
+injiza("utils.kin")
+
+tangaza_amakuru(muraho("Kin"))
+tangaza_amakuru("2 + 3 = ", ongera(2, 3))
+tangaza_amakuru("utils version: ", VERSIYO)

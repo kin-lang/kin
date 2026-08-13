@@ -30,6 +30,11 @@ export default class Environment {
     this.constants = new Set();
   }
 
+  /** Walk to the outermost environment (global / entry scope). */
+  public getRoot(): Environment {
+    return this.parent ? this.parent.getRoot() : this;
+  }
+
   public declareVar(
     varname: string,
     value: RuntimeVal,

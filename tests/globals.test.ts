@@ -718,6 +718,7 @@ describe('createGlobalEnv', () => {
         'tangaza_amakuru',
         'sisitemu',
         'injiza_amakuru',
+        'injiza',
         'hagarara',
         'KIN_IMIBARE',
         'KIN_AMAGAMBO',
@@ -792,6 +793,7 @@ describe('createGlobalEnv', () => {
         'tangaza_amakuru',
         'sisitemu',
         'injiza_amakuru',
+        'injiza',
         'hagarara',
         'ubwoko',
       ]) {

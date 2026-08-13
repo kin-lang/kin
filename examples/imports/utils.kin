@@ -1,0 +1,11 @@
+# Shared helpers for the multi-file import example.
+
+porogaramu_ntoya ongera(a, b) {
+  tanga a + b
+}
+
+porogaramu_ntoya muraho(izina) {
+  tanga "Muraho, " + izina + "!"
+}
+
+reka VERSIYO = 1

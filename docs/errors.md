@@ -49,5 +49,7 @@ Host programs can branch on `instanceof`, `ERRNAME`, or `ERRCODE`.
 | K029 | RuntimeError | Unhandled type in equality | internal | Report to Kin developers. |
 | K030 | SyntaxError | Expected function name following porogaramu_ntoya | `porogaramu_ntoya (){}` | Name the function. |
 | K031 | SyntaxError | Variable name expected following reka or ntahinduka | `reka = 1` | Write `reka name = ...`. |
+| K032 | RuntimeError | Cannot import '{path}': file not found | `injiza("missing.kin")` | Check the path relative to the current file. |
+| K033 | RuntimeError | Circular import detected for '{path}' | A imports B imports A | Break the import cycle. |
 
 Messages are loaded from `src/messages/rw.json` (default) and `src/messages/en.json` (`KIN_LANG=en`).

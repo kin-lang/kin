@@ -72,6 +72,8 @@ export const CODE_CATEGORY: Readonly<Record<string, KinErrorName>> = {
   K027: 'RuntimeError',
   K028: 'RuntimeError',
   K029: 'RuntimeError',
+  K032: 'RuntimeError',
+  K033: 'RuntimeError',
 };
 
 export function categoryForCode(code: string): KinErrorName {

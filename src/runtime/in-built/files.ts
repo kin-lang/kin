@@ -4,18 +4,13 @@ import {
   appendFileSync,
   unlinkSync as deleteFileSync,
 } from 'fs';
-import path from 'path';
 import Environment from '../environment';
 import { MK_BOOL, MK_OBJECT, MK_STRING, ObjectVal, StringVal } from '../values';
 import { defineNative } from '../native';
+import { resolveKinPath } from '../path-resolve';
 
 function filePathFrom(env: Environment, relative: string): string {
-  return path.join(
-    path.dirname(
-      path.join(process.cwd(), (env.lookupVar('filename') as StringVal).value),
-    ),
-    relative,
-  );
+  return resolveKinPath(env, relative);
 }
 
 /** KIN_INYANDIKO — file I/O relative to the running script. */

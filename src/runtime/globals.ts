@@ -7,6 +7,7 @@ import { MK_BOOL, MK_NULL, MK_STRING } from './values';
 import Environment from './environment';
 import {
   hagarara,
+  injiza,
   injiza_amakuru,
   sisitemu,
   tangaza_amakuru,
@@ -30,6 +31,8 @@ export function createGlobalEnv(filename: string): Environment {
   env.declareVar('tangaza_amakuru', tangaza_amakuru, true);
   env.declareVar('sisitemu', sisitemu, true);
   env.declareVar('injiza_amakuru', injiza_amakuru, true);
+  // Load and run another .kin file; bindings are shared with the caller.
+  env.declareVar('injiza', injiza, true);
   // Process exit. Named hagarara in the env; the lexer keyword shadows it
   // in source, so it is only reachable via the JS API.
   env.declareVar('hagarara', hagarara, true);

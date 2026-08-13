@@ -3,6 +3,7 @@
 import { program } from 'commander';
 import pkg from '../package.json';
 import { readFile } from 'fs/promises';
+import path from 'path';
 import {
   Interpreter,
   Parser,
@@ -10,6 +11,7 @@ import {
   isKinError,
   renderThrown,
 } from '../src/index';
+import { withCurrentFile } from '../src/runtime/path-resolve';
 import * as readline from 'readline/promises';
 
 const rl = readline.createInterface({
@@ -94,8 +96,11 @@ program
         }
         process.exit(1);
       }
+      const absolute = path.resolve(file_location);
       const env = createGlobalEnv(file_location);
-      Interpreter.evaluate(ast, env);
+      withCurrentFile(absolute, () => {
+        Interpreter.evaluate(ast, env);
+      });
       process.exit(0);
     } catch (error: unknown) {
       if (

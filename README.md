@@ -168,6 +168,21 @@ tangaza_amakuru(arr.ingano())          # method form
 tangaza_amakuru(KIN_URUTONDE.ifite(arr, 20))  # nibyo
 ```
 
+### Importing other files
+
+Use `injiza("path.kin")` to load another Kin file into the **same** environment. Variables and functions declared in the imported file become available after the call. Paths are resolved relative to the file that contains `injiza`. Each file is loaded once per run (re-import is a no-op). Circular imports raise an error.
+
+```Kin
+# utils.kin
+porogaramu_ntoya ongera(a, b) {
+  tanga a + b
+}
+
+# main.kin
+injiza("utils.kin")
+tangaza_amakuru(ongera(2, 3))  # 5
+```
+
 ### Checking a file without running it
 
 ```shell

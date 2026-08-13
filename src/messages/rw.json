@@ -29,5 +29,7 @@
   "K028": "Ikimenyetso kitazwi '{op}'",
   "K029": "Ubwoko butazwi mu kugereranya: {type}",
   "K030": "Byari biteganyijwe izina rya porogaramu_ntoya",
-  "K031": "Byari biteganyijwe izina ry'ihinduragaciro nyuma ya reka cyangwa ntahinduka"
+  "K031": "Byari biteganyijwe izina ry'ihinduragaciro nyuma ya reka cyangwa ntahinduka",
+  "K032": "Ntibishobora kwinjiza '{path}': dosiye ntabwo ibonetse",
+  "K033": "Kwinjiza gahunda (circular import) kuri '{path}'"
 }
