@@ -193,10 +193,10 @@ stringLiteral ::= '"' { anyCharacterExceptQuoteOrNewline } '"'
 ; Built-in functions (identifiers, not keywords) include:
 ;   tangaza_amakuru  injiza_amakuru  injiza  sisitemu  ubwoko
 ;
-; injiza("path.kin") loads another source file into the current
-; environment (bindings are shared). Paths are relative to the file
-; that contains the call. Each absolute path is loaded once per run;
-; circular imports raise K033.
+; injiza("path.kin") loads another source file into the program
+; (global) environment. Paths are relative to the file that contains
+; the call. Each absolute path is loaded once per run; circular
+; imports raise K033. Failed imports roll back partial declarations.
 
 ; ========================================
 ; Unused tokens  (lexer only — not in this grammar)

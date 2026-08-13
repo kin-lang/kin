@@ -170,7 +170,7 @@ tangaza_amakuru(KIN_URUTONDE.ifite(arr, 20))  # nibyo
 
 ### Importing other files
 
-Use `injiza("path.kin")` to load another Kin file into the **same** environment. Variables and functions declared in the imported file become available after the call. Paths are resolved relative to the file that contains `injiza`. Each file is loaded once per run (re-import is a no-op). Circular imports raise an error.
+Use `injiza("path.kin")` to load another Kin file into the **program (global) environment**. Variables and functions declared at the top level of the imported file become available everywhere after the call — including when `injiza` is invoked from inside a function, `niba`, or loop. Paths are resolved relative to the file that contains `injiza`. Each file is loaded once per run (re-import is a no-op). Circular imports raise an error. Two files that declare the same name raise `K007`.
 
 ```Kin
 # utils.kin
@@ -183,13 +183,15 @@ injiza("utils.kin")
 tangaza_amakuru(ongera(2, 3))  # 5
 ```
 
+Embedders running a file should wrap evaluation with `withCurrentFile` (exported from `@kin-lang/kin`) so nested relative paths resolve correctly — the CLI already does this.
+
 ### Checking a file without running it
 
 ```shell
 kin check path/to/program.kin
 ```
 
-Reports all parse diagnostics (with line, column, and a caret) and exits non-zero when there are errors. Useful for teachers and CI.
+Reports parse diagnostics for **that single file** (with line, column, and a caret) and exits non-zero when there are errors. It does **not** follow `injiza()` imports — use `kin run` to surface errors inside dependencies. Useful for teachers and CI on individual files.
 
 ## Fun fact!
 

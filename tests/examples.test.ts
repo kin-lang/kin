@@ -1,10 +1,11 @@
-import { readdirSync, readFileSync } from 'fs';
+import { readdirSync, readFileSync, statSync } from 'fs';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import * as log from '../src/lib/log';
 import Parser from '../src/parser/parser';
 import { Interpreter } from '../src/runtime/interpreter';
 import { createGlobalEnv } from '../src/runtime/globals';
+import { withCurrentFile } from '../src/runtime/path-resolve';
 
 const promptAnswers = vi.hoisted(() => ({
   queue: [] as Array<string | null>,
@@ -27,13 +28,30 @@ const EXAMPLE_INPUTS: Record<string, string[]> = {
   'switch.kin': ['a'],
 };
 
-function runExample(filename: string): void {
-  const filePath = path.join(EXAMPLES_DIR, filename);
+/** Collect .kin entry files: top-level plus known multi-file entrypoints. */
+function listExampleEntries(): string[] {
+  const top = readdirSync(EXAMPLES_DIR)
+    .filter((file) => file.endsWith('.kin'))
+    .sort();
+  const nested: string[] = [];
+  for (const name of readdirSync(EXAMPLES_DIR)) {
+    const full = path.join(EXAMPLES_DIR, name);
+    if (statSync(full).isDirectory() && name === 'imports') {
+      nested.push(path.join(name, 'main.kin'));
+    }
+  }
+  return [...top, ...nested];
+}
+
+function runExample(relativePath: string): void {
+  const filePath = path.join(EXAMPLES_DIR, relativePath);
   const source = readFileSync(filePath, 'utf-8');
   const parser = new Parser();
   const ast = parser.produceAST(source);
   const env = createGlobalEnv(filePath);
-  Interpreter.evaluate(ast, env);
+  withCurrentFile(path.resolve(filePath), () => {
+    Interpreter.evaluate(ast, env);
+  });
 }
 
 describe('Example programs (current language implementation)', () => {
@@ -46,9 +64,7 @@ describe('Example programs (current language implementation)', () => {
     vi.restoreAllMocks();
   });
 
-  const examples = readdirSync(EXAMPLES_DIR)
-    .filter((file) => file.endsWith('.kin'))
-    .sort();
+  const examples = listExampleEntries();
 
   test('discovers at least the shipped example programs', () => {
     expect(examples.length).toBeGreaterThan(0);
@@ -61,12 +77,14 @@ describe('Example programs (current language implementation)', () => {
         'loops.kin',
         'objects.kin',
         'switch.kin',
+        'imports/main.kin',
       ]),
     );
   });
 
   test.each(examples)('runs %s without throwing', (filename) => {
-    promptAnswers.queue = [...(EXAMPLE_INPUTS[filename] ?? [])];
+    const base = path.basename(filename);
+    promptAnswers.queue = [...(EXAMPLE_INPUTS[base] ?? [])];
     expect(() => runExample(filename)).not.toThrow();
   });
 });

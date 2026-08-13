@@ -1,13 +1,13 @@
 /*************************************************************************************************************
  *                                                   injiza                                                  *
- *  Load and run another .kin file in the caller's environment so its bindings become available.             *
+ *  Load and run another .kin file in the program (root) environment so its bindings become available.       *
  *  Each absolute path is evaluated at most once per global environment (load-once). Circular imports throw. *
  *************************************************************************************************************/
 
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, statSync } from 'fs';
 import path from 'path';
 import Parser from '../../../parser/parser';
-import { createKinError } from '../../../lib/errors';
+import { createKinError, isKinError } from '../../../lib/errors';
 import Environment from '../../environment';
 import { Interpreter } from '../../interpreter';
 import { defineNative } from '../../native';
@@ -43,16 +43,39 @@ function loadingSet(root: Environment): Set<string> {
 }
 
 /**
- * Ensure the entry script is on the loaded set so a file cannot injiza itself
- * as a "fresh" load after already running as the entry point.
+ * Mark the entry script as already loaded so self-injiza of the entry file
+ * is a no-op (does not re-run and redeclare bindings).
+ * Seeds any real file path, regardless of extension.
  */
 function ensureEntrySeeded(root: Environment): void {
   const loaded = loadedSet(root);
-  const entry = resolveEntryFilename(root);
-  // Only seed when we are evaluating under that entry file (not REPL cwd alone).
-  if (existsSync(entry) && entry.endsWith('.kin')) {
-    loaded.add(entry);
+  const entry = path.resolve(resolveEntryFilename(root));
+  try {
+    if (existsSync(entry) && statSync(entry).isFile()) {
+      loaded.add(entry);
+    }
+  } catch {
+    // Ignore races / permission errors; import will fail later if needed.
   }
+}
+
+/** Attach the imported file's source buffer so CLI frames point at the dependency. */
+function withImportContext(
+  error: unknown,
+  source: string,
+  filename: string,
+): never {
+  if (isKinError(error)) {
+    throw createKinError(error.code, {
+      span: error.span,
+      params: error.params,
+      message: error.message,
+      cause: error,
+      source,
+      filename,
+    });
+  }
+  throw error;
 }
 
 export const injiza: NativeFnValue = defineNative({
@@ -61,7 +84,7 @@ export const injiza: NativeFnValue = defineNative({
   maxArgs: 1,
   fn: (args, env) => {
     const requested = (args[0] as StringVal).value;
-    const absolute = path.normalize(resolveKinPath(env, requested));
+    const absolute = path.resolve(resolveKinPath(env, requested));
     const root = env.getRoot();
 
     ensureEntrySeeded(root);
@@ -88,8 +111,15 @@ export const injiza: NativeFnValue = defineNative({
 
     let source: string;
     try {
+      if (!statSync(absolute).isFile()) {
+        throw createKinError('K032', {
+          params: { path: requested },
+          message: `Cannot import '${requested}': file not found`,
+        });
+      }
       source = readFileSync(absolute, 'utf-8');
     } catch (error: unknown) {
+      if (isKinError(error)) throw error;
       throw createKinError('K032', {
         params: { path: requested },
         message: `Cannot import '${requested}': file not found`,
@@ -97,19 +127,31 @@ export const injiza: NativeFnValue = defineNative({
       });
     }
 
+    // Snapshot program bindings so a failed import does not leave partial
+    // declarations that would break a later re-import (K007).
+    const snapshot = root.captureLocals();
     loading.add(absolute);
     try {
       const parser = new Parser();
-      const ast = parser.produceAST(source);
+      let ast;
+      try {
+        ast = parser.produceAST(source);
+      } catch (error: unknown) {
+        withImportContext(error, source, absolute);
+      }
 
-      // Same environment: declarations and functions in the imported file
-      // become visible to the caller (and vice versa for free variables).
-      const result = withCurrentFile(absolute, () =>
-        Interpreter.evaluate(ast, env),
-      );
-
-      loaded.add(absolute);
-      return result;
+      // Always evaluate in the root/program environment so nested call sites
+      // (functions, niba, loops) still install shared top-level bindings.
+      try {
+        const result = withCurrentFile(absolute, () =>
+          Interpreter.evaluate(ast, root),
+        );
+        loaded.add(absolute);
+        return result;
+      } catch (error: unknown) {
+        root.restoreLocals(snapshot);
+        withImportContext(error, source, absolute);
+      }
     } finally {
       loading.delete(absolute);
     }

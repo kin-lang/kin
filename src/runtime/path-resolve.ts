@@ -8,7 +8,11 @@ import path from 'path';
 import Environment from './environment';
 import { StringVal } from './values';
 
-/** Absolute paths of files currently being evaluated (entry script + injiza stack). */
+/**
+ * Absolute paths of files currently being evaluated (entry script + injiza stack).
+ * Process-global by design: Kin evaluation is single-threaded. Concurrent
+ * evaluate() calls in the same process can cross-resolve relative paths.
+ */
 const currentFileStack: string[] = [];
 
 /**

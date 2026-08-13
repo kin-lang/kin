@@ -38,6 +38,11 @@ import {
   CODE_CATEGORY,
 } from './lib/errors';
 import { renderKinError, renderThrown } from './lib/render-error';
+import {
+  resolveEntryFilename,
+  resolveKinPath,
+  withCurrentFile,
+} from './runtime/path-resolve';
 
 export {
   Parser,
@@ -69,6 +74,9 @@ export {
   CODE_CATEGORY,
   renderKinError,
   renderThrown,
+  resolveEntryFilename,
+  resolveKinPath,
+  withCurrentFile,
 };
 
 export type {

@@ -47,14 +47,16 @@ export function renderKinError(
   const lines: string[] = [header];
 
   const span = error.span;
-  const filename = options.filename ?? 'program.kin';
+  // Prefer attribution attached on the error (e.g. imported file) over entry options.
+  const filename = error.filename ?? options.filename ?? 'program.kin';
+  const source = error.source ?? options.source;
 
   if (span) {
     lines.push(` ${cyan('-->')} ${filename}:${span.line}:${span.column}`);
   }
 
-  if (span && options.source && hasSourceRange(span)) {
-    const sourceLines = options.source.split(/\r?\n/);
+  if (span && source && hasSourceRange(span)) {
+    const sourceLines = source.split(/\r?\n/);
     const lineText = sourceLines[span.line - 1] ?? '';
     const lineNo = String(span.line);
     const gutter = ' '.repeat(lineNo.length);

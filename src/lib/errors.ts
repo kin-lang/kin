@@ -86,6 +86,13 @@ export interface KinErrorOptions {
   cause?: unknown;
   /** Override the resolved message (rare; prefer catalog keys). */
   message?: string;
+  /**
+   * Source text the span refers to (e.g. an imported file).
+   * When set, renderers prefer this over the entry-file buffer.
+   */
+  source?: string;
+  /** Path shown in code frames when this error is rendered. */
+  filename?: string;
 }
 
 /**
@@ -93,6 +100,7 @@ export interface KinErrorOptions {
  * - `code` — stable detail code (K001, ...)
  * - `ERRNAME` / `ERRCODE` — category for host programs and tests
  * - optional source `span` and interpolation `params`
+ * - optional `source` / `filename` for multi-file attribution
  *
  * Prefer `createKinError` / `kinError` so the correct subclass is used.
  */
@@ -102,6 +110,8 @@ export class KinError extends Error {
   readonly ERRCODE: KinErrorCategoryCode;
   readonly span?: Span;
   readonly params: Record<string, string | number>;
+  readonly source?: string;
+  readonly filename?: string;
 
   constructor(
     code: string,
@@ -122,6 +132,8 @@ export class KinError extends Error {
     this.code = code;
     this.span = options.span;
     this.params = params;
+    this.source = options.source;
+    this.filename = options.filename;
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }

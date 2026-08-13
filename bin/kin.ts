@@ -10,8 +10,8 @@ import {
   createGlobalEnv,
   isKinError,
   renderThrown,
+  withCurrentFile,
 } from '../src/index';
-import { withCurrentFile } from '../src/runtime/path-resolve';
 import * as readline from 'readline/promises';
 
 const rl = readline.createInterface({
@@ -119,7 +119,9 @@ program
 
 program
   .command('check <file_location>')
-  .description('Parse a file and report diagnostics without executing.')
+  .description(
+    'Parse a single file and report diagnostics without executing. Does not follow injiza() imports.',
+  )
   .action(async (file_location) => {
     let source_codes = '';
     try {

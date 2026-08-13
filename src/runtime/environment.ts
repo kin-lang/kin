@@ -35,6 +35,35 @@ export default class Environment {
     return this.parent ? this.parent.getRoot() : this;
   }
 
+  /**
+   * Snapshot this environment's own bindings (not parent scopes).
+   * Used by `injiza` to roll back partial declarations if an import fails.
+   */
+  public captureLocals(): {
+    variables: Map<string, RuntimeVal>;
+    constants: Set<string>;
+  } {
+    return {
+      variables: new Map(this.variables),
+      constants: new Set(this.constants),
+    };
+  }
+
+  /** Restore bindings previously returned by `captureLocals`. */
+  public restoreLocals(snapshot: {
+    variables: Map<string, RuntimeVal>;
+    constants: Set<string>;
+  }): void {
+    this.variables.clear();
+    this.constants.clear();
+    for (const [name, value] of snapshot.variables) {
+      this.variables.set(name, value);
+    }
+    for (const name of snapshot.constants) {
+      this.constants.add(name);
+    }
+  }
+
   public declareVar(
     varname: string,
     value: RuntimeVal,
