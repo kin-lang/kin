@@ -498,4 +498,63 @@ describe('OOP (imiterere / rema / methods)', () => {
       'K041',
     );
   });
+
+  test('freestanding callback cannot read private field under active method', () => {
+    expectKinError(
+      `
+      imiterere C {
+        tegura() { bwite _.s = 99 }
+        rusange porogaramu_ntoya use(fn) { tanga fn(_) }
+      }
+      porogaramu_ntoya outsider(o) { tanga o.s }
+      rema C().use(outsider)
+      `,
+      'K036',
+    );
+  });
+
+  test('freestanding callback cannot write private field under active method', () => {
+    expectKinError(
+      `
+      imiterere C {
+        tegura() { bwite _.s = 1 }
+        rusange porogaramu_ntoya use(fn) { fn(_) }
+      }
+      porogaramu_ntoya outsider(o) { o.s = 99 }
+      rema C().use(outsider)
+      `,
+      'K036',
+    );
+  });
+
+  test('freestanding callback cannot call private method under active method', () => {
+    expectKinError(
+      `
+      imiterere C {
+        tegura() {}
+        bwite porogaramu_ntoya secret() { tanga 5 }
+        rusange porogaramu_ntoya use(fn) { tanga fn(_) }
+      }
+      porogaramu_ntoya outsider(o) { tanga o.secret() }
+      rema C().use(outsider)
+      `,
+      'K036',
+    );
+  });
+
+  test('nested plain function inside method cannot use ambient private access', () => {
+    expectKinError(
+      `
+      imiterere C {
+        tegura() { bwite _.s = 99 }
+        rusange porogaramu_ntoya m() {
+          porogaramu_ntoya helper() { tanga _.s }
+          tanga helper()
+        }
+      }
+      rema C().m()
+      `,
+      'K036',
+    );
+  });
 });

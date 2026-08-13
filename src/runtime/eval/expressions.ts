@@ -372,29 +372,36 @@ export default class EvalExpr {
         scope.declareVar(func.parameters[i], args[i], false);
       }
 
+      // Suspend class method/ctor privileges for freestanding functions so
+      // callbacks cannot read/write/call bwite members via ambient stack.
+      const savedContexts = Interpreter.suspendMethodContexts();
       try {
-        for (const stmt of func.body) {
-          Interpreter.evaluate(stmt, scope);
+        try {
+          for (const stmt of func.body) {
+            Interpreter.evaluate(stmt, scope);
+          }
+        } catch (e) {
+          if (e instanceof ReturnSignal) {
+            return e.value;
+          }
+          if (e instanceof BreakSignal) {
+            throw createKinError('K019', {
+              span: expr.span,
+              params: { name: 'hagarara' },
+              message: 'hagarara cannot be used across a function boundary',
+            });
+          }
+          if (e instanceof ContinueSignal) {
+            throw createKinError('K019', {
+              span: expr.span,
+              params: { name: 'komeza' },
+              message: 'komeza cannot be used across a function boundary',
+            });
+          }
+          throw e;
         }
-      } catch (e) {
-        if (e instanceof ReturnSignal) {
-          return e.value;
-        }
-        if (e instanceof BreakSignal) {
-          throw createKinError('K019', {
-            span: expr.span,
-            params: { name: 'hagarara' },
-            message: 'hagarara cannot be used across a function boundary',
-          });
-        }
-        if (e instanceof ContinueSignal) {
-          throw createKinError('K019', {
-            span: expr.span,
-            params: { name: 'komeza' },
-            message: 'komeza cannot be used across a function boundary',
-          });
-        }
-        throw e;
+      } finally {
+        Interpreter.restoreMethodContexts(savedContexts);
       }
 
       return MK_NULL();

@@ -58,6 +58,20 @@ export class Interpreter {
     return this.methodContextStack[this.methodContextStack.length - 1];
   }
 
+  /**
+   * Plain porogaramu_ntoya calls must not inherit the caller's private
+   * privileges. Save and clear the stack; restore in finally.
+   */
+  public static suspendMethodContexts(): MethodContext[] {
+    const saved = this.methodContextStack;
+    this.methodContextStack = [];
+    return saved;
+  }
+
+  public static restoreMethodContexts(saved: MethodContext[]): void {
+    this.methodContextStack = saved;
+  }
+
   public static evaluate(astNode: Stmt, env: Environment): RuntimeVal {
     const previous = this.currentSpan;
     this.currentSpan = astNode.span;
