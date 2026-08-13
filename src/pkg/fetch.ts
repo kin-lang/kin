@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { PackageSource } from './types';
-import { hashDirectory } from './integrity';
+import { hashDirectory, IntegrityError } from './integrity';
 
 export class FetchError extends Error {
   constructor(message: string) {
@@ -48,19 +48,39 @@ function fetchPath(source: PackageSource): FetchedPackage {
   if (!fs.existsSync(dir)) {
     throw new FetchError(`Path dependency not found: ${dir}`);
   }
-  if (!fs.statSync(dir).isDirectory()) {
+  let stat: fs.Stats;
+  try {
+    stat = fs.lstatSync(dir);
+  } catch (e) {
+    throw new FetchError(
+      `Path dependency not readable: ${dir}: ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
+  if (stat.isSymbolicLink()) {
+    throw new FetchError(
+      `Path dependency must be a real directory, not a symlink: ${dir}`,
+    );
+  }
+  if (!stat.isDirectory()) {
     throw new FetchError(`Path dependency is not a directory: ${dir}`);
   }
-  const version = readPackageVersion(dir);
-  const integrity = hashDirectory(dir);
-  return {
-    directory: dir,
-    isTemp: false,
-    version,
-    resolved: dir,
-    integrity,
-    sourceType: 'path',
-  };
+  try {
+    const version = readPackageVersion(dir);
+    const integrity = hashDirectory(dir);
+    return {
+      directory: dir,
+      isTemp: false,
+      version,
+      resolved: dir,
+      integrity,
+      sourceType: 'path',
+    };
+  } catch (e) {
+    if (e instanceof FetchError) throw e;
+    throw new FetchError(
+      `Failed to read path package at ${dir}: ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
 }
 
 function fetchGit(source: PackageSource): FetchedPackage {
@@ -79,7 +99,7 @@ function fetchGit(source: PackageSource): FetchedPackage {
         stdio: ['ignore', 'pipe', 'pipe'],
         encoding: 'utf-8',
       });
-    } catch (first) {
+    } catch {
       // Branch may be a full commit SHA (shallow branch clone fails). Full clone + checkout.
       fs.rmSync(tmp, { recursive: true, force: true });
       fs.mkdirSync(tmp, { recursive: true });
@@ -126,10 +146,14 @@ function fetchGit(source: PackageSource): FetchedPackage {
     };
   } catch (e) {
     if (e instanceof FetchError) throw e;
-    fs.rmSync(tmp, { recursive: true, force: true });
-    throw new FetchError(
-      `Failed to fetch git package: ${e instanceof Error ? e.message : String(e)}`,
-    );
+    if (fs.existsSync(tmp)) {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+    const msg =
+      e instanceof IntegrityError || e instanceof Error
+        ? e.message
+        : String(e);
+    throw new FetchError(`Failed to fetch git package: ${msg}`);
   }
 }
 
@@ -185,19 +209,40 @@ export function readPackageName(dir: string): string | null {
 
 /**
  * Copy package files from src into dest, replacing dest if it exists.
- * Skips nested dependency and VCS directories.
+ * Skips nested dependency and VCS directories. Refuses symlinks.
  */
 export function copyPackageTree(src: string, dest: string): void {
-  if (fs.existsSync(dest)) {
-    fs.rmSync(dest, { recursive: true, force: true });
+  try {
+    if (fs.existsSync(dest)) {
+      fs.rmSync(dest, { recursive: true, force: true });
+    }
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    copyRecursive(src, dest);
+  } catch (e) {
+    if (e instanceof FetchError) throw e;
+    throw new FetchError(
+      `Failed to copy package into ${dest}: ${e instanceof Error ? e.message : String(e)}`,
+    );
   }
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-  copyRecursive(src, dest);
 }
 
 function copyRecursive(src: string, dest: string): void {
-  const stat = fs.statSync(src);
-  if (stat.isDirectory()) {
+  let lstat: fs.Stats;
+  try {
+    lstat = fs.lstatSync(src);
+  } catch (e) {
+    throw new FetchError(
+      `Failed to read package entry ${src}: ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
+
+  if (lstat.isSymbolicLink()) {
+    throw new FetchError(
+      `Refusing to install package: symlink not allowed (${src})`,
+    );
+  }
+
+  if (lstat.isDirectory()) {
     fs.mkdirSync(dest, { recursive: true });
     for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
       if (SKIP_COPY.has(entry.name)) continue;
@@ -205,6 +250,13 @@ function copyRecursive(src: string, dest: string): void {
     }
     return;
   }
+
+  if (!lstat.isFile()) {
+    throw new FetchError(
+      `Refusing to install package: unsupported file type at ${src}`,
+    );
+  }
+
   fs.copyFileSync(src, dest);
 }
 

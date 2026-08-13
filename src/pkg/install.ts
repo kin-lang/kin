@@ -1,21 +1,25 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import {
   cleanupFetched,
   copyPackageTree,
   fetchPackage,
   readPackageName,
 } from './fetch';
+import { hashDirectory } from './integrity';
 import {
-  emptyLockfile,
   readLockfile,
   removeFromLockfile,
   writeLockfile,
 } from './lockfile';
 import { readManifest, writeManifest } from './manifest';
+import { isValidPackageName } from './names';
 import {
   findProjectRoot,
+  isInsideDirectory,
   modulesDir,
   packageInstallPath,
+  PathError,
 } from './paths';
 import { formatGitSource, formatPathSource, parseSource } from './source';
 import { InstallResult, KinLockfile, LockedPackage, PkgOptions } from './types';
@@ -47,27 +51,30 @@ export function installAll(options: PkgOptions = {}): InstallReport {
   for (const lockedName of Object.keys(lock.packages)) {
     if (!(lockedName in deps)) {
       removeFromLockfile(lock, lockedName);
-      const installed = packageInstallPath(root, lockedName);
-      if (fs.existsSync(installed)) {
-        fs.rmSync(installed, { recursive: true, force: true });
-      }
+      safeRemoveInstalled(root, lockedName);
     }
   }
 
   for (const [name, spec] of Object.entries(deps)) {
-    results.push(installOne(root, name, spec, lock, options));
+    if (!isValidPackageName(name)) {
+      throw new InstallError(
+        `Invalid dependency name in kin.json: "${name}"`,
+      );
+    }
+    results.push(installOne(root, name, spec, lock));
   }
 
   // Drop packages present on disk but not in deps (e.g. manual leftover).
   const modules = modulesDir(root);
   if (fs.existsSync(modules)) {
     for (const entry of fs.readdirSync(modules, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
+      if (!entry.isDirectory() && !entry.isSymbolicLink()) continue;
+      // Only touch entries that look like package names; never rm arbitrary paths.
+      if (!isValidPackageName(entry.name)) {
+        continue;
+      }
       if (!(entry.name in deps)) {
-        fs.rmSync(packageInstallPath(root, entry.name), {
-          recursive: true,
-          force: true,
-        });
+        safeRemoveInstalled(root, entry.name);
       }
     }
   }
@@ -79,9 +86,9 @@ export function installAll(options: PkgOptions = {}): InstallReport {
 /**
  * Add a dependency to kin.json and install it.
  *
- * Spec forms: same as parseSource. Optional explicit name via "name=spec"
- * or separate name argument. When omitted, name is taken from the package's
- * kin.json, else the directory/repo basename.
+ * Spec forms: same as parseSource. Optional explicit name via options.name.
+ * When omitted, name is taken from the package's kin.json, else the
+ * directory/repo basename.
  */
 export function addDependency(
   spec: string,
@@ -99,11 +106,17 @@ export function addDependency(
       readPackageName(fetched.directory) ??
       deriveNameFromSource(source.location);
 
+    if (!isValidPackageName(name)) {
+      throw new InstallError(
+        `Invalid package name "${name}". Pass --name with a valid name.`,
+      );
+    }
+
     if (!manifest.dependencies) {
       manifest.dependencies = {};
     }
 
-    // Store a portable source string in the manifest.
+    // Store a portable source string in the manifest when possible.
     let storedSpec: string;
     if (source.type === 'path') {
       storedSpec = formatPathSource(source.location, root);
@@ -113,14 +126,7 @@ export function addDependency(
     manifest.dependencies[name] = storedSpec;
     writeManifest(root, manifest);
 
-    const result = materialize(
-      root,
-      name,
-      storedSpec,
-      fetched,
-      lock,
-      options,
-    );
+    const result = materialize(root, name, storedSpec, fetched, lock);
     writeLockfile(root, lock);
     return result;
   } finally {
@@ -133,6 +139,9 @@ export function removeDependency(
   name: string,
   options: PkgOptions = {},
 ): void {
+  if (!isValidPackageName(name)) {
+    throw new InstallError(`Invalid package name "${name}"`);
+  }
   const root = requireRoot(options.cwd);
   const manifest = readManifest(root);
   if (!manifest.dependencies || !(name in manifest.dependencies)) {
@@ -147,20 +156,10 @@ export function removeDependency(
   removeFromLockfile(lock, name);
   writeLockfile(root, lock);
 
-  const installed = packageInstallPath(root, name);
-  if (fs.existsSync(installed)) {
-    fs.rmSync(installed, { recursive: true, force: true });
-  }
+  safeRemoveInstalled(root, name);
 }
 
-/** List installed packages from the lockfile (falls back to kin_modules). */
-export function listPackages(options: PkgOptions = {}): LockedPackage[] {
-  const root = requireRoot(options.cwd);
-  const lock = readLockfile(root);
-  const names = Object.keys(lock.packages).sort();
-  return names.map((n) => lock.packages[n]);
-}
-
+/** List installed packages from the lockfile (name + lock entry). */
 export function listPackagesNamed(
   options: PkgOptions = {},
 ): Array<{ name: string } & LockedPackage> {
@@ -176,19 +175,23 @@ function installOne(
   name: string,
   spec: string,
   lock: KinLockfile,
-  options: PkgOptions,
 ): InstallResult {
   const existing = lock.packages[name];
   const source = parseSource(spec, root);
+  const dest = packageInstallPath(root, name);
 
-  // Skip re-fetch when lock entry matches and install dir is present with same integrity.
-  if (existing && existing.source === spec) {
-    const dest = packageInstallPath(root, name);
-    if (fs.existsSync(dest)) {
-      // For path deps, re-hash to detect local changes.
-      if (source.type === 'path') {
-        // Always refresh path deps so local edits flow into kin_modules.
-      } else {
+  // Skip re-fetch when lock entry matches, install dir exists, and integrity holds.
+  if (existing && existing.source === spec && fs.existsSync(dest)) {
+    if (source.type === 'path') {
+      // Always refresh path deps so local edits flow into kin_modules.
+    } else {
+      let currentIntegrity: string | null = null;
+      try {
+        currentIntegrity = hashDirectory(dest);
+      } catch {
+        currentIntegrity = null;
+      }
+      if (currentIntegrity !== null && currentIntegrity === existing.integrity) {
         return {
           name,
           version: existing.version,
@@ -199,12 +202,13 @@ function installOne(
           action: 'unchanged',
         };
       }
+      // Integrity mismatch or unreadable tree → re-fetch below.
     }
   }
 
   const fetched = fetchPackage(source);
   try {
-    return materialize(root, name, spec, fetched, lock, options);
+    return materialize(root, name, spec, fetched, lock);
   } finally {
     cleanupFetched(fetched);
   }
@@ -216,11 +220,19 @@ function materialize(
   spec: string,
   fetched: ReturnType<typeof fetchPackage>,
   lock: KinLockfile,
-  _options: PkgOptions,
 ): InstallResult {
   const dest = packageInstallPath(root, name);
   const hadExisting = fs.existsSync(dest);
-  const previous = lock.packages[name];
+
+  // Hash on-disk tree before replace so tamper/re-fetch reports "updated".
+  let priorDiskIntegrity: string | null = null;
+  if (hadExisting) {
+    try {
+      priorDiskIntegrity = hashDirectory(dest);
+    } catch {
+      priorDiskIntegrity = null;
+    }
+  }
 
   copyPackageTree(fetched.directory, dest);
 
@@ -234,9 +246,9 @@ function materialize(
   lock.packages[name] = entry;
 
   let action: InstallResult['action'] = 'installed';
-  if (hadExisting && previous) {
+  if (hadExisting) {
     action =
-      previous.integrity === entry.integrity && previous.resolved === entry.resolved
+      priorDiskIntegrity !== null && priorDiskIntegrity === entry.integrity
         ? 'unchanged'
         : 'updated';
   }
@@ -252,6 +264,37 @@ function materialize(
   };
 }
 
+/**
+ * Remove an installed package directory only if it is safely inside kin_modules.
+ */
+function safeRemoveInstalled(root: string, name: string): void {
+  if (!isValidPackageName(name)) {
+    return;
+  }
+  let installed: string;
+  try {
+    installed = packageInstallPath(root, name);
+  } catch (e) {
+    if (e instanceof PathError) {
+      throw new InstallError(e.message);
+    }
+    throw e;
+  }
+  const modules = pathResolveModules(root);
+  if (!isInsideDirectory(modules, installed) || installed === modules) {
+    throw new InstallError(
+      `Refusing to remove path outside ${modules}: ${installed}`,
+    );
+  }
+  if (fs.existsSync(installed)) {
+    fs.rmSync(installed, { recursive: true, force: true });
+  }
+}
+
+function pathResolveModules(root: string): string {
+  return path.resolve(modulesDir(root));
+}
+
 function requireRoot(cwd?: string): string {
   const start = cwd ?? process.cwd();
   const root = findProjectRoot(start);
@@ -264,7 +307,6 @@ function requireRoot(cwd?: string): string {
 }
 
 function deriveNameFromSource(location: string): string {
-  // Strip trailing .git and path bits.
   const base = location
     .replace(/\/$/, '')
     .replace(/\.git$/, '')
@@ -277,15 +319,10 @@ function deriveNameFromSource(location: string): string {
     );
   }
   const normalized = base.toLowerCase().replace(/[^a-z0-9._-]+/g, '-');
-  if (!normalized || !/^[a-z0-9]/.test(normalized)) {
+  if (!isValidPackageName(normalized)) {
     throw new InstallError(
       `Could not derive a valid package name from "${location}". Pass an explicit name.`,
     );
   }
   return normalized;
-}
-
-/** Ensure lock structure exists after init (optional empty lock). */
-export function ensureEmptyLock(root: string): void {
-  writeLockfile(root, emptyLockfile());
 }

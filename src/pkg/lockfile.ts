@@ -1,7 +1,7 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import { KinLockfile, LockedPackage } from './types';
 import { lockfilePath } from './paths';
+import { isValidPackageName } from './names';
 
 export class LockfileError extends Error {
   constructor(message: string) {
@@ -76,6 +76,11 @@ export function validateLockfile(
   for (const [name, entry] of Object.entries(
     obj.packages as Record<string, unknown>,
   )) {
+    if (!isValidPackageName(name)) {
+      throw new LockfileError(
+        `${fileHint}: invalid package name "${name}" (must be a simple package name, not a path)`,
+      );
+    }
     if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
       throw new LockfileError(
         `${fileHint}: package "${name}" must be an object`,
@@ -123,8 +128,4 @@ export function removeFromLockfile(
 ): KinLockfile {
   delete lock.packages[name];
   return lock;
-}
-
-export function lockfileExists(root: string): boolean {
-  return fs.existsSync(path.join(root, path.basename(lockfilePath(root))));
 }

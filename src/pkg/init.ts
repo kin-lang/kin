@@ -1,8 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { defaultManifest, writeManifest, isValidPackageName } from './manifest';
+import { defaultManifest, writeManifest } from './manifest';
+import { isValidPackageName } from './names';
 import { emptyLockfile, writeLockfile } from './lockfile';
-import { MANIFEST_FILE } from './paths';
+import {
+  containProjectRelativePath,
+  MANIFEST_FILE,
+  PathError,
+} from './paths';
 
 export class InitError extends Error {
   constructor(message: string) {
@@ -59,7 +64,20 @@ export function initProject(options: InitOptions = {}): InitResult {
     );
   }
 
-  const main = options.main ?? 'main.kin';
+  let main: string;
+  try {
+    main = containProjectRelativePath(
+      root,
+      options.main ?? 'main.kin',
+      'entry file',
+    );
+  } catch (e) {
+    if (e instanceof PathError) {
+      throw new InitError(e.message);
+    }
+    throw e;
+  }
+
   const manifest = defaultManifest(rawName, {
     version: options.version,
     description: options.description,
@@ -72,6 +90,8 @@ export function initProject(options: InitOptions = {}): InitResult {
   const createMain = options.createMain !== false;
   const mainAbs = path.join(root, main);
   if (createMain && !fs.existsSync(mainAbs)) {
+    // Ensure parent dirs exist for nested entry files (e.g. src/main.kin).
+    fs.mkdirSync(path.dirname(mainAbs), { recursive: true });
     const stub = `# ${rawName}\ntangaza_amakuru("Muraho from ${rawName}!")\n`;
     fs.writeFileSync(mainAbs, stub, 'utf-8');
     mainPath = mainAbs;

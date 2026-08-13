@@ -14,16 +14,22 @@ import {
   parseSource,
   findProjectRoot,
   resolveInstalledPackage,
+  packageInstallPath,
   ManifestError,
   InstallError,
   InitError,
   SourceError,
+  LockfileError,
+  FetchError,
+  PathError,
   MANIFEST_FILE,
   LOCKFILE_FILE,
   MODULES_DIR,
 } from '../src/index';
 import { validateManifest } from '../src/pkg/manifest';
-import { hashDirectory } from '../src/pkg/integrity';
+import { validateLockfile } from '../src/pkg/lockfile';
+import { hashDirectory, IntegrityError } from '../src/pkg/integrity';
+import { copyPackageTree } from '../src/pkg/fetch';
 
 function makeTempDir(prefix = 'kin-pkg-test-'): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -88,6 +94,12 @@ describe('parseSource', () => {
     expect(() => parseSource('')).toThrow(SourceError);
     expect(() => parseSource('some-registry-package')).toThrow(SourceError);
   });
+
+  it('rejects Windows drive paths on non-Windows platforms', () => {
+    if (process.platform === 'win32') return;
+    expect(() => parseSource('C:/Users/foo')).toThrow(SourceError);
+    expect(() => parseSource('path:C:/Users/foo')).toThrow(SourceError);
+  });
 });
 
 describe('validateManifest', () => {
@@ -101,9 +113,9 @@ describe('validateManifest', () => {
   });
 
   it('rejects invalid names and versions', () => {
-    expect(() => validateManifest({ name: 'Bad Name', version: '1.0.0' })).toThrow(
-      ManifestError,
-    );
+    expect(() =>
+      validateManifest({ name: 'Bad Name', version: '1.0.0' }),
+    ).toThrow(ManifestError);
     expect(() => validateManifest({ name: 'ok', version: 'v1' })).toThrow(
       ManifestError,
     );
@@ -151,6 +163,25 @@ describe('initProject', () => {
     const nested = path.join(tmp, 'a', 'b');
     fs.mkdirSync(nested, { recursive: true });
     expect(findProjectRoot(nested)).toBe(tmp);
+  });
+
+  it('rejects main entry paths that escape the project', () => {
+    expect(() =>
+      initProject({ cwd: tmp, name: 'escape-main', main: '../escaped.kin' }),
+    ).toThrow(InitError);
+
+    const parentFile = path.join(path.dirname(tmp), 'escaped.kin');
+    expect(fs.existsSync(parentFile)).toBe(false);
+  });
+
+  it('allows nested relative main files inside the project', () => {
+    const result = initProject({
+      cwd: tmp,
+      name: 'nested-main',
+      main: 'src/app.kin',
+    });
+    expect(result.mainPath).toBe(path.join(tmp, 'src', 'app.kin'));
+    expect(readManifest(tmp).main).toBe('src/app.kin');
   });
 });
 
@@ -206,7 +237,6 @@ describe('path dependencies', () => {
     addDependency(`path:${depA}`, { cwd: project });
     addDependency(`path:${depB}`, { cwd: project, name: 'other' });
 
-    // Wipe modules and reinstall from manifest/lock
     fs.rmSync(path.join(project, MODULES_DIR), { recursive: true, force: true });
     const report = installAll({ cwd: project });
     expect(report.results.map((r) => r.name).sort()).toEqual([
@@ -251,6 +281,165 @@ describe('path dependencies', () => {
   });
 });
 
+describe('security: path containment', () => {
+  let project: string;
+
+  beforeEach(() => {
+    project = makeTempDir('kin-sec-');
+    initProject({ cwd: project, name: 'secure-app' });
+    fs.writeFileSync(path.join(project, 'precious.kin'), 'keep me\n');
+  });
+
+  afterEach(() => {
+    fs.rmSync(project, { recursive: true, force: true });
+  });
+
+  it('rejects lockfile package names that are path segments', () => {
+    expect(() =>
+      validateLockfile({
+        lockfileVersion: 1,
+        packages: {
+          '..': {
+            version: '1.0.0',
+            source: 'path:./x',
+            sourceType: 'path',
+            resolved: '/tmp',
+            integrity: 'sha256-dead',
+          },
+        },
+      }),
+    ).toThrow(LockfileError);
+
+    expect(() =>
+      validateLockfile({
+        lockfileVersion: 1,
+        packages: {
+          '../../outside': {
+            version: '1.0.0',
+            source: 'path:./x',
+            sourceType: 'path',
+            resolved: '/tmp',
+            integrity: 'sha256-dead',
+          },
+        },
+      }),
+    ).toThrow(LockfileError);
+  });
+
+  it('packageInstallPath refuses traversal names', () => {
+    expect(() => packageInstallPath(project, '..')).toThrow(PathError);
+    expect(() => packageInstallPath(project, '../victim')).toThrow(PathError);
+    expect(() => packageInstallPath(project, 'foo/bar')).toThrow(PathError);
+    expect(resolveInstalledPackage('..', project)).toBeNull();
+  });
+
+  it('installAll with poisoned lockfile on disk does not delete the project', () => {
+    // Write a corrupt lock bypassing writeLockfile validation by direct FS write,
+    // then ensure readLockfile rejects it before any rmSync.
+    const lockPath = path.join(project, LOCKFILE_FILE);
+    fs.writeFileSync(
+      lockPath,
+      JSON.stringify({
+        lockfileVersion: 1,
+        packages: {
+          '..': {
+            version: '0.0.0',
+            source: 'path:./x',
+            sourceType: 'path',
+            resolved: project,
+            integrity: 'sha256-x',
+          },
+        },
+      }),
+    );
+
+    expect(() => installAll({ cwd: project })).toThrow(LockfileError);
+    expect(fs.existsSync(path.join(project, 'precious.kin'))).toBe(true);
+    expect(fs.existsSync(path.join(project, MANIFEST_FILE))).toBe(true);
+  });
+
+  it('does not delete sibling directories even if somehow named badly', () => {
+    const outside = makeTempDir('kin-outside-victim-');
+    try {
+      fs.writeFileSync(path.join(outside, 'secret.txt'), 'do not delete\n');
+      // Valid package name only installs under kin_modules.
+      const dest = packageInstallPath(project, 'legit');
+      expect(dest.startsWith(path.join(project, MODULES_DIR))).toBe(true);
+      expect(fs.existsSync(path.join(outside, 'secret.txt'))).toBe(true);
+    } finally {
+      fs.rmSync(outside, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('security: symlinks refused', () => {
+  it('hashDirectory refuses file symlinks', () => {
+    const dir = makeTempDir('kin-sym-');
+    const external = makeTempDir('kin-sym-ext-');
+    try {
+      fs.writeFileSync(path.join(external, 'secret.txt'), 'SECRET_DATA\n');
+      fs.writeFileSync(path.join(dir, 'real.kin'), 'ok\n');
+      fs.symlinkSync(
+        path.join(external, 'secret.txt'),
+        path.join(dir, 'linked.txt'),
+      );
+      expect(() => hashDirectory(dir)).toThrow(IntegrityError);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+      fs.rmSync(external, { recursive: true, force: true });
+    }
+  });
+
+  it('copyPackageTree refuses symlinks and does not copy external content', () => {
+    const src = makeTempDir('kin-copy-src-');
+    const dest = path.join(makeTempDir('kin-copy-dest-'), 'pkg');
+    const external = makeTempDir('kin-copy-ext-');
+    try {
+      fs.writeFileSync(path.join(external, 'secret.txt'), 'SECRET_DATA\n');
+      fs.writeFileSync(path.join(src, 'lib.kin'), 'ok\n');
+      fs.symlinkSync(
+        path.join(external, 'secret.txt'),
+        path.join(src, 'linked.txt'),
+      );
+      expect(() => copyPackageTree(src, dest)).toThrow(FetchError);
+      // If partial dest exists, it must not contain secret content.
+      if (fs.existsSync(path.join(dest, 'linked.txt'))) {
+        const body = fs.readFileSync(path.join(dest, 'linked.txt'), 'utf-8');
+        expect(body).not.toContain('SECRET_DATA');
+      }
+    } finally {
+      fs.rmSync(src, { recursive: true, force: true });
+      fs.rmSync(path.dirname(dest), { recursive: true, force: true });
+      fs.rmSync(external, { recursive: true, force: true });
+    }
+  });
+
+  it('addDependency refuses a path package that contains a symlink', () => {
+    const project = makeTempDir('kin-sym-proj-');
+    const dep = makeTempDir('kin-sym-dep-');
+    const external = makeTempDir('kin-sym-ext2-');
+    try {
+      initProject({ cwd: project, name: 'sym-app' });
+      writePackage(dep, 'evil', '1.0.0');
+      fs.writeFileSync(path.join(external, 'secret.txt'), 'SECRET\n');
+      fs.symlinkSync(
+        path.join(external, 'secret.txt'),
+        path.join(dep, 'leak.txt'),
+      );
+      expect(() => addDependency(`path:${dep}`, { cwd: project })).toThrow(
+        FetchError,
+      );
+      expect(fs.existsSync(path.join(project, MODULES_DIR, 'evil'))).toBe(
+        false,
+      );
+    } finally {
+      fs.rmSync(project, { recursive: true, force: true });
+      fs.rmSync(dep, { recursive: true, force: true });
+      fs.rmSync(external, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('git dependencies (local bare repo)', () => {
   let project: string;
   let repoDir: string;
@@ -279,7 +468,6 @@ describe('git dependencies (local bare repo)', () => {
       stdio: 'ignore',
     });
 
-    // Bare clone as remote URL (file://)
     execFileSync('git', ['clone', '--bare', repoDir, remote], {
       stdio: 'ignore',
     });
@@ -303,17 +491,29 @@ describe('git dependencies (local bare repo)', () => {
     const installed = path.join(project, MODULES_DIR, 'gitpkg');
     expect(fs.existsSync(path.join(installed, 'lib.kin'))).toBe(true);
     expect(fs.existsSync(path.join(installed, 'readme.md'))).toBe(true);
-    // .git should not be present in the installed tree
     expect(fs.existsSync(path.join(installed, '.git'))).toBe(false);
 
     const lock = readLockfile(project);
     expect(lock.packages.gitpkg.sourceType).toBe('git');
     expect(lock.packages.gitpkg.resolved).toContain('#');
 
-    // Second install should be unchanged (git, same lock)
     const report = installAll({ cwd: project });
     const again = report.results.find((r) => r.name === 'gitpkg');
     expect(again?.action).toBe('unchanged');
+  });
+
+  it('re-fetches when installed git package integrity was tampered', () => {
+    const url = `git+file://${remote}`;
+    addDependency(url, { cwd: project, name: 'gitpkg' });
+    const installedLib = path.join(project, MODULES_DIR, 'gitpkg', 'lib.kin');
+    fs.writeFileSync(installedLib, 'tangaza_amakuru("TAMPERED")\n');
+
+    const report = installAll({ cwd: project });
+    const again = report.results.find((r) => r.name === 'gitpkg');
+    expect(again?.action).not.toBe('unchanged');
+    const body = fs.readFileSync(installedLib, 'utf-8');
+    expect(body).not.toContain('TAMPERED');
+    expect(body).toContain('hello from gitpkg');
   });
 });
 

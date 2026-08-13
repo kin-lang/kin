@@ -18,14 +18,17 @@ export {
   lockfilePath,
   modulesDir,
   packageInstallPath,
+  isInsideDirectory,
+  containProjectRelativePath,
+  PathError,
 } from './paths';
+export { isValidPackageName } from './names';
 export {
   ManifestError,
   validateManifest,
   readManifest,
   writeManifest,
   defaultManifest,
-  isValidPackageName,
 } from './manifest';
 export {
   LockfileError,
@@ -40,7 +43,7 @@ export {
   formatPathSource,
   formatGitSource,
 } from './source';
-export { hashDirectory, hashString } from './integrity';
+export { hashDirectory, IntegrityError } from './integrity';
 export {
   FetchError,
   fetchPackage,
@@ -53,7 +56,6 @@ export {
   installAll,
   addDependency,
   removeDependency,
-  listPackages,
   listPackagesNamed,
 } from './install';
 export type { InstallReport } from './install';

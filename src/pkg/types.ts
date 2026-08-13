@@ -80,6 +80,4 @@ export interface InstallResult {
 export interface PkgOptions {
   /** Project root (directory containing kin.json). Defaults to cwd search. */
   cwd?: string;
-  /** Suppress non-error console output. */
-  quiet?: boolean;
 }

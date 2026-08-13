@@ -2,6 +2,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { KinManifest } from './types';
 import { manifestPath } from './paths';
+import { isValidPackageName } from './names';
+
+export { isValidPackageName } from './names';
 
 const SEMVER_LIKE = /^\d+\.\d+\.\d+([-+].*)?$/;
 
@@ -79,14 +82,6 @@ export function validateManifest(
   }
 
   return obj as KinManifest;
-}
-
-/** Package names: npm-style simple names (no scopes for this slice). */
-export function isValidPackageName(name: string): boolean {
-  if (name.length === 0 || name.length > 64) return false;
-  if (name.startsWith('.') || name.startsWith('_')) return false;
-  if (name.includes('/') || name.includes('\\')) return false;
-  return /^[a-z0-9][a-z0-9._-]*$/.test(name);
 }
 
 export function readManifest(root: string): KinManifest {

@@ -195,6 +195,30 @@ program
     }
   });
 
+function runInstallCli(): void {
+  try {
+    const report = installAll({ cwd: process.cwd() });
+    if (report.results.length === 0) {
+      console.log('No dependencies listed in kin.json.');
+      process.exit(0);
+    }
+    for (const r of report.results) {
+      const mark =
+        r.action === 'installed' ? '+' : r.action === 'updated' ? '~' : '=';
+      console.log(
+        `${mark} ${r.name}@${r.version} (${r.sourceType}) → ${MODULES_DIR}/${r.name}`,
+      );
+    }
+    console.log(
+      `Installed ${report.results.length} package(s) into ${MODULES_DIR}/`,
+    );
+    process.exit(0);
+  } catch (error: unknown) {
+    printPkgError(error);
+    process.exit(1);
+  }
+}
+
 const pkgCmd = program
   .command('pkg')
   .description('Manage Kin package dependencies.');
@@ -205,31 +229,7 @@ pkgCmd
     'Install dependencies from kin.json into kin_modules/ and refresh the lockfile.',
   )
   .action(() => {
-    try {
-      const report = installAll({ cwd: process.cwd() });
-      if (report.results.length === 0) {
-        console.log('No dependencies listed in kin.json.');
-        process.exit(0);
-      }
-      for (const r of report.results) {
-        const mark =
-          r.action === 'installed'
-            ? '+'
-            : r.action === 'updated'
-              ? '~'
-              : '=';
-        console.log(
-          `${mark} ${r.name}@${r.version} (${r.sourceType}) → ${MODULES_DIR}/${r.name}`,
-        );
-      }
-      console.log(
-        `Installed ${report.results.length} package(s) into ${MODULES_DIR}/`,
-      );
-      process.exit(0);
-    } catch (error: unknown) {
-      printPkgError(error);
-      process.exit(1);
-    }
+    runInstallCli();
   });
 
 pkgCmd
@@ -304,37 +304,12 @@ pkgCmd
     }
   });
 
-// Top-level aliases for common package workflows
+// Top-level alias for common package workflows
 program
   .command('install')
   .description('Alias for "kin pkg install".')
   .action(() => {
-    // Delegate by re-parsing would be awkward; call the same handler logic.
-    try {
-      const report = installAll({ cwd: process.cwd() });
-      if (report.results.length === 0) {
-        console.log('No dependencies listed in kin.json.');
-        process.exit(0);
-      }
-      for (const r of report.results) {
-        const mark =
-          r.action === 'installed'
-            ? '+'
-            : r.action === 'updated'
-              ? '~'
-              : '=';
-        console.log(
-          `${mark} ${r.name}@${r.version} (${r.sourceType}) → ${MODULES_DIR}/${r.name}`,
-        );
-      }
-      console.log(
-        `Installed ${report.results.length} package(s) into ${MODULES_DIR}/`,
-      );
-      process.exit(0);
-    } catch (error: unknown) {
-      printPkgError(error);
-      process.exit(1);
-    }
+    runInstallCli();
   });
 
 program.parse();

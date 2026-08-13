@@ -90,8 +90,15 @@ Written/updated by `kin pkg install` and `kin pkg add`. Example entry:
 ```
 
 - **path** deps are re-copied on every install so local edits flow into `kin_modules/`.
-- **git** deps are skipped when the lock entry still matches and the install dir exists.
-- Integrity is a stable `sha256` over package files (excluding `.git`, nested `kin_modules`, `node_modules`, etc.).
+- **git** deps are skipped only when the lock entry still matches **and** the on-disk
+  tree still hashes to the locked `integrity` (tampering triggers a re-fetch).
+- Integrity is a stable `sha256` over package files (excluding `.git`, nested
+  `kin_modules`, `node_modules`, etc.). **Symlinks are refused** (not followed).
+- Path deps **outside** the project store absolute `path:/...` in `kin.json` and
+  absolute `resolved` values in the lockfile — those are **not portable** across
+  machines. Prefer in-tree paths like `path:./vendor/foo`.
+- Lock package names are validated like dependency names (no `..`, no path
+  separators). Install/remove never operate outside `kin_modules/<name>/`.
 
 ### Package shape
 
@@ -129,6 +136,7 @@ import {
   listPackagesNamed,
   findProjectRoot,
   resolveInstalledPackage,
+  packageInstallPath,
   parseSource,
   readManifest,
   readLockfile,

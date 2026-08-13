@@ -44,11 +44,11 @@ import {
   MODULES_DIR,
   findProjectRoot,
   resolveInstalledPackage,
+  packageInstallPath,
   initProject,
   installAll,
   addDependency,
   removeDependency,
-  listPackages,
   listPackagesNamed,
   readManifest,
   writeManifest,
@@ -58,6 +58,9 @@ import {
   InstallError,
   InitError,
   SourceError,
+  LockfileError,
+  FetchError,
+  PathError,
 } from './pkg';
 
 export {
@@ -96,11 +99,11 @@ export {
   MODULES_DIR,
   findProjectRoot,
   resolveInstalledPackage,
+  packageInstallPath,
   initProject,
   installAll,
   addDependency,
   removeDependency,
-  listPackages,
   listPackagesNamed,
   readManifest,
   writeManifest,
@@ -110,6 +113,9 @@ export {
   InstallError,
   InitError,
   SourceError,
+  LockfileError,
+  FetchError,
+  PathError,
 };
 
 export type {

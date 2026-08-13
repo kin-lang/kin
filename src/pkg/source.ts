@@ -49,12 +49,22 @@ export function parseSource(raw: string, projectRoot?: string): PackageSource {
     return parseGitSource(trimmed, trimmed);
   }
 
+  // Windows drive-letter paths are only valid on Windows.
+  if (/^[A-Za-z]:[\\/]/.test(trimmed)) {
+    if (process.platform !== 'win32') {
+      throw new SourceError(
+        `Windows drive path "${trimmed}" is not supported on this platform. Use a POSIX path under path: or a git URL.`,
+      );
+    }
+    return {
+      type: 'path',
+      location: resolvePathLocation(trimmed, projectRoot),
+      raw: trimmed,
+    };
+  }
+
   // Relative / absolute filesystem path
-  if (
-    trimmed.startsWith('.') ||
-    trimmed.startsWith('/') ||
-    /^[A-Za-z]:[\\/]/.test(trimmed)
-  ) {
+  if (trimmed.startsWith('.') || trimmed.startsWith('/')) {
     return {
       type: 'path',
       location: resolvePathLocation(trimmed, projectRoot),
@@ -68,6 +78,11 @@ export function parseSource(raw: string, projectRoot?: string): PackageSource {
 }
 
 function resolvePathLocation(location: string, projectRoot?: string): string {
+  if (/^[A-Za-z]:[\\/]/.test(location) && process.platform !== 'win32') {
+    throw new SourceError(
+      `Windows drive path "${location}" is not supported on this platform.`,
+    );
+  }
   if (path.isAbsolute(location)) {
     return path.normalize(location);
   }
@@ -76,14 +91,11 @@ function resolvePathLocation(location: string, projectRoot?: string): string {
 }
 
 function parseGitSource(urlWithMaybeRef: string, raw: string): PackageSource {
-  // Split on last # that looks like a ref (not part of a fragment-less URL edge case).
-  // git URLs: https://host/repo.git#v1.0.0
   let location = urlWithMaybeRef;
   let ref: string | undefined;
 
   const hashIdx = urlWithMaybeRef.lastIndexOf('#');
   if (hashIdx > 0) {
-    // Avoid treating userinfo or weird cases; simple split is fine for this slice.
     location = urlWithMaybeRef.slice(0, hashIdx);
     ref = urlWithMaybeRef.slice(hashIdx + 1) || undefined;
   }
@@ -92,7 +104,6 @@ function parseGitSource(urlWithMaybeRef: string, raw: string): PackageSource {
     throw new SourceError(`Invalid git source: ${raw}`);
   }
 
-  // Normalize git@host:path to ssh URL form for display; keep as-is for git clone.
   return {
     type: 'git',
     location,
@@ -110,6 +121,7 @@ export function formatPathSource(
   if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
     return `path:./${rel.split(path.sep).join('/')}`;
   }
+  // Outside the project: absolute path: is stored (not portable across machines).
   return `path:${absolutePath}`;
 }
 
@@ -117,7 +129,6 @@ export function formatPathSource(
 export function formatGitSource(url: string, ref?: string): string {
   const base = url.startsWith('git+') ? url : `git+${url}`;
   if (ref) {
-    // strip existing fragment
     const without = base.replace(/#.*$/, '');
     return `${without}#${ref}`;
   }
