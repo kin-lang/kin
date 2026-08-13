@@ -1,0 +1,7 @@
+# Shared constants for the multi-file import example.
+
+ntahinduka THRESHOLD: umubare = 0.05
+
+emerera_gukoresha {
+  THRESHOLD
+}

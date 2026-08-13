@@ -83,6 +83,14 @@ enum TokenType {
   /** Inheritance: `imiterere Child ikomoka Parent` */
   IKOMOKA,
 
+  /* Modules */
+  /** Import: `koresha "./file.kin" nka alias` */
+  KORESHA,
+  /** Import alias keyword (English `as`) */
+  NKA,
+  /** Export list: `emerera_gukoresha { name1, name2 }` */
+  EMERERA_GUKORESHA,
+
   EOF,
 }
 

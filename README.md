@@ -125,6 +125,18 @@ npm run build:exe:all
   reka keza: Person = { name: "Keza", age: 20 }
   tangaza_amakuru(greet(keza))
   ```
+- Multi-file modules (`koresha` / `nka` / `emerera_gukoresha`)
+  ```Kin
+  # methods.kin
+  porogaramu_ntoya guteranya(a: umubare, b: umubare): umubare {
+    tanga a + b
+  }
+  emerera_gukoresha { guteranya }
+
+  # main.kin
+  koresha "./methods.kin" nka math
+  tangaza_amakuru(math.guteranya(2, 3))
+  ```
 - Executing system commands
   ```Kin
   sisitemu("sudo shutdown now")

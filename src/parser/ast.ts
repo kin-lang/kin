@@ -13,6 +13,8 @@ export type NodeType =
   | 'TypeAliasDeclaration'
   | 'ClassDeclaration'
   | 'FieldInitStatement'
+  | 'ImportDeclaration'
+  | 'ExportDeclaration'
   | 'LoopStatement'
   | 'BreakStatement'
   | 'ContinueStatement'
@@ -198,6 +200,24 @@ export interface RemaExpr extends Expr {
   kind: 'RemaExpr';
   classExpr: Expr;
   args: Expr[];
+}
+
+/**
+ * Import a module as a namespace object:
+ * `koresha "./methods.kin" nka arithmeticMethods`
+ */
+export interface ImportDeclaration extends Stmt {
+  kind: 'ImportDeclaration';
+  path: string;
+  alias: string;
+}
+
+/**
+ * Explicit exports: `emerera_gukoresha { guteranya, THRESHOLD }`
+ */
+export interface ExportDeclaration extends Stmt {
+  kind: 'ExportDeclaration';
+  names: string[];
 }
 
 /**
@@ -396,6 +416,18 @@ export function mkRema(
   span: Span,
 ): RemaExpr {
   return { kind: 'RemaExpr', classExpr, args, span };
+}
+
+export function mkImport(
+  path: string,
+  alias: string,
+  span: Span,
+): ImportDeclaration {
+  return { kind: 'ImportDeclaration', path, alias, span };
+}
+
+export function mkExport(names: string[], span: Span): ExportDeclaration {
+  return { kind: 'ExportDeclaration', names, span };
 }
 
 export function mkNamedType(name: string, span: Span): NamedType {

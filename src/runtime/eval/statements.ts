@@ -8,8 +8,10 @@ import {
   ClassDeclaration,
   ConditionalStmt,
   ContinueStatement,
+  ExportDeclaration,
   FieldInitStatement,
   FunctionDeclaration,
+  ImportDeclaration,
   LoopStatement,
   Program,
   Stmt,
@@ -30,6 +32,7 @@ import {
 } from '../signals';
 import { resolveAnnotation, resolveTypeNode } from '../types';
 import { eval_class_declaration, eval_field_init } from '../oop';
+import { eval_import, registerExports } from '../modules';
 
 export default class EvalStmt {
   public static eval_program(program: Program, env: Environment): RuntimeVal {
@@ -82,6 +85,25 @@ export default class EvalStmt {
     env: Environment,
   ): RuntimeVal {
     return eval_field_init(declaration, env);
+  }
+
+  public static eval_import(
+    declaration: ImportDeclaration,
+    env: Environment,
+  ): RuntimeVal {
+    return eval_import(
+      declaration.path,
+      declaration.alias,
+      env,
+      declaration.span,
+    );
+  }
+
+  public static eval_export(
+    declaration: ExportDeclaration,
+    env: Environment,
+  ): RuntimeVal {
+    return registerExports(env, declaration.names, declaration.span);
   }
 
   public static eval_function_declaration(

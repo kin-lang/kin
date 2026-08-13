@@ -61,5 +61,8 @@ Host programs can branch on `instanceof`, `ERRNAME`, or `ERRCODE`.
 | K041 | TypeError | Cannot access private member | read `bwite` from outside | Use a public method wrapper. |
 | K042 | TypeError | Not a class (imiterere) | `rema 5()` | Pass a class value to rema. |
 | K043 | TypeError | Field already defined | duplicate field in tegura | Assign each field once in tegura. |
+| K044 | RuntimeError | Cannot import '{path}': file not found | bad koresha path | Fix the relative path to the .kin file. |
+| K045 | RuntimeError | Circular import | A koresha B koresha A | Break the import cycle. |
+| K046 | ReferenceError | Cannot export undefined name | emerera_gukoresha { missing } | Export only names defined in that module. |
 
 Messages are loaded from `src/messages/rw.json` (default) and `src/messages/en.json` (`KIN_LANG=en`).

@@ -41,5 +41,8 @@
   "K040": "Umwanya '{name}' ntihari kuri {klass}; umwanya uremwa muri tegura gusa",
   "K041": "Ntushobora kugera kuri '{name}' (bwite)",
   "K042": "'{name}' ntabwo ari imiterere",
-  "K043": "Umwanya '{name}' usanzwe uhari"
+  "K043": "Umwanya '{name}' usanzwe uhari",
+  "K044": "Ntibishobora gukoresha '{path}': dosiye ntabwo iboneka",
+  "K045": "Import y'uruziga yabonetse kuri '{path}'",
+  "K046": "Ntushobora kohereza '{name}': ntabwo yatazwe muri iyi module"
 }

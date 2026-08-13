@@ -27,6 +27,8 @@ program ::= statement*
 statement ::= variableDeclaration
             | typeAliasDeclaration
             | classDeclaration
+            | importDeclaration
+            | exportDeclaration
             | functionDeclaration
             | loopStatement
             | breakStatement
@@ -68,6 +70,13 @@ methodDecl ::= ("rusange" | "bwite") "porogaramu_ntoya" identifier
 ; rema binds tighter than binary ops; (rema C(…)).method() is valid.
 remaExpression ::= "rema" memberExpression "(" argumentList? ")"
                    (memberSuffix | "(" argumentList? ")")*
+
+; Modules: import as namespace object; explicit exports.
+; Paths are relative to the importing file. Each path loads once per run.
+importDeclaration ::= "koresha" stringLiteral "nka" identifier ";"?
+exportDeclaration ::= "emerera_gukoresha" "{"
+                        (identifier ("," identifier)* ","?)?
+                      "}" ";"?
 
 functionDeclaration ::= "porogaramu_ntoya" identifier "(" parameterList? ")"
                         typeAnnotation? block
@@ -247,6 +256,7 @@ stringLiteral ::= '"' { anyCharacterExceptQuoteOrNewline } '"'
 ; gereranya  usanze  ibindi
 ; ubwoko     (type alias keyword + typeof prefix operator)
 ; imiterere  tegura  rema  rusange  bwite  ikomoka
+; koresha  nka  emerera_gukoresha
 
 ; Built-in type names:
 ; umubare  ijambo  ukuri  ubwoko_imiterere  urutonde

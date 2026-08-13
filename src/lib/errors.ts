@@ -74,6 +74,11 @@ export const CODE_CATEGORY: Readonly<Record<string, KinErrorName>> = {
   K042: 'TypeError',
   K043: 'TypeError',
 
+  // Modules — koresha / emerera_gukoresha
+  K044: 'RuntimeError',
+  K045: 'RuntimeError',
+  K046: 'ReferenceError',
+
   // Runtime — control flow, exit, internals
   K013: 'RuntimeError',
   K014: 'RuntimeError',

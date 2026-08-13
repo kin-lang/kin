@@ -19,9 +19,9 @@ failed=0
 ran=0
 
 shopt -s nullglob
-examples=(examples/*.kin examples/oop/*.kin)
+examples=(examples/*.kin examples/oop/*.kin examples/importing/*.kin)
 if [[ ${#examples[@]} -eq 0 ]]; then
-  echo "No example programs found in examples/ or examples/oop/" >&2
+  echo "No example programs found under examples/" >&2
   exit 1
 fi
 
@@ -33,6 +33,13 @@ for example in "${examples[@]}"; do
     io.kin|switch.kin)
       echo "SKIP $rel (interactive; covered by tests/examples.test.ts)"
       continue
+      ;;
+    # Library modules used only as dependencies of index.kin / with-oop.kin
+    methods.kin|constants.kin|person.kin)
+      if [[ "$rel" == importing/* ]]; then
+        echo "SKIP $rel (imported library; run via index.kin / with-oop.kin)"
+        continue
+      fi
       ;;
   esac
 
