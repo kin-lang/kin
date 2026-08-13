@@ -1,4 +1,5 @@
-# Node.js
+# Node.js (match directory and worktree symlink alike)
+node_modules
 node_modules/
 
 # Compiled files
