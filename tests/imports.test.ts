@@ -397,13 +397,6 @@ reka c = content
 
   test('diamond import loads shared dependency once', () => {
     writeFileSync(
-      path.join(tmpDir, 'core.kin'),
-      `reka hits = 0
-hits = hits + 1
-`,
-    );
-    // hits reassignment - wait hits is declared then assigned. For load-once side effect:
-    writeFileSync(
       path.join(tmpDir, 'core2.kin'),
       `tangaza_amakuru("core")`,
     );
@@ -419,5 +412,110 @@ injiza("right.kin")
 
     runFile(path.join(tmpDir, 'main.kin'));
     expect(log.LogMessage).toHaveBeenCalledTimes(1);
+  });
+
+  test('multi-hop parse errors attribute to the leaf file', () => {
+    writeFileSync(path.join(tmpDir, 'bad.kin'), `reka =`);
+    writeFileSync(path.join(tmpDir, 'mid.kin'), `injiza("bad.kin")`);
+    writeFileSync(path.join(tmpDir, 'main.kin'), `injiza("mid.kin")`);
+
+    const err = expectRunError(path.join(tmpDir, 'main.kin'), 'K002');
+    expect(err.filename).toBe(path.resolve(tmpDir, 'bad.kin'));
+    expect(err.source).toContain('reka =');
+    const rendered = renderKinError(err, { color: false });
+    expect(rendered).toMatch(/bad\.kin/);
+    expect(rendered).not.toMatch(/mid\.kin:1/);
+  });
+
+  test('multi-hop runtime errors attribute to the leaf file', () => {
+    writeFileSync(path.join(tmpDir, 'leaf.kin'), `reka x = missing`);
+    writeFileSync(path.join(tmpDir, 'mid.kin'), `injiza("leaf.kin")`);
+    writeFileSync(path.join(tmpDir, 'a.kin'), `injiza("mid.kin")`);
+    writeFileSync(path.join(tmpDir, 'main.kin'), `injiza("a.kin")`);
+
+    const err = expectRunError(path.join(tmpDir, 'main.kin'), 'K005');
+    expect(err.filename).toBe(path.resolve(tmpDir, 'leaf.kin'));
+    expect(err.source).toContain('missing');
+  });
+
+  test('nested success then parent failure rolls back loaded set so child reloads', () => {
+    writeFileSync(path.join(tmpDir, 'inner.kin'), `reka INNER = 1`);
+    writeFileSync(
+      path.join(tmpDir, 'outer.kin'),
+      `
+injiza("inner.kin")
+reka boom = missing
+`,
+    );
+    writeFileSync(
+      path.join(tmpDir, 'outer_fixed.kin'),
+      `
+injiza("inner.kin")
+reka OUTER = INNER + 1
+`,
+    );
+
+    const entry = path.join(tmpDir, 'driver.kin');
+    writeFileSync(entry, `reka ok = 0`);
+    const env = createGlobalEnv(entry);
+    withCurrentFile(path.resolve(entry), () => {
+      try {
+        Interpreter.evaluate(
+          new Parser().produceAST(`injiza("outer.kin")`),
+          env,
+        );
+        throw new Error('expected outer failure');
+      } catch (e) {
+        expect(e).toBeInstanceOf(KinError);
+        expect((e as KinError).code).toBe('K005');
+      }
+      // Nested bindings must not remain.
+      expect(() => env.lookupVar('INNER')).toThrow();
+      // Child must not be stuck as "loaded"; re-import rebinds.
+      Interpreter.evaluate(
+        new Parser().produceAST(`injiza("inner.kin")`),
+        env,
+      );
+      expect(asNumber(env.lookupVar('INNER'))).toBe(1);
+      // Fixed parent re-import still works (inner already loaded once; outer adds OUTER).
+      Interpreter.evaluate(
+        new Parser().produceAST(`injiza("outer_fixed.kin")`),
+        env,
+      );
+      expect(asNumber(env.lookupVar('OUTER'))).toBe(2);
+    });
+  });
+
+  test('rollback is binding-table only (in-place object mutation survives)', () => {
+    writeFileSync(
+      path.join(tmpDir, 'mut.kin'),
+      `
+obj.a = 99
+reka boom = missing
+`,
+    );
+    const entry = path.join(tmpDir, 'driver.kin');
+    writeFileSync(entry, `reka obj = { a: 1 }`);
+    const env = createGlobalEnv(entry);
+    withCurrentFile(path.resolve(entry), () => {
+      Interpreter.evaluate(
+        new Parser().produceAST(`reka obj = { a: 1 }`),
+        env,
+      );
+      try {
+        Interpreter.evaluate(
+          new Parser().produceAST(`injiza("mut.kin")`),
+          env,
+        );
+        throw new Error('expected failure');
+      } catch (e) {
+        expect(e).toBeInstanceOf(KinError);
+      }
+      const obj = env.lookupVar('obj');
+      expect(obj.type).toBe('object');
+      const a = (obj as { properties: Map<string, { value: number }> })
+        .properties.get('a');
+      expect(a?.value).toBe(99);
+    });
   });
 });

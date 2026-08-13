@@ -172,6 +172,7 @@ tangaza_amakuru(KIN_URUTONDE.ifite(arr, 20))  # nibyo
 
 Use `injiza("path.kin")` to load another Kin file into the **program (global) environment**. Variables and functions declared at the top level of the imported file become available everywhere after the call — including when `injiza` is invoked from inside a function, `niba`, or loop. Paths are resolved relative to the file that contains `injiza`. Each file is loaded once per run (re-import is a no-op). Circular imports raise an error. Two files that declare the same name raise `K007`.
 
+If an import fails mid-file, **top-level name bindings** introduced during that import (including nested successful `injiza`s under it) are rolled back and those paths may be loaded again. Rollback is **not** deep: mutations to existing objects/arrays and host side effects (prints, file I/O) are not undone.
 ```Kin
 # utils.kin
 porogaramu_ntoya ongera(a, b) {

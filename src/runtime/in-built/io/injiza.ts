@@ -59,7 +59,10 @@ function ensureEntrySeeded(root: Environment): void {
   }
 }
 
-/** Attach the imported file's source buffer so CLI frames point at the dependency. */
+/**
+ * Attach the imported file's source buffer so CLI frames point at the dependency.
+ * Preserve attribution already set by a nested import (do not re-stamp outer files).
+ */
 function withImportContext(
   error: unknown,
   source: string,
@@ -71,11 +74,19 @@ function withImportContext(
       params: error.params,
       message: error.message,
       cause: error,
-      source,
-      filename,
+      source: error.source ?? source,
+      filename: error.filename ?? filename,
     });
   }
   throw error;
+}
+
+/** Replace the contents of `target` with those of `snapshot`. */
+function restoreSet(target: Set<string>, snapshot: Set<string>): void {
+  target.clear();
+  for (const value of snapshot) {
+    target.add(value);
+  }
 }
 
 export const injiza: NativeFnValue = defineNative({
@@ -127,9 +138,12 @@ export const injiza: NativeFnValue = defineNative({
       });
     }
 
-    // Snapshot program bindings so a failed import does not leave partial
-    // declarations that would break a later re-import (K007).
+    // Snapshot program bindings AND the load-once set so a failed parent
+    // import does not leave nested modules marked loaded while their
+    // declarations were rolled back.
+    // Rollback is binding-table only (not deep object/array mutations or I/O).
     const snapshot = root.captureLocals();
+    const loadedSnapshot = new Set(loaded);
     loading.add(absolute);
     try {
       const parser = new Parser();
@@ -150,6 +164,7 @@ export const injiza: NativeFnValue = defineNative({
         return result;
       } catch (error: unknown) {
         root.restoreLocals(snapshot);
+        restoreSet(loaded, loadedSnapshot);
         withImportContext(error, source, absolute);
       }
     } finally {
