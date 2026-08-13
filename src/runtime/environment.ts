@@ -5,8 +5,9 @@
  *******************************************************************************************/
 
 import { Interpreter } from '..';
-import { Identifier, MemberExpr } from '../parser/ast';
+import { Identifier, MemberExpr, TypeAnnotation } from '../parser/ast';
 import { createKinError } from '../lib/errors';
+import { Span } from '../lib/span';
 import {
   ArrayVal,
   MK_NATIVE_FN,
@@ -18,28 +19,61 @@ import {
   typeName,
 } from './values';
 import { lookupMethod } from './methods';
+import {
+  assertValueMatchesType,
+  TypeSafetyMode,
+} from './types';
 
 export default class Environment {
   private parent?: Environment;
   private variables: Map<string, RuntimeVal>;
   private constants: Set<string>;
+  /** Type annotations for variables declared with `: type` / `: type?`. */
+  private types: Map<string, TypeAnnotation>;
+  /**
+   * Type-safety mode for this program. Child scopes inherit the root mode.
+   * Only meaningful on the global env; nested envs read through the root.
+   */
+  private typeSafety: TypeSafetyMode;
 
-  constructor(parentENV?: Environment) {
+  constructor(parentENV?: Environment, typeSafety: TypeSafetyMode = 'on') {
     this.parent = parentENV;
     this.variables = new Map();
     this.constants = new Set();
+    this.types = new Map();
+    this.typeSafety = parentENV ? parentENV.typeSafety : typeSafety;
+  }
+
+  public getTypeSafety(): TypeSafetyMode {
+    return this.typeSafety;
+  }
+
+  /**
+   * Update type-safety mode (e.g. REPL after a `# kin-types:` line).
+   * Nested scopes created later inherit via the constructor copy.
+   */
+  public setTypeSafety(mode: TypeSafetyMode): void {
+    this.typeSafety = mode;
   }
 
   public declareVar(
     varname: string,
     value: RuntimeVal,
     constant: boolean,
+    typeAnnotation?: TypeAnnotation,
+    span?: Span,
   ): RuntimeVal {
     if (this.variables.has(varname)) {
       throw createKinError('K007', {
         params: { name: varname },
         message: `Cannot declare variable ${varname}. As it already is defined.`,
       });
+    }
+
+    // `off` ignores annotations; `on`/`strict` check and store them.
+    if (typeAnnotation && this.typeSafety !== 'off') {
+      assertValueMatchesType(value, typeAnnotation, varname, span);
+      this.types.set(varname, typeAnnotation);
     }
 
     this.variables.set(varname, value);
@@ -49,7 +83,11 @@ export default class Environment {
     return value;
   }
 
-  public assignVar(varname: string, value: RuntimeVal): RuntimeVal {
+  public assignVar(
+    varname: string,
+    value: RuntimeVal,
+    span?: Span,
+  ): RuntimeVal {
     const env = this.resolve(varname);
 
     if (env.constants.has(varname)) {
@@ -59,9 +97,21 @@ export default class Environment {
       });
     }
 
+    if (this.typeSafety !== 'off') {
+      const annotation = env.types.get(varname);
+      if (annotation) {
+        assertValueMatchesType(value, annotation, varname, span);
+      }
+    }
+
     env.variables.set(varname, value);
 
     return value;
+  }
+
+  /** Look up a variable's type annotation, if any (for hosts / tests). */
+  public lookupType(varname: string): TypeAnnotation | undefined {
+    return this.resolve(varname).types.get(varname);
   }
 
   public lookupMember(expr: MemberExpr): RuntimeVal {

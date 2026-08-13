@@ -349,6 +349,9 @@ class Lexer {
       case ':':
         this.advance();
         return this.makeToken(TokenType.COLON, ':', start, line, column);
+      case '?':
+        this.advance();
+        return this.makeToken(TokenType.QUESTION, '?', start, line, column);
       case '>':
         this.advance();
         if (this.peek() == '=') {

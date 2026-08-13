@@ -29,5 +29,9 @@
   "K028": "Unknown operator '{op}'",
   "K029": "Unhandled type in equality: {type}",
   "K030": "Expected function name following porogaramu_ntoya",
-  "K031": "Variable name expected following reka or ntahinduka"
+  "K031": "Variable name expected following reka or ntahinduka",
+  "K032": "Unknown type name '{name}'. Expected one of: {allowed}",
+  "K033": "Variable '{name}' expects type {expected}, got {got}",
+  "K034": "Variable '{name}' has required type {expected} and cannot be ubusa",
+  "K035": "Strict type safety requires a type annotation on '{name}' (e.g. reka {name}: number = ...)"
 }

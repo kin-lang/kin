@@ -75,11 +75,28 @@ export default class EvalStmt {
     declaration: VariableDeclaration,
     env: Environment,
   ): RuntimeVal {
+    if (
+      env.getTypeSafety() === 'strict' &&
+      !declaration.typeAnnotation
+    ) {
+      throw createKinError('K035', {
+        span: declaration.span,
+        params: { name: declaration.identifier },
+        message: `Strict type safety requires a type annotation on '${declaration.identifier}'`,
+      });
+    }
+
     const value = declaration.value
       ? Interpreter.evaluate(declaration.value, env)
       : MK_NULL();
 
-    return env.declareVar(declaration.identifier, value, declaration.constant);
+    return env.declareVar(
+      declaration.identifier,
+      value,
+      declaration.constant,
+      declaration.typeAnnotation,
+      declaration.span,
+    );
   }
 
   public static eval_conditional_statement(

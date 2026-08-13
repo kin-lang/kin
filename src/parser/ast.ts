@@ -55,6 +55,18 @@ export interface Program extends Stmt {
 }
 
 /**
+ * Optional type annotation on a variable declaration.
+ * `optional: true` means the binding also accepts `ubusa` (null).
+ * Annotation names: number, string, boolean, object, urutonde, fn,
+ * native-fn (synonym of fn). Note: `ubwoko` still reports raw runtime
+ * tags (`fn` vs `native-fn`); annotations treat both as `fn`.
+ */
+export interface TypeAnnotation {
+  name: string;
+  optional: boolean;
+}
+
+/**
  * Defines a variable declaration
  */
 export interface VariableDeclaration extends Stmt {
@@ -62,6 +74,8 @@ export interface VariableDeclaration extends Stmt {
   constant: boolean;
   identifier: string;
   value?: Expr;
+  /** When set, runtime checks the value (and later assignments) against it. */
+  typeAnnotation?: TypeAnnotation;
 }
 
 /**
@@ -207,8 +221,17 @@ export function mkVarDecl(
   constant: boolean,
   value: Expr | undefined,
   span: Span,
+  typeAnnotation?: TypeAnnotation,
 ): VariableDeclaration {
-  return { kind: 'VariableDeclaration', identifier, constant, value, span };
+  const node: VariableDeclaration = {
+    kind: 'VariableDeclaration',
+    identifier,
+    constant,
+    value,
+    span,
+  };
+  if (typeAnnotation) node.typeAnnotation = typeAnnotation;
+  return node;
 }
 
 export function mkConditional(

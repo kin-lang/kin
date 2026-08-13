@@ -45,6 +45,8 @@ export const CODE_CATEGORY: Readonly<Record<string, KinErrorName>> = {
   K023: 'SyntaxError',
   K030: 'SyntaxError',
   K031: 'SyntaxError',
+  K032: 'SyntaxError',
+  K035: 'SyntaxError',
 
   // Reference — names / bindings
   K005: 'ReferenceError',
@@ -61,6 +63,8 @@ export const CODE_CATEGORY: Readonly<Record<string, KinErrorName>> = {
   K017: 'TypeError',
   K018: 'TypeError',
   K024: 'TypeError',
+  K033: 'TypeError',
+  K034: 'TypeError',
 
   // Runtime — control flow, exit, internals
   K013: 'RuntimeError',

@@ -37,8 +37,27 @@ statement ::= variableDeclaration
 ; Semicolon is required only when the initializer is omitted.
 ; Constants (ntahinduka) must have an initializer — the parser rejects
 ; "ntahinduka name ;".
-variableDeclaration ::= "reka" identifier (";" | "=" expression)
-                      | "ntahinduka" identifier "=" expression
+;
+; Optional type annotation after the name enables runtime type checks for
+; that binding (declare + reassign) when type safety is on or strict.
+; Unannotated bindings stay dynamic under `on`; under `strict` they error.
+; Required types reject ubusa; optional types (`type?`) accept ubusa.
+;
+; Annotation names: number string boolean object urutonde fn native-fn
+; Note: ubwoko still reports runtime tags "fn" vs "native-fn"; annotations
+; treat both as `fn` (and accept `native-fn` as a synonym of `fn`).
+variableDeclaration ::= "reka" identifier typeAnnotation? (";" | "=" expression)
+                      | "ntahinduka" identifier typeAnnotation? "=" expression
+
+typeAnnotation ::= ":" typeName "?"?
+typeName       ::= "number" | "string" | "boolean" | "object"
+                 | "urutonde" | "fn" | "native-fn"
+
+; Type-safety control (not a statement — a special comment or host flag):
+;   # kin-types: on      default; check annotated bindings only
+;   # kin-types: off     disable type checks (ignore annotations)
+;   # kin-types: strict  every reka/ntahinduka needs an annotation
+; Precedence: CLI --types > this directive > env KIN_TYPES > on
 
 functionDeclaration ::= "porogaramu_ntoya" identifier "(" parameterList? ")" block
 
@@ -198,3 +217,4 @@ stringLiteral ::= '"' { anyCharacterExceptQuoteOrNewline } '"'
 ; &          tokenized (AMPERSAND), never parsed  (&& is AND and is used)
 ; |          lexer error unless it is part of ||
 ; '          not recognized; strings use " only
+; ?          used only as optional-type marker after a type name

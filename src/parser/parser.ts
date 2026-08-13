@@ -31,7 +31,14 @@ import {
   mkUnary,
   mkVarDecl,
   Identifier,
+  TypeAnnotation,
 } from './ast';
+import {
+  BUILTIN_TYPE_NAMES,
+  isBuiltinTypeName,
+  resolveTypeSafetyMode,
+  TypeSafetyMode,
+} from '../runtime/types';
 
 export interface Diagnostic {
   severity: 'error' | 'warning';
@@ -41,6 +48,8 @@ export interface Diagnostic {
 export interface ParseResult {
   program: Program;
   diagnostics: Diagnostic[];
+  /** Effective type-safety mode for this source (directive / env / default). */
+  typeSafety: TypeSafetyMode;
 }
 
 /**
@@ -57,6 +66,10 @@ export default class Parser {
   /** When true, the first error is thrown (produceAST). When false, recover. */
   private throwOnError = true;
   private source = '';
+  /** Resolved after source is known; used for strict-mode annotation requirements. */
+  private typeSafety: TypeSafetyMode = 'on';
+  /** Optional CLI/host override for type safety (set before parse). */
+  private typeSafetyOverride: string | null | undefined;
 
   private not_eof(): boolean {
     return this.at().type != TokenType.EOF;
@@ -119,6 +132,14 @@ export default class Parser {
   }
 
   /**
+   * Host/CLI override for type-safety mode (`on` | `off` | `strict`).
+   * Takes precedence over file `# kin-types:` and `KIN_TYPES`.
+   */
+  public setTypeSafetyOverride(mode: string | null | undefined): void {
+    this.typeSafetyOverride = mode;
+  }
+
+  /**
    * Backwards-compatible entry: throws on the first error.
    * Existing callers and tests keep this behaviour.
    */
@@ -139,6 +160,11 @@ export default class Parser {
     return this.parseInternal(sourceCodes, false);
   }
 
+  /** Last resolved type-safety mode (after produceAST/parse). */
+  public getTypeSafety(): TypeSafetyMode {
+    return this.typeSafety;
+  }
+
   private parseInternal(
     sourceCodes: string,
     throwOnError: boolean,
@@ -148,6 +174,10 @@ export default class Parser {
     this.diagnostics = [];
     this.pos = 0;
     this.loopDepth = 0;
+    this.typeSafety = resolveTypeSafetyMode(
+      sourceCodes,
+      this.typeSafetyOverride,
+    );
 
     const lexer = new Lexer(sourceCodes);
     this.tokens = lexer.tokenize();
@@ -173,6 +203,7 @@ export default class Parser {
     return {
       program: mkProgram(body, span),
       diagnostics: this.diagnostics,
+      typeSafety: this.typeSafety,
     };
   }
 
@@ -372,11 +403,60 @@ export default class Parser {
     return body;
   }
 
+  /**
+   * Optional type annotation after a binding name:
+   *   : number
+   *   : string?
+   * Names must be built-in type names (same vocabulary as ubwoko).
+   */
+  private parse_type_annotation(): TypeAnnotation | undefined {
+    if (this.at().type !== TokenType.COLON) return undefined;
+
+    this.eat(); // :
+    const typeTok = this.expect(TokenType.IDENTIFIER, 'type name');
+    // Hyphenated names (e.g. native-fn): lexer splits on `-`.
+    let name = typeTok.lexeme;
+    let endTok = typeTok;
+    while (this.at().type === TokenType.MINUS) {
+      this.eat();
+      const part = this.expect(TokenType.IDENTIFIER, 'type name');
+      name = `${name}-${part.lexeme}`;
+      endTok = part;
+    }
+
+    if (!isBuiltinTypeName(name)) {
+      this.fail(
+        'K032',
+        mergeSpans(tokenSpan(typeTok), tokenSpan(endTok)),
+        { name, allowed: BUILTIN_TYPE_NAMES.join(', ') },
+        `Unknown type name '${name}'. Expected one of: ${BUILTIN_TYPE_NAMES.join(', ')}`,
+      );
+    }
+
+    let optional = false;
+    if (this.at().type === TokenType.QUESTION) {
+      this.eat();
+      optional = true;
+    }
+
+    return { name, optional };
+  }
+
   private parse_var_declaration(): Stmt {
     const startTok = this.at();
     const isConstant = this.eat().type == TokenType.NTAHINDUKA;
     const nameTok = this.expect(TokenType.IDENTIFIER, 'variable name');
     const identifier = nameTok.lexeme;
+    const typeAnnotation = this.parse_type_annotation();
+
+    if (this.typeSafety === 'strict' && !typeAnnotation) {
+      this.fail(
+        'K035',
+        tokenSpan(nameTok),
+        { name: identifier },
+        `Strict type safety requires a type annotation on '${identifier}'`,
+      );
+    }
 
     if (this.at().type == TokenType.SEMI_COLON) {
       const semi = this.eat();
@@ -393,16 +473,18 @@ export default class Parser {
         false,
         undefined,
         mergeSpans(tokenSpan(startTok), tokenSpan(semi)),
+        typeAnnotation,
       );
     }
 
-    this.eat(); // =
+    this.expect(TokenType.EQUAL, '=');
     const value = this.parse_expr();
     return mkVarDecl(
       identifier,
       isConstant,
       value,
       mergeSpans(tokenSpan(startTok), value.span),
+      typeAnnotation,
     );
   }
 

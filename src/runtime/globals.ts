@@ -17,9 +17,28 @@ import { createKinIgihe } from './in-built/time';
 import { createKinUrutonde } from './in-built/arrays';
 import { createKinInyandiko } from './in-built/files';
 import { ubwoko } from './in-built/types';
+import {
+  normalizeTypeSafetyMode,
+  TypeSafetyMode,
+} from './types';
 
-export function createGlobalEnv(filename: string): Environment {
-  const env = new Environment();
+export interface GlobalEnvOptions {
+  /**
+   * Type-safety mode for this run.
+   * When omitted, uses `KIN_TYPES` env if valid, otherwise `on`.
+   * File `# kin-types:` is applied by hosts that pass `ParseResult.typeSafety`
+   * (see `runSource`).
+   */
+  typeSafety?: TypeSafetyMode;
+}
+
+export function createGlobalEnv(
+  filename: string,
+  options: GlobalEnvOptions = {},
+): Environment {
+  const fromEnv = normalizeTypeSafetyMode(process.env.KIN_TYPES);
+  const typeSafety = options.typeSafety ?? fromEnv ?? 'on';
+  const env = new Environment(undefined, typeSafety);
   env.declareVar('filename', MK_STRING(filename), true);
   env.declareVar('nibyo', MK_BOOL(true), true);
   env.declareVar('sibyo', MK_BOOL(false), true);

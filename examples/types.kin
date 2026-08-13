@@ -1,0 +1,47 @@
+# Variable type annotations (issue #256)
+#
+# Type safety modes (file directive, env KIN_TYPES, or CLI --types):
+#   # kin-types: on      (default) check annotated bindings only
+#   # kin-types: off     ignore annotations
+#   # kin-types: strict  every reka/ntahinduka needs an annotation
+#
+# Syntax:
+#   reka name: type = value      # required type — rejects ubusa and wrong types
+#   reka name: type? = value     # optional type — allows ubusa
+#   reka name: type?;            # optional, starts as ubusa
+#   ntahinduka name: type = val  # typed constant
+#
+# Annotation names: number string boolean object urutonde fn (native-fn = fn)
+# ubwoko still reports raw tags (e.g. native-fn for builtins).
+# Unannotated bindings stay fully dynamic under the default `on` mode.
+
+# kin-types: on
+
+reka age: number = 25
+reka name: string = "Keza"
+reka ok: boolean = nibyo
+reka list: urutonde = [1, 2, 3]
+reka person: object = {izina: "Keza", imyaka: 25}
+reka maybe: number? = ubusa
+reka later: string?;
+
+porogaramu_ntoya ongera(a, b) {
+  tanga a + b
+}
+reka f: fn = ongera
+
+# Reassignment is checked too.
+age = 26
+maybe = 10
+maybe = ubusa
+later = "ready"
+
+tangaza_amakuru(age)
+tangaza_amakuru(name)
+tangaza_amakuru(ok)
+tangaza_amakuru(list[0])
+tangaza_amakuru(person.izina)
+tangaza_amakuru(maybe)
+tangaza_amakuru(later)
+tangaza_amakuru(f(2, 3))
+tangaza_amakuru(ubwoko(age))

@@ -2,9 +2,7 @@ import { readdirSync, readFileSync } from 'fs';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import * as log from '../src/lib/log';
-import Parser from '../src/parser/parser';
-import { Interpreter } from '../src/runtime/interpreter';
-import { createGlobalEnv } from '../src/runtime/globals';
+import { runSource } from '../src/runtime/run';
 
 const promptAnswers = vi.hoisted(() => ({
   queue: [] as Array<string | null>,
@@ -30,10 +28,8 @@ const EXAMPLE_INPUTS: Record<string, string[]> = {
 function runExample(filename: string): void {
   const filePath = path.join(EXAMPLES_DIR, filename);
   const source = readFileSync(filePath, 'utf-8');
-  const parser = new Parser();
-  const ast = parser.produceAST(source);
-  const env = createGlobalEnv(filePath);
-  Interpreter.evaluate(ast, env);
+  // runSource keeps parser + env type-safety modes aligned.
+  runSource(source, { filename: filePath });
 }
 
 describe('Example programs (current language implementation)', () => {
@@ -61,6 +57,7 @@ describe('Example programs (current language implementation)', () => {
         'loops.kin',
         'objects.kin',
         'switch.kin',
+        'types.kin',
       ]),
     );
   });

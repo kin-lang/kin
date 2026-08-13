@@ -138,7 +138,11 @@ export default class EvalExpr {
     }
 
     const varname = (node.assigne as Identifier).symbol;
-    return env.assignVar(varname, Interpreter.evaluate(node.value, env));
+    return env.assignVar(
+      varname,
+      Interpreter.evaluate(node.value, env),
+      node.span,
+    );
   }
 
   public static eval_object_expr(

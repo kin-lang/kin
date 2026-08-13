@@ -24,6 +24,8 @@ enum TokenType {
   SINGLE_QUOTATION,
   DOUBLE_QUOTATION,
   COLON,
+  /** Optional type marker: `number?` */
+  QUESTION,
   GREATER_THAN,
   LESS_THAN,
   COMMA,

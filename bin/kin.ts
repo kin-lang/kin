@@ -6,9 +6,12 @@ import { readFile } from 'fs/promises';
 import {
   Interpreter,
   Parser,
+  applyTypeSafetyToEnv,
   createGlobalEnv,
   isKinError,
+  normalizeTypeSafetyMode,
   renderThrown,
+  runSource,
 } from '../src/index';
 import * as readline from 'readline/promises';
 
@@ -51,9 +54,25 @@ program
 program
   .command('repl')
   .description("Enter Kin's Repl")
-  .action(async () => {
+  .option(
+    '--types <mode>',
+    'Type safety: on (default), off, or strict. Overrides # kin-types: and KIN_TYPES.',
+  )
+  .action(async (opts: { types?: string }) => {
+    if (opts.types && !normalizeTypeSafetyMode(opts.types)) {
+      console.error(
+        `Kin Error: Invalid --types mode '${opts.types}'. Use on, off, or strict.`,
+      );
+      process.exit(1);
+    }
     const parser = new Parser();
-    const env = createGlobalEnv(process.cwd());
+    if (opts.types) parser.setTypeSafetyOverride(opts.types);
+    // Initial mode from CLI / KIN_TYPES (no source yet).
+    const initialMode =
+      normalizeTypeSafetyMode(opts.types) ??
+      normalizeTypeSafetyMode(process.env.KIN_TYPES) ??
+      'on';
+    const env = createGlobalEnv(process.cwd(), { typeSafety: initialMode });
 
     console.log(`Repl ${pkg.version} (Kin)`);
 
@@ -65,7 +84,14 @@ program
       }
 
       try {
-        const { program: ast, diagnostics } = parser.parse(input);
+        // Per-line override still wins when set; otherwise re-resolve from
+        // this line's `# kin-types:` directive (and env), then apply to env
+        // so runtime checks stay aligned with the parser.
+        if (!opts.types) {
+          parser.setTypeSafetyOverride(undefined);
+        }
+        const { program: ast, diagnostics, typeSafety } = parser.parse(input);
+        applyTypeSafetyToEnv(env, typeSafety);
         if (diagnostics.length > 0) {
           for (const d of diagnostics) {
             printError(d.error, input, 'repl');
@@ -82,20 +108,31 @@ program
 program
   .command('run <file_location>')
   .description('Runs a given file.')
-  .action(async (file_location) => {
+  .option(
+    '--types <mode>',
+    'Type safety: on (default), off, or strict. Overrides # kin-types: and KIN_TYPES.',
+  )
+  .action(async (file_location, opts: { types?: string }) => {
     let source_codes = '';
     try {
+      if (opts.types && !normalizeTypeSafetyMode(opts.types)) {
+        console.error(
+          `Kin Error: Invalid --types mode '${opts.types}'. Use on, off, or strict.`,
+        );
+        process.exit(1);
+      }
       source_codes = await readFile(file_location, 'utf-8');
-      const parser = new Parser();
-      const { program: ast, diagnostics } = parser.parse(source_codes);
+      const { diagnostics } = runSource(source_codes, {
+        filename: file_location,
+        typeSafety: opts.types,
+        throwOnDiagnostic: false,
+      });
       if (diagnostics.length > 0) {
         for (const d of diagnostics) {
           printError(d.error, source_codes, file_location);
         }
         process.exit(1);
       }
-      const env = createGlobalEnv(file_location);
-      Interpreter.evaluate(ast, env);
       process.exit(0);
     } catch (error: unknown) {
       if (
@@ -115,11 +152,22 @@ program
 program
   .command('check <file_location>')
   .description('Parse a file and report diagnostics without executing.')
-  .action(async (file_location) => {
+  .option(
+    '--types <mode>',
+    'Type safety: on (default), off, or strict. Overrides # kin-types: and KIN_TYPES.',
+  )
+  .action(async (file_location, opts: { types?: string }) => {
     let source_codes = '';
     try {
+      if (opts.types && !normalizeTypeSafetyMode(opts.types)) {
+        console.error(
+          `Kin Error: Invalid --types mode '${opts.types}'. Use on, off, or strict.`,
+        );
+        process.exit(1);
+      }
       source_codes = await readFile(file_location, 'utf-8');
       const parser = new Parser();
+      parser.setTypeSafetyOverride(opts.types);
       const { diagnostics } = parser.parse(source_codes);
       if (diagnostics.length === 0) {
         console.log(`No issues found in ${file_location}`);

@@ -1,6 +1,4 @@
 import Parser from '../src/parser/parser';
-import { Interpreter } from '../src/runtime/interpreter';
-import { createGlobalEnv } from '../src/runtime/globals';
 import {
   ArrayVal,
   BooleanVal,
@@ -12,15 +10,18 @@ import {
 } from '../src/runtime/values';
 import Environment from '../src/runtime/environment';
 import { KinError } from '../src/lib/errors';
+import { TypeSafetyMode } from '../src/runtime/types';
+import { runSource } from '../src/runtime/run';
 
 export function evaluate(
   sourceCode: string,
   filename = 'test.kin',
+  options: { typeSafety?: TypeSafetyMode | string } = {},
 ): { result: RuntimeVal; env: Environment } {
-  const parser = new Parser();
-  const ast = parser.produceAST(sourceCode);
-  const env = createGlobalEnv(filename);
-  const result = Interpreter.evaluate(ast, env);
+  const { result, env } = runSource(sourceCode, {
+    filename,
+    typeSafety: options.typeSafety,
+  });
   return { result, env };
 }
 

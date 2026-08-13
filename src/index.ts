@@ -38,6 +38,22 @@ import {
   CODE_CATEGORY,
 } from './lib/errors';
 import { renderKinError, renderThrown } from './lib/render-error';
+import {
+  BUILTIN_TYPE_NAMES,
+  assertValueMatchesType,
+  annotationTypeName,
+  formatTypeAnnotation,
+  isBuiltinTypeName,
+  normalizeAnnotationName,
+  normalizeTypeSafetyMode,
+  parseTypeSafetyDirective,
+  resolveTypeSafetyMode,
+  valueMatchesType,
+} from './runtime/types';
+import {
+  applyTypeSafetyToEnv,
+  runSource,
+} from './runtime/run';
 
 export {
   Parser,
@@ -69,6 +85,18 @@ export {
   CODE_CATEGORY,
   renderKinError,
   renderThrown,
+  BUILTIN_TYPE_NAMES,
+  assertValueMatchesType,
+  annotationTypeName,
+  formatTypeAnnotation,
+  isBuiltinTypeName,
+  normalizeAnnotationName,
+  normalizeTypeSafetyMode,
+  parseTypeSafetyDirective,
+  resolveTypeSafetyMode,
+  valueMatchesType,
+  runSource,
+  applyTypeSafetyToEnv,
 };
 
 export type {
@@ -88,3 +116,9 @@ export type {
   KinErrorCode,
   KinErrorOptions,
 } from './lib/errors';
+
+export type { TypeAnnotation } from './parser/ast';
+export type { TypeSafetyMode, BuiltinTypeName } from './runtime/types';
+export type { GlobalEnvOptions } from './runtime/globals';
+export type { ParseResult, Diagnostic } from './parser/parser';
+export type { RunSourceOptions, RunSourceResult } from './runtime/run';

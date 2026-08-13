@@ -29,5 +29,9 @@
   "K028": "Ikimenyetso kitazwi '{op}'",
   "K029": "Ubwoko butazwi mu kugereranya: {type}",
   "K030": "Byari biteganyijwe izina rya porogaramu_ntoya",
-  "K031": "Byari biteganyijwe izina ry'ihinduragaciro nyuma ya reka cyangwa ntahinduka"
+  "K031": "Byari biteganyijwe izina ry'ihinduragaciro nyuma ya reka cyangwa ntahinduka",
+  "K032": "Izina ry'ubwoko '{name}' ntirizwi. Byari biteganyijwe kimwe muri: {allowed}",
+  "K033": "Ihinduragaciro '{name}' risaba ubwoko {expected}, habonetse {got}",
+  "K034": "Ihinduragaciro '{name}' rifite ubwoko ngombwa {expected} ntishobora kuba ubusa",
+  "K035": "Ubwoko bwa strict busaba ubwoko kuri '{name}' (urugero: reka {name}: number = ...)"
 }
