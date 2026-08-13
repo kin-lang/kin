@@ -34,5 +34,12 @@
   "K033": "Ubwoko '{name}' ntabwo buzwi",
   "K034": "Ubwoko bwa Pick si bwo: {message}",
   "K035": "Ntushobora guha {got} kuri {expected}, byari biteganyijwe {expected}",
-  "K036": "Ubwoko '{name}' busanzwe buhari"
+  "K036": "Ubwoko '{name}' busanzwe buhari",
+  "K037": "Iyi imiterere ifite tegura isanzwe ihari",
+  "K038": "Gushyiraho umwanya ugomba gukoresha _.<izina> muri tegura",
+  "K039": "Ntushobora guhindura umumaro '{name}'",
+  "K040": "Umwanya '{name}' ntihari kuri {klass}; umwanya uremwa muri tegura gusa",
+  "K041": "Ntushobora kugera kuri '{name}' (bwite)",
+  "K042": "'{name}' ntabwo ari imiterere",
+  "K043": "Umwanya '{name}' usanzwe uhari"
 }

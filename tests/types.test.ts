@@ -186,18 +186,20 @@ describe('Type system — runtime checks', () => {
     `);
   });
 
-  test('ubwoko() still reports runtime type names in Kinyarwanda', () => {
+  test('ubwoko() returns a type value with Kinyarwanda name', () => {
     const { result } = evaluate('ubwoko(5)');
-    expect(asString(result)).toBe('umubare');
+    expect(result.type).toBe('type-val');
+    expect((result as { name: string }).name).toBe('umubare');
   });
 
-  test('ubwoko as type keyword and as function coexist', () => {
+  test('ubwoko as type keyword and as typeof operator coexist', () => {
     const { result } = evaluate(`
       ubwoko Id = umubare
       reka x: Id = 3
       ubwoko(x)
     `);
-    expect(asString(result)).toBe('umubare');
+    expect(result.type).toBe('type-val');
+    expect((result as { name: string }).name).toBe('umubare');
   });
 
   test('unknown type name is an error', () => {

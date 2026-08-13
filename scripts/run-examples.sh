@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Run every shipped example with the built Kin CLI (dist/bin/kin.js).
+# Includes top-level examples/*.kin and OOP samples under examples/oop/*.kin.
 # Interactive examples (injiza_amakuru / prompt-sync) need a real TTY, so they
 # are exercised in tests/examples.test.ts instead of this script.
 set -euo pipefail
@@ -18,27 +19,29 @@ failed=0
 ran=0
 
 shopt -s nullglob
-examples=(examples/*.kin)
+examples=(examples/*.kin examples/oop/*.kin)
 if [[ ${#examples[@]} -eq 0 ]]; then
-  echo "No example programs found in examples/" >&2
+  echo "No example programs found in examples/ or examples/oop/" >&2
   exit 1
 fi
 
 for example in "${examples[@]}"; do
+  # Relative path for display: arrays.kin or oop/class-basics.kin
+  rel="${example#examples/}"
   name="$(basename "$example")"
   case "$name" in
     io.kin|switch.kin)
-      echo "SKIP $name (interactive; covered by tests/examples.test.ts)"
+      echo "SKIP $rel (interactive; covered by tests/examples.test.ts)"
       continue
       ;;
   esac
 
-  echo "RUN  $name"
+  echo "RUN  $rel"
   if node "$KIN_BIN" run "$example"; then
-    echo "PASS $name"
+    echo "PASS $rel"
     ran=$((ran + 1))
   else
-    echo "FAIL $name" >&2
+    echo "FAIL $rel" >&2
     failed=1
   fi
 done

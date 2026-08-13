@@ -37,6 +37,9 @@ export function createGlobalEnv(filename: string): Environment {
   env.declareVar('KIN_AMAGAMBO', createKinAmagambo(), true);
   env.declareVar('KIN_IGIHE', createKinIgihe(), true);
   env.declareVar('KIN_URUTONDE', createKinUrutonde(), true);
+  // Registered for the JS API / env shape. In source, `ubwoko` is a keyword
+  // (prefix operator + type-alias). The global remains callable if obtained
+  // without the keyword path.
   env.declareVar('ubwoko', ubwoko, true);
   env.declareVar('KIN_INYANDIKO', createKinInyandiko(), true);
 

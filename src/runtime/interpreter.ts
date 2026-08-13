@@ -9,8 +9,10 @@ import {
   AssignmentExpr,
   BinaryExpr,
   BreakStatement,
+  ClassDeclaration,
   ContinueStatement,
   CallExpr,
+  FieldInitStatement,
   LoopStatement,
   FunctionDeclaration,
   Identifier,
@@ -18,6 +20,7 @@ import {
   NumericLiteral,
   ObjectLiteral,
   Program,
+  RemaExpr,
   Stmt,
   StringLiteral,
   ConditionalStmt,
@@ -27,7 +30,7 @@ import {
   ReturnExpr,
 } from '../parser/ast';
 
-import Environment from './environment';
+import Environment, { MethodContext } from './environment';
 import EvalExpr from './eval/expressions';
 import EvalStmt from './eval/statements';
 import { KinError, createKinError } from '../lib/errors';
@@ -36,6 +39,36 @@ import { Span } from '../lib/span';
 export class Interpreter {
   /** Span of the node currently being evaluated (for runtime errors). */
   public static currentSpan: Span | undefined;
+
+  /**
+   * Active tegura / method frames. Push on enter, pop on exit — never sticky
+   * on Environment, so nested freestanding functions cannot keep private access.
+   */
+  private static methodContextStack: MethodContext[] = [];
+
+  public static pushMethodContext(ctx: MethodContext): void {
+    this.methodContextStack.push(ctx);
+  }
+
+  public static popMethodContext(): void {
+    this.methodContextStack.pop();
+  }
+
+  public static getMethodContext(): MethodContext | undefined {
+    if (this.methodContextStack.length === 0) return undefined;
+    return this.methodContextStack[this.methodContextStack.length - 1];
+  }
+
+  /** Clear privileges for freestanding porogaramu_ntoya calls; restore in finally. */
+  public static suspendMethodContexts(): MethodContext[] {
+    const saved = this.methodContextStack;
+    this.methodContextStack = [];
+    return saved;
+  }
+
+  public static restoreMethodContexts(saved: MethodContext[]): void {
+    this.methodContextStack = saved;
+  }
 
   public static evaluate(astNode: Stmt, env: Environment): RuntimeVal {
     const previous = this.currentSpan;
@@ -68,6 +101,8 @@ export class Interpreter {
           return EvalExpr.eval_binary_expr(astNode as BinaryExpr, env);
         case 'UnaryExpr':
           return EvalExpr.eval_unary_expr(astNode as UnaryExpr, env);
+        case 'RemaExpr':
+          return EvalExpr.eval_rema_expr(astNode as RemaExpr, env);
         case 'MemberExpression':
           return EvalExpr.eval_member_expr(
             env,
@@ -93,6 +128,16 @@ export class Interpreter {
         case 'TypeAliasDeclaration':
           return EvalStmt.eval_type_alias(
             astNode as TypeAliasDeclaration,
+            env,
+          );
+        case 'ClassDeclaration':
+          return EvalStmt.eval_class_declaration(
+            astNode as ClassDeclaration,
+            env,
+          );
+        case 'FieldInitStatement':
+          return EvalStmt.eval_field_init(
+            astNode as FieldInitStatement,
             env,
           );
         case 'FunctionDeclaration':

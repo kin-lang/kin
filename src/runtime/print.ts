@@ -11,6 +11,10 @@ import {
   ObjectVal,
   ArrayVal,
   FunctionValue,
+  ClassVal,
+  InstanceVal,
+  TypeVal,
+  BoundMethodVal,
   MK_STRING,
 } from './values';
 
@@ -65,6 +69,25 @@ export function matchType(arg: RuntimeVal): unknown {
         body: fn.body,
         internal: false,
       };
+    }
+    case 'class':
+      // Class value prints the class name.
+      return (arg as ClassVal).name;
+    case 'type-val':
+      // Type value prints its type name.
+      return (arg as TypeVal).name;
+    case 'instance': {
+      // Instance shows class name and public-ish field dump.
+      const inst = arg as InstanceVal;
+      const fields: { [key: string]: unknown } = {};
+      inst.fields.forEach((value, key) => {
+        fields[key] = matchType(value);
+      });
+      return `${inst.klass.name} ${JSON.stringify(fields)}`;
+    }
+    case 'bound-method': {
+      const bm = arg as BoundMethodVal;
+      return `<method ${bm.method.name}>`;
     }
     default:
       return arg;

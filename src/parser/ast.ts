@@ -11,6 +11,8 @@ export type NodeType =
   | 'VariableDeclaration'
   | 'FunctionDeclaration'
   | 'TypeAliasDeclaration'
+  | 'ClassDeclaration'
+  | 'FieldInitStatement'
   | 'LoopStatement'
   | 'BreakStatement'
   | 'ContinueStatement'
@@ -23,6 +25,7 @@ export type NodeType =
   | 'BinaryExpr'
   | 'UnaryExpr'
   | 'ReturnExpr'
+  | 'RemaExpr'
 
   // Literals
   | 'ObjectLiteral'
@@ -147,6 +150,54 @@ export interface TypeAliasDeclaration extends Stmt {
   kind: 'TypeAliasDeclaration';
   name: string;
   type: TypeNode;
+}
+
+export type Visibility = 'rusange' | 'bwite';
+
+/**
+ * Class declaration: `imiterere Name ikomoka Parent? { … }`
+ */
+export interface ClassDeclaration extends Stmt {
+  kind: 'ClassDeclaration';
+  name: string;
+  /** Parent class name when `ikomoka Parent` is present. */
+  parentName?: string;
+  constructor?: ClassConstructor;
+  methods: ClassMethod[];
+}
+
+export interface ClassConstructor {
+  parameters: FunctionParameter[];
+  body: Stmt[];
+  span: Span;
+}
+
+export interface ClassMethod {
+  visibility: Visibility;
+  name: string;
+  parameters: FunctionParameter[];
+  returnType?: TypeAnnotation;
+  body: Stmt[];
+  span: Span;
+}
+
+/**
+ * Field creation inside tegura: `rusange _.izina = expr`
+ */
+export interface FieldInitStatement extends Stmt {
+  kind: 'FieldInitStatement';
+  visibility: Visibility;
+  name: string;
+  value: Expr;
+}
+
+/**
+ * Instantiate a class: `rema ClassName(args)`
+ */
+export interface RemaExpr extends Expr {
+  kind: 'RemaExpr';
+  classExpr: Expr;
+  args: Expr[];
 }
 
 /**
@@ -311,6 +362,40 @@ export function mkTypeAlias(
   span: Span,
 ): TypeAliasDeclaration {
   return { kind: 'TypeAliasDeclaration', name, type, span };
+}
+
+export function mkClassDecl(
+  name: string,
+  parentName: string | undefined,
+  ctor: ClassConstructor | undefined,
+  methods: ClassMethod[],
+  span: Span,
+): ClassDeclaration {
+  return {
+    kind: 'ClassDeclaration',
+    name,
+    parentName,
+    constructor: ctor,
+    methods,
+    span,
+  };
+}
+
+export function mkFieldInit(
+  visibility: Visibility,
+  name: string,
+  value: Expr,
+  span: Span,
+): FieldInitStatement {
+  return { kind: 'FieldInitStatement', visibility, name, value, span };
+}
+
+export function mkRema(
+  classExpr: Expr,
+  args: Expr[],
+  span: Span,
+): RemaExpr {
+  return { kind: 'RemaExpr', classExpr, args, span };
 }
 
 export function mkNamedType(name: string, span: Span): NamedType {

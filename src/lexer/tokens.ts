@@ -65,9 +65,24 @@ enum TokenType {
   IBINDI,
   /**
    * Type-related keyword: type alias declaration (`ubwoko Person = …`)
-   * and still usable as the typeof function name in expressions (`ubwoko(x)`).
+   * and typeof prefix operator / paren form (`ubwoko x`, `ubwoko(x)`).
    */
   UBWOKO,
+
+  /* OOP keywords */
+  /** Class declaration: `imiterere Name { … }` */
+  IMITERERE,
+  /** Constructor: `tegura(params) { … }` */
+  TEGURA,
+  /** Instantiate: `rema ClassName(args)` */
+  REMA,
+  /** Public visibility */
+  RUSANGE,
+  /** Private visibility */
+  BWITE,
+  /** Inheritance: `imiterere Child ikomoka Parent` */
+  IKOMOKA,
+
   EOF,
 }
 

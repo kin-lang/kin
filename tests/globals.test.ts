@@ -578,29 +578,41 @@ describe('createGlobalEnv', () => {
   });
 
   describe('ubwoko', () => {
-    test('returns the runtime type name', () => {
-      expect(asString(evaluate('ubwoko(1)').result)).toBe('umubare');
-      expect(asString(evaluate('ubwoko("kin")').result)).toBe('ijambo');
-      expect(asString(evaluate('ubwoko(nibyo)').result)).toBe('ukuri');
-      expect(asString(evaluate('ubwoko(ubusa)').result)).toBe('ubusa');
-      expect(asString(evaluate('ubwoko([1])').result)).toBe('urutonde');
-      expect(asString(evaluate('ubwoko(tangaza_amakuru)').result)).toBe(
-        '_porogaramu_ntoya',
+    test('returns a type value (identity-comparable)', () => {
+      const n = evaluate('ubwoko(1)').result;
+      expect(n.type).toBe('type-val');
+      expect((n as { name: string }).name).toBe('umubare');
+      expect((evaluate('ubwoko("kin")').result as { name: string }).name).toBe(
+        'ijambo',
       );
+      expect((evaluate('ubwoko(nibyo)').result as { name: string }).name).toBe(
+        'ukuri',
+      );
+      expect((evaluate('ubwoko(ubusa)').result as { name: string }).name).toBe(
+        'ubusa',
+      );
+      expect((evaluate('ubwoko([1])').result as { name: string }).name).toBe(
+        'urutonde',
+      );
+      // User and native functions share one function type value.
       expect(
-        asString(
+        (evaluate('ubwoko(tangaza_amakuru)').result as { name: string }).name,
+      ).toBe('porogaramu_ntoya');
+      expect(
+        (
           evaluate(`
             porogaramu_ntoya f() { tanga 1 }
             ubwoko(f)
-          `).result,
-        ),
+          `).result as { name: string }
+        ).name,
       ).toBe('porogaramu_ntoya');
+      // Same type values compare equal by identity.
+      expect(asBool(evaluate('ubwoko(5) == ubwoko(10)').result)).toBe(true);
+      expect(asBool(evaluate('ubwoko(5) == ubwoko("5")').result)).toBe(false);
     });
 
-    test('requires an argument', () => {
-      expect(() => evaluate('ubwoko()')).toThrow(
-        'ubwoko expects at least one argument',
-      );
+    test('empty call is a syntax error (prefix operator needs an operand)', () => {
+      expect(() => evaluate('ubwoko()')).toThrow();
     });
   });
 
