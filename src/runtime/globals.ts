@@ -16,6 +16,7 @@ import { createKinAmagambo } from './in-built/strings';
 import { createKinIgihe } from './in-built/time';
 import { createKinUrutonde } from './in-built/arrays';
 import { createKinInyandiko } from './in-built/files';
+import { createKinUrubuga } from './in-built/network';
 import { ubwoko } from './in-built/types';
 
 export function createGlobalEnv(filename: string): Environment {
@@ -39,6 +40,7 @@ export function createGlobalEnv(filename: string): Environment {
   env.declareVar('KIN_URUTONDE', createKinUrutonde(), true);
   env.declareVar('ubwoko', ubwoko, true);
   env.declareVar('KIN_INYANDIKO', createKinInyandiko(), true);
+  env.declareVar('KIN_URUBUGA', createKinUrubuga(), true);
 
   return env;
 }

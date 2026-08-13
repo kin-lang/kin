@@ -725,6 +725,7 @@ describe('createGlobalEnv', () => {
         'KIN_URUTONDE',
         'ubwoko',
         'KIN_INYANDIKO',
+        'KIN_URUBUGA',
       ];
 
       for (const name of expected) {
@@ -732,7 +733,7 @@ describe('createGlobalEnv', () => {
       }
     });
 
-    test('math / string / time / list / file objects expose their methods', () => {
+    test('math / string / time / list / file / network objects expose their methods', () => {
       const env = createGlobalEnv('test.kin');
       const methods: Record<string, string[]> = {
         KIN_IMIBARE: [
@@ -764,6 +765,7 @@ describe('createGlobalEnv', () => {
           'siba_ahabanza',
         ],
         KIN_INYANDIKO: ['soma', 'andika', 'vugurura', 'siba'],
+        KIN_URUBUGA: ['saba'],
       };
 
       for (const [objectName, keys] of Object.entries(methods)) {

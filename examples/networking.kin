@@ -1,0 +1,17 @@
+# HTTP client example — KIN_URUBUGA.saba
+# Requires network access. Replace the URL with any public endpoint you trust.
+#
+# Success returns an object:
+#   res.kode     -> number  (HTTP status)
+#   res.umubiri  -> string  (response body)
+#   res.imitwe   -> object  (response headers, string values)
+# Failure (bad URL, timeout, DNS, …) returns an error message string.
+
+reka res = KIN_URUBUGA.saba("https://example.com")
+
+niba (ubwoko(res) == "string") {
+  tangaza_amakuru("Ikosa: ", res)
+} niba_byanze {
+  tangaza_amakuru("Kode: ", res.kode)
+  tangaza_amakuru("Umubiri (ibanze): ", res.umubiri)
+}
