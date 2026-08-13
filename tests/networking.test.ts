@@ -263,9 +263,9 @@ describe('KIN_URUBUGA', () => {
     expect(result).toEqual({ ok: false, error: 'Request timed out' });
   }, 15_000);
 
-  test('saba surfaces timeout as a plain error string', () => {
-    // Timeout is not configurable from Kin source; assert the helper message
-    // that saba returns as a string on failure.
+  test('timeout helper path returns the stable error string saba surfaces', () => {
+    // Kin source cannot pass timeoutMs; saba uses the same httpRequestSync path
+    // with a 30s default. Assert the stable message that path returns on hang.
     const result = httpRequestSync({
       method: 'GET',
       url: `${baseUrl}/hang`,

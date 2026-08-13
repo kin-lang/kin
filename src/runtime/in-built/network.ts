@@ -141,8 +141,9 @@ process.stdin.on('end', () => {
           total += c.length;
           if (total > maxBody) {
             oversized = true;
-            req.destroy();
+            // Respond first so a destroy-triggered 'error' cannot win the race.
             fail('Response body exceeds maximum size');
+            req.destroy();
             return;
           }
           chunks.push(c);
@@ -168,8 +169,9 @@ process.stdin.on('end', () => {
     );
 
     req.on('timeout', () => {
-      req.destroy();
+      // Respond first so a destroy-triggered 'error' cannot win the race.
       fail('Request timed out');
+      req.destroy();
     });
     req.on('error', (e) => {
       // After destroy() Node often emits socket hang up — respond() ignores duplicates.
