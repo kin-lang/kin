@@ -3,7 +3,7 @@
  *      utility for logging messages    *
  ****************************************/
 
-import { KinError, KinErrorOptions } from './errors';
+import { KinErrorOptions, createKinError } from './errors';
 
 export const LogMessage = console.log;
 
@@ -22,5 +22,5 @@ export function LogKinError(
   code: string,
   options: KinErrorOptions = {},
 ): never {
-  throw new KinError(code, options);
+  throw createKinError(code, options);
 }

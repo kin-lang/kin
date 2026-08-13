@@ -23,7 +23,7 @@ function paint(enabled: boolean, code: string, text: string): string {
 /**
  * Format a KinError the way rustc / tsc do:
  *
- *   ikosa[K014]: <message>
+ *   ikosa[K014] ReferenceError [E_REFERENCE]: <message>
  *    --> program.kin:7:11
  *     |
  *   7 |   tangaza_amakuru(izina)
@@ -43,7 +43,7 @@ export function renderKinError(
   const bold = (s: string) => paint(useColor, '1', s);
   const cyan = (s: string) => paint(useColor, '36', s);
 
-  const header = `${red(bold(`ikosa[${error.code}]`))}: ${error.message}`;
+  const header = `${red(bold(`ikosa[${error.code}]`))} ${error.ERRNAME} [${error.ERRCODE}]: ${error.message}`;
   const lines: string[] = [header];
 
   const span = error.span;

@@ -24,6 +24,73 @@ export function evaluate(
   return { result, env };
 }
 
+type KinErrorClass = new (
+  code: string,
+  options?: ConstructorParameters<typeof KinError>[1],
+) => KinError;
+
+/**
+ * Assert that `fn` throws a KinError of the expected class and optional fields.
+ * Overload used by taxonomy tests: `expectKinError(fn, Class, { ERRNAME, ... })`.
+ */
+export function expectThrownKinError(
+  fn: () => unknown,
+  ErrorClass: KinErrorClass | typeof KinError = KinError,
+  match: {
+    code?: string;
+    ERRNAME?: string;
+    ERRCODE?: string;
+    message?: string | RegExp;
+  } = {},
+): KinError {
+  try {
+    fn();
+  } catch (e) {
+    if (!(e instanceof ErrorClass)) {
+      throw new Error(
+        `Expected ${ErrorClass.name}, got ${
+          e instanceof Error ? e.constructor.name : typeof e
+        }: ${e instanceof Error ? e.message : String(e)}`,
+        { cause: e },
+      );
+    }
+    const err = e as KinError;
+    if (match.code !== undefined && err.code !== match.code) {
+      throw new Error(
+        `Expected code ${match.code}, got ${err.code}: ${err.message}`,
+        { cause: e },
+      );
+    }
+    if (match.ERRNAME !== undefined && err.ERRNAME !== match.ERRNAME) {
+      throw new Error(`Expected ERRNAME ${match.ERRNAME}, got ${err.ERRNAME}`, {
+        cause: e,
+      });
+    }
+    if (match.ERRCODE !== undefined && err.ERRCODE !== match.ERRCODE) {
+      throw new Error(`Expected ERRCODE ${match.ERRCODE}, got ${err.ERRCODE}`, {
+        cause: e,
+      });
+    }
+    if (match.message !== undefined) {
+      if (typeof match.message === 'string') {
+        if (err.message !== match.message) {
+          throw new Error(
+            `Expected message ${JSON.stringify(match.message)}, got ${JSON.stringify(err.message)}`,
+            { cause: e },
+          );
+        }
+      } else if (!match.message.test(err.message)) {
+        throw new Error(
+          `Expected message matching ${match.message}, got ${JSON.stringify(err.message)}`,
+          { cause: e },
+        );
+      }
+    }
+    return err;
+  }
+  throw new Error(`Expected ${ErrorClass.name}, but call succeeded`);
+}
+
 export function nativeFn(env: Environment, name: string): NativeFnValue {
   const value = env.lookupVar(name);
   if (value.type !== 'native-fn') {

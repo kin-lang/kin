@@ -29,7 +29,7 @@ import {
 import Environment from './environment';
 import EvalExpr from './eval/expressions';
 import EvalStmt from './eval/statements';
-import { KinError } from '../lib/errors';
+import { KinError, createKinError } from '../lib/errors';
 import { Span } from '../lib/span';
 
 export class Interpreter {
@@ -97,7 +97,7 @@ export class Interpreter {
         case 'ReturnExpr':
           return EvalExpr.eval_return_expr(astNode as ReturnExpr, env);
         default:
-          throw new KinError('K026', {
+          throw createKinError('K026', {
             span: astNode.span,
             message:
               'AST of unknown kind found. Cannot evaluate. Exiting. Please report this to Kin developers',
@@ -106,7 +106,7 @@ export class Interpreter {
     } catch (e) {
       // Attach the current span to KinErrors that have none.
       if (e instanceof KinError && !e.span && this.currentSpan) {
-        throw new KinError(e.code, {
+        throw createKinError(e.code, {
           span: this.currentSpan,
           params: e.params,
           message: e.message,

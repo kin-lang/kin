@@ -4,7 +4,7 @@
  ******************************************/
 
 import TokenType from './tokens';
-import { KinError } from '../lib/errors';
+import { createKinError } from '../lib/errors';
 import { Span } from '../lib/span';
 
 /* Token structure: full source span plus legacy line field. */
@@ -142,7 +142,7 @@ class Lexer {
     const quote: string = this.consume();
     while (this.peek() !== quote) {
       if (this.peek() === '\n' || this.currentPos === this.sourceCodes.length) {
-        throw new KinError('K003', {
+        throw createKinError('K003', {
           span: {
             start,
             end: this.currentPos,
@@ -288,7 +288,7 @@ class Lexer {
           this.advance();
           return this.makeToken(TokenType.OR, '||', start, line, column);
         }
-        throw new KinError('K004', {
+        throw createKinError('K004', {
           span: { start, end: this.currentPos, line, column },
           params: { char: '|' },
           message: `Unexpected character '|' at line ${line}`,
@@ -387,7 +387,7 @@ class Lexer {
         } else if (this.isSingleAlphaCharacter(char) || char === '_') {
           return this.scanIdentifierOrKeyword();
         } else {
-          throw new KinError('K004', {
+          throw createKinError('K004', {
             span: {
               start,
               end: start + 1,

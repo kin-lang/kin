@@ -13,7 +13,7 @@ import {
   Stmt,
   VariableDeclaration,
 } from '../../parser/ast';
-import { KinError } from '../../lib/errors';
+import { createKinError } from '../../lib/errors';
 import Environment from '../environment';
 import { Interpreter } from '../interpreter';
 import { FunctionValue, MK_NULL, RuntimeVal } from '../values';
@@ -36,17 +36,17 @@ export default class EvalStmt {
       }
     } catch (e) {
       if (isContinueSignal(e)) {
-        throw new KinError('K013', {
+        throw createKinError('K013', {
           message: 'komeza can only be used inside a loop',
         });
       }
       if (isBreakSignal(e)) {
-        throw new KinError('K014', {
+        throw createKinError('K014', {
           message: 'hagarara can only be used inside a loop',
         });
       }
       if (isReturnSignal(e)) {
-        throw new KinError('K015', {
+        throw createKinError('K015', {
           message: 'tanga can only be used inside a function',
         });
       }

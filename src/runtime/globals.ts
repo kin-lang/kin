@@ -28,7 +28,7 @@ import {
   unlinkSync as deleteFileSync,
 } from 'fs';
 import path from 'path';
-import { KinError } from '../lib/errors';
+import { createKinError } from '../lib/errors';
 import { defineNative } from './native';
 import { valuesEqual } from './values';
 
@@ -114,7 +114,7 @@ export function createGlobalEnv(filename: string): Environment {
       fn: (args) => {
         const exit_code = (args[0] as NumberVal).value;
         if (exit_code != 0 && exit_code != 1) {
-          throw new KinError('K025', {
+          throw createKinError('K025', {
             message: 'hagarara expects 1 or 0 as exit codes',
           });
         }

@@ -6,7 +6,7 @@
 
 import { Interpreter } from '..';
 import { Identifier, MemberExpr } from '../parser/ast';
-import { KinError } from '../lib/errors';
+import { createKinError } from '../lib/errors';
 import {
   ArrayVal,
   MK_NATIVE_FN,
@@ -36,7 +36,7 @@ export default class Environment {
     constant: boolean,
   ): RuntimeVal {
     if (this.variables.has(varname)) {
-      throw new KinError('K007', {
+      throw createKinError('K007', {
         params: { name: varname },
         message: `Cannot declare variable ${varname}. As it already is defined.`,
       });
@@ -53,7 +53,7 @@ export default class Environment {
     const env = this.resolve(varname);
 
     if (env.constants.has(varname)) {
-      throw new KinError('K006', {
+      throw createKinError('K006', {
         params: { name: varname },
         message: `Cannot reassign to variable "${varname}" as it's constant.`,
       });
@@ -87,7 +87,7 @@ export default class Environment {
         index < 0 ||
         index >= arr.elements.length
       ) {
-        throw new KinError('K016', {
+        throw createKinError('K016', {
           span: expr.span,
           params: { index: key, length: arr.elements.length },
           message: `Array index ${key} is out of range (length ${arr.elements.length})`,
@@ -107,7 +107,7 @@ export default class Environment {
       const arr = container as ArrayVal;
       const index = Number(key);
       if (!Number.isInteger(index) || index < 0) {
-        throw new KinError('K016', {
+        throw createKinError('K016', {
           span: expr.span,
           params: { index: key, length: arr.elements.length },
           message: `Array index ${key} is out of range (length ${arr.elements.length})`,
@@ -115,7 +115,7 @@ export default class Environment {
       }
       // Allow extending by exactly one past the end (like push via index).
       if (index > arr.elements.length) {
-        throw new KinError('K016', {
+        throw createKinError('K016', {
           span: expr.span,
           params: { index: key, length: arr.elements.length },
           message: `Array index ${key} is out of range (length ${arr.elements.length})`,
@@ -190,7 +190,7 @@ export default class Environment {
       const type =
         obj === undefined || obj.type === 'null' ? 'ubusa' : typeName(obj);
 
-      throw new KinError('K008', {
+      throw createKinError('K008', {
         span: expr.span,
         params: { key, type },
         message: `Cannot access property '${key}' of ${type}`,
@@ -206,7 +206,7 @@ export default class Environment {
     const evaluated = Interpreter.evaluate(expr.property, this);
 
     if (evaluated.type !== 'string' && evaluated.type !== 'number') {
-      throw new KinError('K009', {
+      throw createKinError('K009', {
         span: expr.property.span,
         params: { type: typeName(evaluated) },
         message: `Cannot use ${evaluated.type} as an index/key`,
@@ -225,7 +225,7 @@ export default class Environment {
     if (this.variables.has(varname)) return this;
 
     if (this.parent == undefined) {
-      throw new KinError('K005', {
+      throw createKinError('K005', {
         params: { name: varname },
         message: `Cannot resolve '${varname}' as it does not exist.`,
       });

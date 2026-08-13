@@ -5,7 +5,7 @@
 
 import Lexer, { Token, tokenSpan } from '../lexer/lexer';
 import TokenType from '../lexer/tokens';
-import { KinError } from '../lib/errors';
+import { KinError, createKinError } from '../lib/errors';
 import { Span, emptySpan, mergeSpans } from '../lib/span';
 import {
   Expr,
@@ -109,7 +109,7 @@ export default class Parser {
     params: Record<string, string | number> = {},
     message?: string,
   ): never {
-    const error = new KinError(code, { span, params, message });
+    const error = createKinError(code, { span, params, message });
     if (this.throwOnError) {
       throw error;
     }

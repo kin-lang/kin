@@ -33,7 +33,7 @@ import {
 
 import Environment from '../environment';
 import { Interpreter } from '../interpreter';
-import { KinError } from '../../lib/errors';
+import { createKinError } from '../../lib/errors';
 import { BreakSignal, ContinueSignal, ReturnSignal } from '../signals';
 import { Span } from '../../lib/span';
 
@@ -108,7 +108,7 @@ export default class EvalExpr {
         return MK_BOOL(false);
       case '-':
         if (operand.type !== 'number') {
-          throw new KinError('K024', {
+          throw createKinError('K024', {
             span: node.span,
             params: { op: '-', type: typeName(operand) },
             message: `Unary operator '-' is not supported on ${typeName(operand)}`,
@@ -116,7 +116,7 @@ export default class EvalExpr {
         }
         return MK_NUMBER(-(operand as NumberVal).value);
       default:
-        throw new KinError('K024', {
+        throw createKinError('K024', {
           span: node.span,
           params: { op: node.operator, type: typeName(operand) },
           message: `Unsupported unary operator ${node.operator}`,
@@ -131,7 +131,7 @@ export default class EvalExpr {
     if (node.assigne.kind === 'MemberExpression')
       return this.eval_member_expr(env, node);
     if (node.assigne.kind !== 'Identifier') {
-      throw new KinError('K023', {
+      throw createKinError('K023', {
         span: node.assigne.span,
         message: `Invalid left-hand-side expression: ${JSON.stringify(node.assigne)}.`,
       });
@@ -180,7 +180,7 @@ export default class EvalExpr {
       const scope = new Environment(func.declarationEnv);
 
       if (args.length != func.parameters.length) {
-        throw new KinError('K011', {
+        throw createKinError('K011', {
           span: expr.span,
           params: {
             expected: func.parameters.length,
@@ -204,14 +204,14 @@ export default class EvalExpr {
           return e.value;
         }
         if (e instanceof BreakSignal) {
-          throw new KinError('K019', {
+          throw createKinError('K019', {
             span: expr.span,
             params: { name: 'hagarara' },
             message: 'hagarara cannot be used across a function boundary',
           });
         }
         if (e instanceof ContinueSignal) {
-          throw new KinError('K019', {
+          throw createKinError('K019', {
             span: expr.span,
             params: { name: 'komeza' },
             message: 'komeza cannot be used across a function boundary',
@@ -223,7 +223,7 @@ export default class EvalExpr {
       return MK_NULL();
     }
 
-    throw new KinError('K010', {
+    throw createKinError('K010', {
       span: expr.span,
       message:
         'Cannot call value that is not a function: ' + JSON.stringify(fn),
@@ -253,7 +253,7 @@ export default class EvalExpr {
         Interpreter.evaluate(node.value, env),
       );
     } else {
-      throw new KinError('K027', {
+      throw createKinError('K027', {
         message:
           'Evaluating a member expression is not possible without a member or assignment expression.',
       });
@@ -275,7 +275,7 @@ export default class EvalExpr {
 
     if (operator === '&&' || operator === '||') {
       if (lhs.type !== 'boolean' || rhs.type !== 'boolean') {
-        throw new KinError('K012', {
+        throw createKinError('K012', {
           span,
           params: {
             op: operator,
@@ -297,7 +297,7 @@ export default class EvalExpr {
       return impl(lhs, rhs, span);
     }
 
-    throw new KinError('K012', {
+    throw createKinError('K012', {
       span,
       params: {
         op: operator,

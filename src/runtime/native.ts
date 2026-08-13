@@ -4,7 +4,7 @@
  *   builtin functions                  *
  ****************************************/
 
-import { KinError } from '../lib/errors';
+import { createKinError } from '../lib/errors';
 import { MK_NATIVE_FN, NativeFnValue, RuntimeVal, typeName } from './values';
 import Environment from './environment';
 
@@ -43,14 +43,14 @@ export function defineNative(options: DefineNativeOptions): NativeFnValue {
 
   return MK_NATIVE_FN((args, env) => {
     if (args.length < effectiveMin) {
-      throw new KinError('K017', {
+      throw createKinError('K017', {
         params: { name: options.name, min: effectiveMin },
         // Keep the classic English shape so older tests and docs still match.
         message: `${options.name} expects at least ${effectiveMin === 1 ? 'one argument' : effectiveMin === 2 ? 'two arguments' : `${effectiveMin} arguments`}`,
       });
     }
     if (options.maxArgs !== undefined && args.length > options.maxArgs) {
-      throw new KinError('K011', {
+      throw createKinError('K011', {
         params: {
           expected: options.maxArgs,
           got: args.length,
@@ -64,7 +64,7 @@ export function defineNative(options: DefineNativeOptions): NativeFnValue {
         const expected = options.params[i];
         if (i >= args.length) break;
         if (!matchesType(args[i], expected)) {
-          throw new KinError('K018', {
+          throw createKinError('K018', {
             params: {
               name: options.name,
               arg: i + 1,

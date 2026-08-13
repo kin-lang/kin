@@ -15,7 +15,7 @@ import {
   StringVal,
   valuesEqual,
 } from './values';
-import { KinError } from '../lib/errors';
+import { createKinError } from '../lib/errors';
 import { Span } from '../lib/span';
 
 type MethodFn = (
@@ -32,7 +32,7 @@ const stringMethods: Record<string, MethodFn> = {
     MK_STRING((receiver as StringVal).value.toLowerCase()),
   inyuguti: (receiver, args) => {
     if (args.length < 1 || args[0].type !== 'number') {
-      throw new KinError('K018', {
+      throw createKinError('K018', {
         message: 'inyuguti expects a number index',
         params: {
           name: 'inyuguti',
@@ -51,7 +51,7 @@ const arrayMethods: Record<string, MethodFn> = {
   ingano: (receiver) => MK_NUMBER((receiver as ArrayVal).elements.length),
   ongera_kumusozo: (receiver, args) => {
     if (args.length < 1) {
-      throw new KinError('K017', {
+      throw createKinError('K017', {
         message: 'ongera_kumusozo expects at least one argument',
         params: { name: 'ongera_kumusozo', min: 1 },
       });
@@ -67,7 +67,7 @@ const arrayMethods: Record<string, MethodFn> = {
   },
   ifite: (receiver, args) => {
     if (args.length < 1) {
-      throw new KinError('K017', {
+      throw createKinError('K017', {
         message: 'ifite expects at least one argument',
         params: { name: 'ifite', min: 1 },
       });
@@ -81,7 +81,7 @@ const arrayMethods: Record<string, MethodFn> = {
   },
   ifite_ikirango: (receiver, args) => {
     if (args.length < 1 || args[0].type !== 'string') {
-      throw new KinError('K018', {
+      throw createKinError('K018', {
         message: 'ifite_ikirango expects a string key',
         params: {
           name: 'ifite_ikirango',
@@ -112,7 +112,7 @@ const arrayMethods: Record<string, MethodFn> = {
   },
   injiza_ahabanza: (receiver, args) => {
     if (args.length < 1) {
-      throw new KinError('K017', {
+      throw createKinError('K017', {
         message: 'injiza_ahabanza expects at least one argument',
         params: { name: 'injiza_ahabanza', min: 1 },
       });

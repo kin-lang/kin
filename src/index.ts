@@ -20,7 +20,23 @@ import {
   FunctionValue,
   NullVal,
 } from './runtime/values';
-import { KinError, isKinError } from './lib/errors';
+import {
+  KinError,
+  KinSyntaxError,
+  KinTypeError,
+  KinReferenceError,
+  KinRuntimeError,
+  isKinError,
+  isKinSyntaxError,
+  isKinTypeError,
+  isKinReferenceError,
+  isKinRuntimeError,
+  createKinError,
+  kinError,
+  formatKinError,
+  categoryForCode,
+  CODE_CATEGORY,
+} from './lib/errors';
 import { renderKinError, renderThrown } from './lib/render-error';
 
 export {
@@ -37,7 +53,20 @@ export {
   MK_ARRAY,
   MK_NATIVE_FN,
   KinError,
+  KinSyntaxError,
+  KinTypeError,
+  KinReferenceError,
+  KinRuntimeError,
   isKinError,
+  isKinSyntaxError,
+  isKinTypeError,
+  isKinReferenceError,
+  isKinRuntimeError,
+  createKinError,
+  kinError,
+  formatKinError,
+  categoryForCode,
+  CODE_CATEGORY,
   renderKinError,
   renderThrown,
 };
@@ -52,3 +81,10 @@ export type {
   FunctionValue,
   NullVal,
 };
+
+export type {
+  KinErrorName,
+  KinErrorCategoryCode,
+  KinErrorCode,
+  KinErrorOptions,
+} from './lib/errors';
