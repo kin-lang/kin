@@ -29,5 +29,10 @@
   "K028": "Unknown operator '{op}'",
   "K029": "Unhandled type in equality: {type}",
   "K030": "Expected function name following porogaramu_ntoya",
-  "K031": "Variable name expected following reka or ntahinduka"
+  "K031": "Variable name expected following reka or ntahinduka",
+  "K032": "Expected a type, found {lexeme}",
+  "K033": "Unknown type '{name}'",
+  "K034": "Invalid Pick type: {message}",
+  "K035": "Cannot assign a {got} to a {expected}, expected a {expected} instead",
+  "K036": "Type '{name}' is already defined"
 }

@@ -9,8 +9,11 @@ import { KinError, createKinError } from '../lib/errors';
 import { Span, emptySpan, mergeSpans } from '../lib/span';
 import {
   Expr,
+  FunctionParameter,
   Program,
   Stmt,
+  TypeAnnotation,
+  TypeNode,
   mkArray,
   mkAssign,
   mkBinary,
@@ -19,18 +22,25 @@ import {
   mkConditional,
   mkContinue,
   mkFunction,
+  mkFunctionParam,
   mkIdent,
   mkLoop,
   mkMember,
+  mkNamedType,
   mkNumber,
   mkObject,
+  mkObjectType,
+  mkPickType,
   mkProgram,
   mkProperty,
   mkReturn,
   mkString,
+  mkTypeAlias,
+  mkTypeAnnotation,
   mkUnary,
+  mkUnionType,
   mkVarDecl,
-  Identifier,
+  ObjectTypeProperty,
 } from './ast';
 
 export interface Diagnostic {
@@ -193,6 +203,7 @@ export default class Parser {
         t === TokenType.POROGARAMU_NTOYA ||
         t === TokenType.GERERANYA ||
         t === TokenType.TANGA ||
+        t === TokenType.UBWOKO ||
         t === TokenType.CLOSE_CURLY_BRACES ||
         t === TokenType.HAGARARA ||
         t === TokenType.KOMEZA
@@ -208,6 +219,15 @@ export default class Parser {
       case TokenType.REKA:
       case TokenType.NTAHINDUKA:
         return this.parse_var_declaration();
+      case TokenType.UBWOKO:
+        // `ubwoko Name = Type` is a type alias. `ubwoko(x)` / bare use is an expression.
+        if (
+          this.peek(1).type === TokenType.IDENTIFIER &&
+          this.peek(2).type === TokenType.EQUAL
+        ) {
+          return this.parse_type_alias_declaration();
+        }
+        return this.parse_expr();
       case TokenType.NIBA:
         return this.parse_if_statement();
       case TokenType.GERERANYA:
@@ -378,6 +398,11 @@ export default class Parser {
     const nameTok = this.expect(TokenType.IDENTIFIER, 'variable name');
     const identifier = nameTok.lexeme;
 
+    const typeAnnotation =
+      this.at().type == TokenType.COLON
+        ? this.parse_type_annotation()
+        : undefined;
+
     if (this.at().type == TokenType.SEMI_COLON) {
       const semi = this.eat();
       if (isConstant) {
@@ -393,16 +418,163 @@ export default class Parser {
         false,
         undefined,
         mergeSpans(tokenSpan(startTok), tokenSpan(semi)),
+        typeAnnotation,
       );
     }
 
-    this.eat(); // =
+    this.expect(TokenType.EQUAL, '=');
     const value = this.parse_expr();
     return mkVarDecl(
       identifier,
       isConstant,
       value,
       mergeSpans(tokenSpan(startTok), value.span),
+      typeAnnotation,
+    );
+  }
+
+  /**
+   * `ubwoko Name = TypeExpr`
+   * Type aliases are statements; the type expression is kept on the AST
+   * and resolved / registered at runtime (not erased).
+   */
+  private parse_type_alias_declaration(): Stmt {
+    const startTok = this.eat(); // ubwoko
+    const nameTok = this.expect(TokenType.IDENTIFIER, 'type name');
+    this.expect(TokenType.EQUAL, '=');
+    const type = this.parse_type_expr();
+    return mkTypeAlias(
+      nameTok.lexeme,
+      type,
+      mergeSpans(tokenSpan(startTok), type.span),
+    );
+  }
+
+  /** `: TypeExpr` optionally followed by `?` for optional types. */
+  private parse_type_annotation(): TypeAnnotation {
+    const colon = this.expect(TokenType.COLON, ':');
+    const type = this.parse_type_expr();
+    let optional = false;
+    let endSpan = type.span;
+    if (this.at().type == TokenType.QUESTION) {
+      const q = this.eat();
+      optional = true;
+      endSpan = tokenSpan(q);
+    }
+    return mkTypeAnnotation(
+      type,
+      optional,
+      mergeSpans(tokenSpan(colon), endSpan),
+    );
+  }
+
+  /**
+   * Type expression grammar (low → high):
+   *   unionType  ::= primaryType ("|" primaryType)*
+   *   primaryType ::= named | object | Fata<…> | "(" type ")"
+   */
+  private parse_type_expr(): TypeNode {
+    let left = this.parse_type_primary();
+    if (this.at().type != TokenType.PIPE) return left;
+
+    const members: TypeNode[] = [left];
+    while (this.at().type == TokenType.PIPE) {
+      this.eat(); // |
+      members.push(this.parse_type_primary());
+    }
+    return mkUnionType(
+      members,
+      mergeSpans(members[0].span, members[members.length - 1].span),
+    );
+  }
+
+  private parse_type_primary(): TypeNode {
+    // Parenthesized type: (ijambo | umubare)
+    if (this.at().type == TokenType.OPEN_PARANTHESES) {
+      const open = this.eat();
+      const inner = this.parse_type_expr();
+      const close = this.expect(TokenType.CLOSE_PARANTHESES, ')');
+      inner.span = mergeSpans(tokenSpan(open), tokenSpan(close));
+      return inner;
+    }
+
+    // Object type: { key: Type, ... }
+    if (this.at().type == TokenType.OPEN_CURLY_BRACES) {
+      return this.parse_object_type();
+    }
+
+    // `porogaramu_ntoya` is a keyword token but also a type name (functions).
+    if (this.at().type == TokenType.POROGARAMU_NTOYA) {
+      const tok = this.eat();
+      return mkNamedType('porogaramu_ntoya', tokenSpan(tok));
+    }
+
+    // Named type or Fata<T, keys>
+    if (this.at().type == TokenType.IDENTIFIER) {
+      const nameTok = this.eat();
+      if (
+        nameTok.lexeme === 'Fata' &&
+        this.at().type == TokenType.LESS_THAN
+      ) {
+        return this.parse_fata_type(nameTok);
+      }
+      return mkNamedType(nameTok.lexeme, tokenSpan(nameTok));
+    }
+
+    return this.fail(
+      'K032',
+      tokenSpan(this.at()),
+      { lexeme: this.at().lexeme },
+      `Expected a type, found ${this.at().lexeme}`,
+    );
+  }
+
+  /** `Fata < TargetType , "key" | "key2" >` (Pick) */
+  private parse_fata_type(fataTok: Token): TypeNode {
+    this.expect(TokenType.LESS_THAN, '<');
+    const target = this.parse_type_expr();
+    this.expect(TokenType.COMMA, ',');
+
+    const keys: string[] = [];
+    const firstKey = this.expect(TokenType.STRING, 'property name string');
+    keys.push(firstKey.lexeme);
+    while (this.at().type == TokenType.PIPE) {
+      this.eat();
+      const keyTok = this.expect(TokenType.STRING, 'property name string');
+      keys.push(keyTok.lexeme);
+    }
+
+    const close = this.expect(TokenType.GREATER_THAN, '>');
+    return mkPickType(
+      target,
+      keys,
+      mergeSpans(tokenSpan(fataTok), tokenSpan(close)),
+    );
+  }
+
+  /** `{ key: Type, key2: Type }` */
+  private parse_object_type(): TypeNode {
+    const startTok = this.eat(); // {
+    const properties: ObjectTypeProperty[] = [];
+
+    while (this.not_eof() && this.at().type != TokenType.CLOSE_CURLY_BRACES) {
+      const keyTok = this.expect(TokenType.IDENTIFIER, 'type property name');
+      this.expect(TokenType.COLON, ':');
+      const propType = this.parse_type_expr();
+      properties.push({
+        key: keyTok.lexeme,
+        type: propType,
+        span: mergeSpans(tokenSpan(keyTok), propType.span),
+      });
+      if (this.at().type != TokenType.CLOSE_CURLY_BRACES) {
+        this.expect(TokenType.COMMA, ',');
+      }
+    }
+
+    const endTok = this.expect(TokenType.CLOSE_CURLY_BRACES, '}');
+    return mkObjectType(
+      properties,
+      mergeSpans(tokenSpan(startTok), tokenSpan(endTok)),
     );
   }
 
@@ -421,6 +593,12 @@ export default class Parser {
       case TokenType.IDENTIFIER: {
         const tok = this.eat();
         return mkIdent(tok.lexeme, tokenSpan(tok));
+      }
+      // `ubwoko` is a keyword for type aliases, but remains a call-able name
+      // in expressions: ubwoko(x) / ubwoko x (if used as bare identifier).
+      case TokenType.UBWOKO: {
+        const tok = this.eat();
+        return mkIdent('ubwoko', tokenSpan(tok));
       }
       case TokenType.INTEGER:
       case TokenType.FLOAT: {
@@ -702,19 +880,12 @@ export default class Parser {
     const nameTok = this.expect(TokenType.IDENTIFIER, 'function name');
     const name = nameTok.lexeme;
 
-    const args = this.parse_args();
-    const params: string[] = [];
+    const params = this.parse_function_params();
 
-    for (const arg of args) {
-      if (arg.kind != 'Identifier') {
-        this.fail(
-          'K022',
-          arg.span,
-          {},
-          'Expected identifier for function parameter',
-        );
-      }
-      params.push((arg as Identifier).symbol);
+    // Optional return type: ): number {
+    let returnType: TypeAnnotation | undefined;
+    if (this.at().type == TokenType.COLON) {
+      returnType = this.parse_type_annotation();
     }
 
     // continue/break inside a function are not tied to an enclosing loop
@@ -734,7 +905,48 @@ export default class Parser {
       params,
       body,
       mergeSpans(tokenSpan(startTok), endSpan),
+      returnType,
     );
+  }
+
+  /**
+   * Parameter list for function declarations: `(a: number, b: string?)`.
+   * Call-site argument lists still use parse_args().
+   */
+  private parse_function_params(): FunctionParameter[] {
+    this.expect(TokenType.OPEN_PARANTHESES, '(');
+    const params: FunctionParameter[] = [];
+
+    if (this.at().type != TokenType.CLOSE_PARANTHESES) {
+      params.push(this.parse_function_param());
+      while (this.at().type == TokenType.COMMA) {
+        this.eat();
+        params.push(this.parse_function_param());
+      }
+    }
+
+    this.expect(TokenType.CLOSE_PARANTHESES, ')');
+    return params;
+  }
+
+  private parse_function_param(): FunctionParameter {
+    if (this.at().type != TokenType.IDENTIFIER) {
+      this.fail(
+        'K022',
+        tokenSpan(this.at()),
+        {},
+        'Expected identifier for function parameter',
+      );
+    }
+    const nameTok = this.eat();
+    const typeAnnotation =
+      this.at().type == TokenType.COLON
+        ? this.parse_type_annotation()
+        : undefined;
+    const span = typeAnnotation
+      ? mergeSpans(tokenSpan(nameTok), typeAnnotation.span)
+      : tokenSpan(nameTok);
+    return mkFunctionParam(nameTok.lexeme, span, typeAnnotation);
   }
 
   private parse_args(): Expr[] {

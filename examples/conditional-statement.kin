@@ -1,4 +1,4 @@
-reka grade = 90
+reka grade: umubare = 90
 
 niba (grade >= 90) {
   tangaza_amakuru("Excellent work! You got an A.")

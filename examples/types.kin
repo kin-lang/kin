@@ -1,0 +1,69 @@
+# =============================================================================
+# Ubwoko (type safety) muri Kin
+# =============================================================================
+# Ubwoko butokenizwa, buparswa, kandi bugenzurwa igihe porogaramu ikora.
+# Bishyirwa ku minduragaciro, ku bipimo by'umumaro, no ku gaciro gasubizwa.
+# `ubwoko` rirema amazina y'ubwoko; kandi `ubwoko(x)` isubiza ubwoko bw'agaciro.
+# =============================================================================
+
+# --- Amazina yubatsemo -------------------------------------------------------
+reka age: umubare = 25
+reka name: ijambo = "Keza"
+reka ok: ukuri = nibyo
+reka items: urutonde = [1, 2, 3]
+reka maybe: umubare? = ubusa
+
+# --- Union -------------------------------------------------------------------
+ubwoko Id = ijambo | umubare
+reka id1: Id = "A-1"
+reka id2: Id = 42
+
+# --- Ikintu + ubwoko bujya mu bindi ------------------------------------------
+ubwoko Address = {
+    city: ijambo,
+    street: ijambo
+}
+
+ubwoko Person = {
+    name: ijambo,
+    age: umubare,
+    address: Address
+}
+
+reka keza: Person = {
+    name: "Keza",
+    age: 20,
+    address: {
+        city: "Kigali",
+        street: "KG 1 Ave"
+    }
+}
+
+# --- Fata (gufata imfunguzo zihariye) -----------------------------------------
+ubwoko PersonName = Fata<Person, "name">
+ubwoko PersonNameAge = Fata<Person, "name" | "age">
+
+reka onlyName: PersonName = { name: "Keza" }
+reka nameAndAge: PersonNameAge = { name: "Keza", age: 20 }
+
+# --- Imimaro ifite ubwoko ----------------------------------------------------
+porogaramu_ntoya fullName(first: ijambo, last: ijambo): ijambo {
+    tanga first + " " + last
+}
+
+porogaramu_ntoya birthday(p: Person): umubare {
+    tanga p.age + 1
+}
+
+tangaza_amakuru(fullName("Keza", "Uwase"))
+tangaza_amakuru(birthday(keza))
+tangaza_amakuru(keza.address.city)
+tangaza_amakuru(onlyName.name)
+tangaza_amakuru(id1)
+tangaza_amakuru(id2)
+tangaza_amakuru(ubwoko(age))
+tangaza_amakuru(ubwoko(name))
+
+# Fungura kureba ikosa ry'ubwoko:
+# reka bad: ijambo = 123
+#   -> Cannot assign a umubare to a ijambo, expected a ijambo instead.

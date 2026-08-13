@@ -28,6 +28,10 @@ enum TokenType {
   LESS_THAN,
   COMMA,
   EQUAL,
+  /** Single `|` used in type unions (`string | number`) and Pick key lists. */
+  PIPE,
+  /** `?` marks optional types (`number?`). */
+  QUESTION,
 
   /* Literals */
   IDENTIFIER,
@@ -59,6 +63,11 @@ enum TokenType {
   GERERANYA,
   USANZE,
   IBINDI,
+  /**
+   * Type-related keyword: type alias declaration (`ubwoko Person = …`)
+   * and still usable as the typeof function name in expressions (`ubwoko(x)`).
+   */
+  UBWOKO,
   EOF,
 }
 

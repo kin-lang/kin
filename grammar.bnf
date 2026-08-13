@@ -25,6 +25,7 @@ program ::= statement*
 ; ========================================
 
 statement ::= variableDeclaration
+            | typeAliasDeclaration
             | functionDeclaration
             | loopStatement
             | breakStatement
@@ -37,12 +38,42 @@ statement ::= variableDeclaration
 ; Semicolon is required only when the initializer is omitted.
 ; Constants (ntahinduka) must have an initializer — the parser rejects
 ; "ntahinduka name ;".
-variableDeclaration ::= "reka" identifier (";" | "=" expression)
-                      | "ntahinduka" identifier "=" expression
+; Optional type annotations are kept on the AST and checked at runtime.
+variableDeclaration ::= "reka" identifier typeAnnotation? (";" | "=" expression)
+                      | "ntahinduka" identifier typeAnnotation? "=" expression
 
-functionDeclaration ::= "porogaramu_ntoya" identifier "(" parameterList? ")" block
+; Named type alias (not erased). Supports object types, unions, Fata, nesting.
+; `ubwoko` is also the typeof function in expressions: ubwoko(x).
+typeAliasDeclaration ::= "ubwoko" identifier "=" typeExpression
 
-parameterList ::= identifier ("," identifier)*
+functionDeclaration ::= "porogaramu_ntoya" identifier "(" parameterList? ")"
+                        typeAnnotation? block
+
+parameterList ::= parameter ("," parameter)*
+parameter     ::= identifier typeAnnotation?
+
+; `: type` required; `: type?` also accepts ubusa.
+typeAnnotation ::= ":" typeExpression "?"?
+
+; Union has lowest precedence among type operators.
+typeExpression ::= typePrimary ("|" typePrimary)*
+
+typePrimary ::= typeName
+              | objectType
+              | fataType
+              | "(" typeExpression ")"
+
+; Built-in type names (Kinyarwanda) or user aliases.
+; porogaramu_ntoya is a keyword token that is also a type name.
+typeName ::= "umubare" | "ijambo" | "ukuri" | "ubwoko_imiterere" | "urutonde"
+           | "porogaramu_ntoya" | "_porogaramu_ntoya" | "ubusa"
+           | identifier
+
+objectType ::= "{" (identifier ":" typeExpression
+                    ("," identifier ":" typeExpression)* ","?)? "}"
+
+; Select keys from an object type: Fata<Person, "name" | "age">
+fataType ::= "Fata" "<" typeExpression "," stringLiteral ("|" stringLiteral)* ">"
 
 block ::= "{" statement* "}"
 
@@ -189,6 +220,11 @@ stringLiteral ::= '"' { anyCharacterExceptQuoteOrNewline } '"'
 ; subiramo_niba  hagarara  komeza
 ; niba  nanone_niba  niba_byanze
 ; gereranya  usanze  ibindi
+; ubwoko   (type alias keyword; also typeof function name)
+
+; Built-in type names:
+; umubare  ijambo  ukuri  ubwoko_imiterere  urutonde
+; porogaramu_ntoya  _porogaramu_ntoya  ubusa
 
 ; ========================================
 ; Unused tokens  (lexer only — not in this grammar)
@@ -196,5 +232,6 @@ stringLiteral ::= '"' { anyCharacterExceptQuoteOrNewline } '"'
 ;
 ; ++  --     tokenized (INCREMENT / DECREMENT), never parsed
 ; &          tokenized (AMPERSAND), never parsed  (&& is AND and is used)
-; |          lexer error unless it is part of ||
+; |          tokenized (PIPE); used in type unions and Pick key lists
+; ?          tokenized (QUESTION); used for optional types (number?)
 ; '          not recognized; strings use " only

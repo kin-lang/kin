@@ -209,6 +209,8 @@ class Lexer {
         return TokenType.USANZE;
       case 'ibindi':
         return TokenType.IBINDI;
+      case 'ubwoko':
+        return TokenType.UBWOKO;
       default:
         return undefined;
     }
@@ -288,11 +290,11 @@ class Lexer {
           this.advance();
           return this.makeToken(TokenType.OR, '||', start, line, column);
         }
-        throw createKinError('K004', {
-          span: { start, end: this.currentPos, line, column },
-          params: { char: '|' },
-          message: `Unexpected character '|' at line ${line}`,
-        });
+        // Single `|` is a type-level union / Pick key separator.
+        return this.makeToken(TokenType.PIPE, '|', start, line, column);
+      case '?':
+        this.advance();
+        return this.makeToken(TokenType.QUESTION, '?', start, line, column);
       case ';':
         this.advance();
         return this.makeToken(TokenType.SEMI_COLON, ';', start, line, column);

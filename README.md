@@ -94,11 +94,11 @@ npm run build:exe:all
 - This is implementation of linear search:
 
   ```Kin
-  reka arr = [45, 56, 334, 78, 34, 78, 23, 90]
+  reka arr: urutonde = [45, 56, 334, 78, 34, 78, 23, 90]
 
-  reka i = 0
+  reka i: umubare = 0
 
-  reka key = 23
+  reka key: umubare = 23
 
   subiramo_niba(i < KIN_URUTONDE.ingano(arr)) {
     niba (arr[i] == key) {
@@ -111,8 +111,19 @@ npm run build:exe:all
 
 - Hello \<name\> !
   ```Kin
-  reka name = injiza_amakuru("Enter your name: ")
+  reka name: ijambo = injiza_amakuru("Enter your name: ")
   tangaza_amakuru("Hello ", name, "!")
+  ```
+- Typed functions and type aliases
+  ```Kin
+  ubwoko Person = { name: ijambo, age: umubare }
+
+  porogaramu_ntoya greet(p: Person): ijambo {
+    tanga "Muraho " + p.name
+  }
+
+  reka keza: Person = { name: "Keza", age: 20 }
+  tangaza_amakuru(greet(keza))
   ```
 - Executing system commands
   ```Kin

@@ -49,5 +49,10 @@ Host programs can branch on `instanceof`, `ERRNAME`, or `ERRCODE`.
 | K029 | RuntimeError | Unhandled type in equality | internal | Report to Kin developers. |
 | K030 | SyntaxError | Expected function name following porogaramu_ntoya | `porogaramu_ntoya (){}` | Name the function. |
 | K031 | SyntaxError | Variable name expected following reka or ntahinduka | `reka = 1` | Write `reka name = ...`. |
+| K032 | SyntaxError | Expected a type, found {lexeme} | `reka x: = 1` | Write a type name or object type after `:`. |
+| K033 | TypeError | Unknown type '{name}' | `reka x: Foo = 1` | Declare the type with `ubwoko Foo = ...` first. |
+| K034 | TypeError | Invalid Fata type | `Fata<umubare, "a">` | Fata only works on object types with existing keys. |
+| K035 | TypeError | Cannot assign a {got} to a {expected} | `reka x: ijambo = 1` | Assign a value that matches the annotation. |
+| K036 | TypeError | Type '{name}' is already defined | two `ubwoko Person = ...` | Use a unique type name. |
 
 Messages are loaded from `src/messages/rw.json` (default) and `src/messages/en.json` (`KIN_LANG=en`).

@@ -36,6 +36,7 @@ import { Interpreter } from '../interpreter';
 import { createKinError } from '../../lib/errors';
 import { BreakSignal, ContinueSignal, ReturnSignal } from '../signals';
 import { Span } from '../../lib/span';
+import { assertValueMatchesType } from '../types';
 
 type BinOp = (lhs: RuntimeVal, rhs: RuntimeVal, span?: Span) => RuntimeVal;
 
@@ -138,7 +139,8 @@ export default class EvalExpr {
     }
 
     const varname = (node.assigne as Identifier).symbol;
-    return env.assignVar(varname, Interpreter.evaluate(node.value, env));
+    const value = Interpreter.evaluate(node.value, env);
+    return env.assignVar(varname, value, node.span);
   }
 
   public static eval_object_expr(
@@ -192,7 +194,14 @@ export default class EvalExpr {
       }
 
       for (let i = 0; i < func.parameters.length; i++) {
-        scope.declareVar(func.parameters[i], args[i], false);
+        const paramType = func.parameterTypes?.[i];
+        scope.declareVar(
+          func.parameters[i],
+          args[i],
+          false,
+          paramType,
+          expr.span,
+        );
       }
 
       try {
@@ -201,6 +210,9 @@ export default class EvalExpr {
         }
       } catch (e) {
         if (e instanceof ReturnSignal) {
+          if (func.returnType) {
+            assertValueMatchesType(e.value, func.returnType, expr.span);
+          }
           return e.value;
         }
         if (e instanceof BreakSignal) {
@@ -220,6 +232,10 @@ export default class EvalExpr {
         throw e;
       }
 
+      // Implicit null return when function has a return type annotation.
+      if (func.returnType) {
+        assertValueMatchesType(MK_NULL(), func.returnType, expr.span);
+      }
       return MK_NULL();
     }
 

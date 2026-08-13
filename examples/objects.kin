@@ -1,11 +1,30 @@
-porogaramu_ntoya add (a, b) {
+# Typed function used as an object property
+porogaramu_ntoya add(a: umubare, b: umubare): umubare {
     tanga a + b
 }
 
-# object can't as complex as you want in Kin
+# Named object types with nesting (type chaining)
+ubwoko SubObj = {
+    sub_sub_key: ijambo
+}
+
+ubwoko Key4 = {
+    sub_key: ijambo,
+    sub_obj: SubObj
+}
+
+ubwoko Bag = {
+    key: ijambo,
+    key2: umubare,
+    key3: porogaramu_ntoya,
+    key4: Key4,
+    key5: urutonde
+}
+
+# object can be as complex as you want in Kin
 # only make sure that key is a string and value is an expression.
 
-reka obj = {
+reka obj: Bag = {
     key: "value",
     key2: 1,
     key3: add,

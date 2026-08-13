@@ -234,7 +234,7 @@ describe('Member Expression (computed + dot access) Tests', () => {
           reka x = 5
           x.foo
         `),
-      ).toThrow("Cannot access property 'foo' of number");
+      ).toThrow("Cannot access property 'foo' of umubare");
     });
 
     test('should throw a Kin error when walking through a primitive element', () => {
@@ -243,7 +243,7 @@ describe('Member Expression (computed + dot access) Tests', () => {
           reka arr = [5]
           arr[0][0]
         `),
-      ).toThrow("Cannot access property '0' of number");
+      ).toThrow("Cannot access property '0' of umubare");
     });
 
     test('should return ubusa (null) for a missing key instead of throwing', () => {

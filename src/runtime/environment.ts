@@ -7,6 +7,7 @@
 import { Interpreter } from '..';
 import { Identifier, MemberExpr } from '../parser/ast';
 import { createKinError } from '../lib/errors';
+import { Span } from '../lib/span';
 import {
   ArrayVal,
   MK_NATIVE_FN,
@@ -18,28 +19,45 @@ import {
   typeName,
 } from './values';
 import { lookupMethod } from './methods';
+import {
+  assertValueMatchesType,
+  ResolvedType,
+} from './types';
 
 export default class Environment {
   private parent?: Environment;
   private variables: Map<string, RuntimeVal>;
   private constants: Set<string>;
+  /** Declared type for annotated bindings (checked on assign). */
+  private variableTypes: Map<string, ResolvedType>;
+  /** Named type aliases registered in this scope. */
+  private typeAliases: Map<string, ResolvedType>;
 
   constructor(parentENV?: Environment) {
     this.parent = parentENV;
     this.variables = new Map();
     this.constants = new Set();
+    this.variableTypes = new Map();
+    this.typeAliases = new Map();
   }
 
   public declareVar(
     varname: string,
     value: RuntimeVal,
     constant: boolean,
+    type?: ResolvedType,
+    span?: Span,
   ): RuntimeVal {
     if (this.variables.has(varname)) {
       throw createKinError('K007', {
         params: { name: varname },
         message: `Cannot declare variable ${varname}. As it already is defined.`,
       });
+    }
+
+    if (type) {
+      assertValueMatchesType(value, type, span);
+      this.variableTypes.set(varname, type);
     }
 
     this.variables.set(varname, value);
@@ -49,7 +67,11 @@ export default class Environment {
     return value;
   }
 
-  public assignVar(varname: string, value: RuntimeVal): RuntimeVal {
+  public assignVar(
+    varname: string,
+    value: RuntimeVal,
+    span?: Span,
+  ): RuntimeVal {
     const env = this.resolve(varname);
 
     if (env.constants.has(varname)) {
@@ -59,9 +81,39 @@ export default class Environment {
       });
     }
 
+    const declaredType = env.variableTypes.get(varname);
+    if (declaredType) {
+      assertValueMatchesType(value, declaredType, span);
+    }
+
     env.variables.set(varname, value);
 
     return value;
+  }
+
+  /** Look up the declared type of a binding, if any. */
+  public lookupVarType(varname: string): ResolvedType | undefined {
+    const env = this.resolve(varname);
+    return env.variableTypes.get(varname);
+  }
+
+  public declareType(name: string, type: ResolvedType): void {
+    if (this.typeAliases.has(name)) {
+      throw createKinError('K036', {
+        params: { name },
+        message: `Type '${name}' is already defined`,
+      });
+    }
+    // Shadowing a value name is fine; types live in a separate namespace.
+    this.typeAliases.set(name, type);
+  }
+
+  public lookupType(name: string): ResolvedType | undefined {
+    if (this.typeAliases.has(name)) {
+      return this.typeAliases.get(name);
+    }
+    if (this.parent) return this.parent.lookupType(name);
+    return undefined;
   }
 
   public lookupMember(expr: MemberExpr): RuntimeVal {
