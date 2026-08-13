@@ -157,64 +157,6 @@ export function packageInstallPath(root: string, name: string): string {
 }
 
 /**
- * Re-verify that kin_modules is still a real directory at the expected realpath,
- * and that dest is still contained. Call immediately before/after install IO.
- */
-export function assertSafeInstallTarget(
-  root: string,
-  name: string,
-  expectedModulesReal: string,
-  dest: string,
-): void {
-  const currentModules = inspectModulesDir(root);
-  if (!currentModules) {
-    throw new PathError(`${MODULES_DIR} disappeared during install`);
-  }
-  if (currentModules !== expectedModulesReal) {
-    throw new PathError(
-      `${MODULES_DIR} changed during install (possible symlink swap); refusing to continue`,
-    );
-  }
-  packageInstallPathLexical(root, name);
-  if (!isInsideDirectory(currentModules, dest) || dest === currentModules) {
-    throw new PathError(
-      `Package install path escapes ${MODULES_DIR}/: "${name}"`,
-    );
-  }
-  // If dest already exists, its realpath must stay inside modules.
-  if (fs.existsSync(dest)) {
-    let lstat: fs.Stats;
-    try {
-      lstat = fs.lstatSync(dest);
-    } catch (e) {
-      throw new PathError(
-        `Cannot stat install target: ${e instanceof Error ? e.message : String(e)}`,
-      );
-    }
-    if (lstat.isSymbolicLink()) {
-      // Lexical path is under modules; caller may replace/unlink the link.
-      return;
-    }
-    try {
-      const realDest = fs.realpathSync(dest);
-      if (
-        !isInsideDirectory(currentModules, realDest) ||
-        realDest === currentModules
-      ) {
-        throw new PathError(
-          `Install target resolves outside ${MODULES_DIR}/: "${name}"`,
-        );
-      }
-    } catch (e) {
-      if (e instanceof PathError) throw e;
-      throw new PathError(
-        `Cannot resolve install target: ${e instanceof Error ? e.message : String(e)}`,
-      );
-    }
-  }
-}
-
-/**
  * Resolve the on-disk location of an installed package by name.
  * Returns null if the name is invalid, the project is missing, or the package
  * is not present under kin_modules. Does not create kin_modules.

@@ -21,7 +21,6 @@ export {
   packageInstallPathLexical,
   ensureModulesDir,
   inspectModulesDir,
-  assertSafeInstallTarget,
   isInsideDirectory,
   containProjectRelativePath,
   PathError,
