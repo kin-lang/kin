@@ -38,6 +38,27 @@ import {
   CODE_CATEGORY,
 } from './lib/errors';
 import { renderKinError, renderThrown } from './lib/render-error';
+import {
+  MANIFEST_FILE,
+  LOCKFILE_FILE,
+  MODULES_DIR,
+  findProjectRoot,
+  resolveInstalledPackage,
+  initProject,
+  installAll,
+  addDependency,
+  removeDependency,
+  listPackages,
+  listPackagesNamed,
+  readManifest,
+  writeManifest,
+  readLockfile,
+  parseSource,
+  ManifestError,
+  InstallError,
+  InitError,
+  SourceError,
+} from './pkg';
 
 export {
   Parser,
@@ -69,6 +90,26 @@ export {
   CODE_CATEGORY,
   renderKinError,
   renderThrown,
+  // Package manager
+  MANIFEST_FILE,
+  LOCKFILE_FILE,
+  MODULES_DIR,
+  findProjectRoot,
+  resolveInstalledPackage,
+  initProject,
+  installAll,
+  addDependency,
+  removeDependency,
+  listPackages,
+  listPackagesNamed,
+  readManifest,
+  writeManifest,
+  readLockfile,
+  parseSource,
+  ManifestError,
+  InstallError,
+  InitError,
+  SourceError,
 };
 
 export type {

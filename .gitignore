@@ -47,3 +47,6 @@ testing.kin
 
 # Standalone executables (distributed via GitHub Releases)
 release/
+
+# Kin package manager install directory
+kin_modules/

@@ -39,6 +39,9 @@ kin --version
 kin repl
 kin run path/to/program.kin
 kin check path/to/program.kin
+kin init
+kin pkg add path:./vendor/helpers
+kin install
 ```
 
 ### Option 2: Standalone Windows executable (no Node.js required)
@@ -175,6 +178,21 @@ kin check path/to/program.kin
 ```
 
 Reports all parse diagnostics (with line, column, and a caret) and exits non-zero when there are errors. Useful for teachers and CI.
+
+### Package manager (first slice)
+
+Scaffold a project and install dependencies from the filesystem or Git. Packages are copied into `kin_modules/`; a future language import system can resolve them from there.
+
+```shell
+kin init
+kin pkg add path:./vendor/helpers
+kin pkg add git+https://github.com/example/kin-utils.git#main
+kin install          # or: kin pkg install
+kin pkg list
+kin pkg remove helpers
+```
+
+Manifest: `kin.json`. Lockfile: `kin-lock.json`. Full details: [docs/package-manager.md](docs/package-manager.md).
 
 ## Fun fact!
 

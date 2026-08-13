@@ -39,6 +39,19 @@ npm run build:exe   # outputs release/kin-win-x64.exe
 kin <command> <arguments>
 ```
 
+| Command | Description |
+|---------|-------------|
+| `kin repl` | Interactive REPL |
+| `kin run <file>` | Run a `.kin` file |
+| `kin check <file>` | Parse and report diagnostics |
+| `kin init [dir]` | Create `kin.json`, lockfile, and `main.kin` |
+| `kin install` | Install dependencies into `kin_modules/` |
+| `kin pkg add <spec>` | Add a path or git dependency |
+| `kin pkg list` | List locked packages |
+| `kin pkg remove <name>` | Remove a dependency |
+
+Package manager details: [docs/package-manager.md](../docs/package-manager.md).
+
 ## License
 
 Kin's CLI is under MIT license.
