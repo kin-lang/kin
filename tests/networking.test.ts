@@ -58,6 +58,24 @@ const server = http.createServer((req, res) => {
       res.end('muraho');
       return;
     }
+    if (url.pathname === '/hang') {
+      // Never respond — exercises request timeout.
+      return;
+    }
+    if (url.pathname === '/big') {
+      const size = Number(url.searchParams.get('n') || '100');
+      res.writeHead(200, { 'Content-Type': 'application/octet-stream' });
+      res.end(Buffer.alloc(size, 0x61));
+      return;
+    }
+    if (url.pathname === '/redir') {
+      res.writeHead(302, {
+        Location: '/hello',
+        'Content-Type': 'text/plain',
+      });
+      res.end('moved');
+      return;
+    }
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('not found');
   });
@@ -102,7 +120,6 @@ server.listen(0, '127.0.0.1', () => {
 
     child.stderr.on('data', (chunk: Buffer) => {
       if (!settled) {
-        // Keep stderr available for debugging failed starts.
         buffer += chunk.toString('utf8');
       }
     });
@@ -145,7 +162,8 @@ describe('KIN_URUBUGA', () => {
     expect(asNumber(res.properties.get('kode')!)).toBe(200);
     expect(asString(res.properties.get('umubiri')!)).toBe('muraho');
     const headers = asObject(res.properties.get('imitwe')!);
-    const contentType = headers.properties.get('content-type');
+    // Response header keys use underscores for Kin identifier access.
+    const contentType = headers.properties.get('content_type');
     expect(contentType).toBeDefined();
     expect(asString(contentType!).toLowerCase()).toContain('text/plain');
   });
@@ -172,7 +190,6 @@ describe('KIN_URUBUGA', () => {
   });
 
   test('saba accepts custom headers as an object (underscores become hyphens)', () => {
-    // Kin object keys are identifiers, so Content_Type maps to Content-Type.
     const { result } = evaluate(`
       KIN_URUBUGA.saba(
         "${baseUrl}/echo",
@@ -190,6 +207,14 @@ describe('KIN_URUBUGA', () => {
     expect(parsed.body).toBe('payload');
   });
 
+  test('response headers are readable from Kin via underscore keys', () => {
+    const { result } = evaluate(`
+      reka res = KIN_URUBUGA.saba("${baseUrl}/hello")
+      res.imitwe.content_type
+    `);
+    expect(asString(result).toLowerCase()).toContain('text/plain');
+  });
+
   test('saba surfaces non-2xx status codes without treating them as errors', () => {
     const { result } = evaluate(
       `KIN_URUBUGA.saba("${baseUrl}/status?code=404")`,
@@ -197,6 +222,15 @@ describe('KIN_URUBUGA', () => {
     const res = asObject(result);
     expect(asNumber(res.properties.get('kode')!)).toBe(404);
     expect(asString(res.properties.get('umubiri')!)).toBe('status-404');
+  });
+
+  test('saba does not follow redirects', () => {
+    const { result } = evaluate(`KIN_URUBUGA.saba("${baseUrl}/redir")`);
+    const res = asObject(result);
+    expect(asNumber(res.properties.get('kode')!)).toBe(302);
+    expect(asString(res.properties.get('umubiri')!)).toBe('moved');
+    const headers = asObject(res.properties.get('imitwe')!);
+    expect(asString(headers.properties.get('location')!)).toBe('/hello');
   });
 
   test('saba returns an error string for an invalid URL scheme', () => {
@@ -209,6 +243,47 @@ describe('KIN_URUBUGA', () => {
     const { result } = evaluate('KIN_URUBUGA.saba("not a url")');
     expect(result.type).toBe('string');
     expect(asString(result).length).toBeGreaterThan(0);
+  });
+
+  test('saba returns a connection error string for ECONNREFUSED', () => {
+    // Port 1 is almost never open on localhost.
+    const { result } = evaluate('KIN_URUBUGA.saba("http://127.0.0.1:1/")');
+    expect(result.type).toBe('string');
+    expect(asString(result).toLowerCase()).toMatch(
+      /econnrefused|connect|refused/,
+    );
+  });
+
+  test('httpRequestSync reports Request timed out on hang (not parse failure)', () => {
+    const result = httpRequestSync({
+      method: 'GET',
+      url: `${baseUrl}/hang`,
+      timeoutMs: 400,
+    });
+    expect(result).toEqual({ ok: false, error: 'Request timed out' });
+  }, 15_000);
+
+  test('saba surfaces timeout as a plain error string', () => {
+    // Timeout is not configurable from Kin source; assert the helper message
+    // that saba returns as a string on failure.
+    const result = httpRequestSync({
+      method: 'GET',
+      url: `${baseUrl}/hang`,
+      timeoutMs: 300,
+    });
+    expect(result).toEqual({ ok: false, error: 'Request timed out' });
+  }, 15_000);
+
+  test('httpRequestSync reports oversize body cleanly', () => {
+    const result = httpRequestSync({
+      method: 'GET',
+      url: `${baseUrl}/big?n=64`,
+      maxBodyBytes: 16,
+    });
+    expect(result).toEqual({
+      ok: false,
+      error: 'Response body exceeds maximum size',
+    });
   });
 
   test('saba validates arity and argument types', () => {
@@ -264,7 +339,7 @@ describe('KIN_URUBUGA', () => {
       status: 200,
       body: 'muraho',
       headers: expect.objectContaining({
-        'content-type': expect.stringContaining('text/plain'),
+        content_type: expect.stringContaining('text/plain'),
       }),
     });
   });

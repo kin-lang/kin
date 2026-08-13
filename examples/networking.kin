@@ -1,11 +1,16 @@
 # HTTP client example — KIN_URUBUGA.saba
-# Requires network access. Replace the URL with any public endpoint you trust.
 #
 # Success returns an object:
-#   res.kode     -> number  (HTTP status)
-#   res.umubiri  -> string  (response body)
-#   res.imitwe   -> object  (response headers, string values)
+#   res.kode     -> number  (HTTP status; redirects are NOT followed)
+#   res.umubiri  -> string  (response body as UTF-8 text)
+#   res.imitwe   -> object  (response headers; keys use underscores, e.g. content_type)
 # Failure (bad URL, timeout, DNS, …) returns an error message string.
+#
+# Request headers: use underscores for hyphenated names (Content_Type -> Content-Type).
+#
+# Replace the URL with an endpoint you trust before running online demos.
+# Offline CI still "runs" this file: a transport failure returns a string and
+# the program does not throw.
 
 reka res = KIN_URUBUGA.saba("https://example.com")
 
@@ -13,5 +18,7 @@ niba (ubwoko(res) == "string") {
   tangaza_amakuru("Ikosa: ", res)
 } niba_byanze {
   tangaza_amakuru("Kode: ", res.kode)
+  # Header keys are underscore form so they work as Kin identifiers:
+  tangaza_amakuru("Content-Type: ", res.imitwe.content_type)
   tangaza_amakuru("Umubiri (ibanze): ", res.umubiri)
 }
