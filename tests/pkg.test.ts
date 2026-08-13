@@ -622,3 +622,77 @@ describe('manifest main containment', () => {
     ).toThrow(ManifestError);
   });
 });
+
+describe('security: git host after scheme', () => {
+  it('rejects dashed hosts in ssh/git/file and scp-like forms', () => {
+    expect(() =>
+      parseSource('git+ssh://-oProxyCommand=evil/repo.git'),
+    ).toThrow(SourceError);
+    expect(() => parseSource('git@-oProxyCommand=evil:repo.git')).toThrow(
+      SourceError,
+    );
+    expect(() =>
+      parseSource('git+ssh://user@-oProxyCommand=evil/repo.git'),
+    ).toThrow(SourceError);
+    expect(() => parseSource('git+git://-e/repo.git')).toThrow(SourceError);
+    expect(() => parseSource('git+file://-foo/bar.git')).toThrow(SourceError);
+  });
+
+  it('rejects odd git refs', () => {
+    expect(() =>
+      parseSource('git+https://github.com/org/pkg.git#branch with spaces'),
+    ).toThrow(SourceError);
+    expect(() =>
+      parseSource('git+https://github.com/org/pkg.git#main;id'),
+    ).toThrow(SourceError);
+    expect(() =>
+      parseSource('git+https://github.com/org/pkg.git#--output=/tmp/x'),
+    ).toThrow(SourceError);
+  });
+});
+
+describe('resolveInstalledPackage does not mkdir', () => {
+  it('returns null without creating kin_modules', () => {
+    const project = makeTempDir('kin-resolve-');
+    try {
+      initProject({ cwd: project, name: 'resolve-app' });
+      const modules = path.join(project, MODULES_DIR);
+      if (fs.existsSync(modules)) {
+        fs.rmSync(modules, { recursive: true, force: true });
+      }
+      expect(resolveInstalledPackage('missing', project)).toBeNull();
+      expect(fs.existsSync(modules)).toBe(false);
+    } finally {
+      fs.rmSync(project, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('removeDependency unlinks package symlinks without following', () => {
+  it('removes a planted symlink entry and keeps victim data', () => {
+    const project = makeTempDir('kin-rm-sym-');
+    const dep = makeTempDir('kin-rm-sym-dep-');
+    const victim = makeTempDir('kin-rm-sym-victim-');
+    try {
+      initProject({ cwd: project, name: 'rm-sym-app' });
+      writePackage(dep, 'helper', '1.0.0');
+      addDependency(`path:${dep}`, { cwd: project, name: 'helper' });
+
+      const installed = path.join(project, MODULES_DIR, 'helper');
+      fs.rmSync(installed, { recursive: true, force: true });
+      fs.writeFileSync(path.join(victim, 'keep.txt'), 'safe\n');
+      fs.symlinkSync(victim, installed);
+
+      removeDependency('helper', { cwd: project });
+
+      expect(fs.existsSync(installed)).toBe(false);
+      expect(fs.existsSync(path.join(victim, 'keep.txt'))).toBe(true);
+      expect(readManifest(project).dependencies?.helper).toBeUndefined();
+      expect(readLockfile(project).packages.helper).toBeUndefined();
+    } finally {
+      fs.rmSync(project, { recursive: true, force: true });
+      fs.rmSync(dep, { recursive: true, force: true });
+      fs.rmSync(victim, { recursive: true, force: true });
+    }
+  });
+});

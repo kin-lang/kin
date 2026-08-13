@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import {
   cleanupFetched,
   copyPackageTree,
@@ -14,11 +15,13 @@ import {
 import { readManifest, writeManifest } from './manifest';
 import { isValidPackageName } from './names';
 import {
+  assertSafeInstallTarget,
   ensureModulesDir,
   findProjectRoot,
   isInsideDirectory,
   modulesDir,
   packageInstallPath,
+  packageInstallPathLexical,
   PathError,
 } from './paths';
 import { formatGitSource, formatPathSource, parseSource } from './source';
@@ -69,7 +72,6 @@ export function installAll(options: PkgOptions = {}): InstallReport {
   if (fs.existsSync(modules)) {
     for (const entry of fs.readdirSync(modules, { withFileTypes: true })) {
       if (!entry.isDirectory() && !entry.isSymbolicLink()) continue;
-      // Only touch entries that look like package names; never rm arbitrary paths.
       if (!isValidPackageName(entry.name)) {
         continue;
       }
@@ -85,10 +87,7 @@ export function installAll(options: PkgOptions = {}): InstallReport {
 
 /**
  * Add a dependency to kin.json and install it.
- *
- * Spec forms: same as parseSource. Optional explicit name via options.name.
- * When omitted, name is taken from the package's kin.json, else the
- * directory/repo basename.
+ * Materializes first so a failed install does not leave a dangling dep entry.
  */
 export function addDependency(
   spec: string,
@@ -112,7 +111,6 @@ export function addDependency(
       );
     }
 
-    // Portable source string for the manifest.
     let storedSpec: string;
     if (source.type === 'path') {
       storedSpec = formatPathSource(source.location, root);
@@ -120,8 +118,6 @@ export function addDependency(
       storedSpec = formatGitSource(source.location, source.ref);
     }
 
-    // Install first so a failed materialize does not leave a dangling dep
-    // entry in kin.json.
     const result = materialize(root, name, storedSpec, fetched, lock);
 
     if (!manifest.dependencies) {
@@ -136,7 +132,9 @@ export function addDependency(
   }
 }
 
-/** Remove a dependency from the manifest, lockfile, and kin_modules. */
+/**
+ * Remove a dependency from disk first, then manifest and lockfile.
+ */
 export function removeDependency(
   name: string,
   options: PkgOptions = {},
@@ -151,14 +149,16 @@ export function removeDependency(
       `Dependency "${name}" is not listed in kin.json`,
     );
   }
+
+  // Disk first so a failed remove does not desync manifest from modules.
+  safeRemoveInstalled(root, name);
+
   delete manifest.dependencies[name];
   writeManifest(root, manifest);
 
   const lock = readLockfile(root);
   removeFromLockfile(lock, name);
   writeLockfile(root, lock);
-
-  safeRemoveInstalled(root, name);
 }
 
 /** List installed packages from the lockfile (name + lock entry). */
@@ -182,10 +182,9 @@ function installOne(
   const source = parseSource(spec, root);
   const dest = packageInstallPath(root, name);
 
-  // Skip re-fetch when lock entry matches, install dir exists, and integrity holds.
   if (existing && existing.source === spec && fs.existsSync(dest)) {
     if (source.type === 'path') {
-      // Always refresh path deps so local edits flow into kin_modules.
+      // Always refresh path deps.
     } else {
       let currentIntegrity: string | null = null;
       try {
@@ -204,7 +203,6 @@ function installOne(
           action: 'unchanged',
         };
       }
-      // Integrity mismatch or unreadable tree → re-fetch below.
     }
   }
 
@@ -223,10 +221,10 @@ function materialize(
   fetched: ReturnType<typeof fetchPackage>,
   lock: KinLockfile,
 ): InstallResult {
+  const modulesReal = ensureModulesDir(root);
   const dest = packageInstallPath(root, name);
   const hadExisting = fs.existsSync(dest);
 
-  // Hash on-disk tree before replace so tamper/re-fetch reports "updated".
   let priorDiskIntegrity: string | null = null;
   if (hadExisting) {
     try {
@@ -236,7 +234,34 @@ function materialize(
     }
   }
 
+  // Re-check containment immediately before copy (TOCTOU defense).
+  assertSafeInstallTarget(root, name, modulesReal, dest);
   copyPackageTree(fetched.directory, dest);
+  // Re-check after copy: modules dir must still be the same real directory,
+  // and dest realpath must remain inside it.
+  assertSafeInstallTarget(root, name, modulesReal, dest);
+  try {
+    const realDest = fs.realpathSync(dest);
+    if (
+      !isInsideDirectory(modulesReal, realDest) ||
+      realDest === modulesReal
+    ) {
+      // Attempt cleanup of leaked tree is best-effort only on lexical dest.
+      try {
+        fs.rmSync(dest, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+      throw new InstallError(
+        `Install of "${name}" resolved outside ${modulesReal}; refused`,
+      );
+    }
+  } catch (e) {
+    if (e instanceof InstallError) throw e;
+    throw new InstallError(
+      `Failed to verify install path for "${name}": ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
 
   const entry: LockedPackage = {
     version: fetched.version,
@@ -267,32 +292,62 @@ function materialize(
 }
 
 /**
- * Remove an installed package directory only if it is safely inside kin_modules.
+ * Remove an installed package directory or symlink only if its lexical path
+ * is under kin_modules/<name>. Symlinks are unlinked without following.
  */
 function safeRemoveInstalled(root: string, name: string): void {
   if (!isValidPackageName(name)) {
     return;
   }
-  let installed: string;
+  let lexical: string;
   let modulesReal: string;
   try {
+    lexical = packageInstallPathLexical(root, name);
     modulesReal = ensureModulesDir(root);
-    installed = packageInstallPath(root, name);
   } catch (e) {
     if (e instanceof PathError) {
       throw new InstallError(e.message);
     }
     throw e;
   }
+
+  // Prefer the path under the real modules dir.
+  const installed = path.join(modulesReal, name);
   if (!isInsideDirectory(modulesReal, installed) || installed === modulesReal) {
     throw new InstallError(
       `Refusing to remove path outside ${modulesReal}: ${installed}`,
     );
   }
-  if (fs.existsSync(installed)) {
-    // Re-check realpath if the entry already exists (symlink swap defense).
+
+  // Also accept lexical path if modules was just created empty.
+  const candidate = fs.existsSync(installed)
+    ? installed
+    : fs.existsSync(lexical)
+      ? lexical
+      : installed;
+
+  if (!fs.existsSync(candidate)) {
+    return;
+  }
+
+  let lstat: fs.Stats;
+  try {
+    lstat = fs.lstatSync(candidate);
+  } catch (e) {
+    throw new InstallError(
+      `Cannot stat package "${name}": ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
+
+  if (lstat.isSymbolicLink()) {
+    // Unlink the link node itself (do not follow into victim).
+    fs.unlinkSync(candidate);
+    return;
+  }
+
+  if (lstat.isDirectory() || lstat.isFile()) {
     try {
-      const realInstalled = fs.realpathSync(installed);
+      const realInstalled = fs.realpathSync(candidate);
       if (
         !isInsideDirectory(modulesReal, realInstalled) ||
         realInstalled === modulesReal
@@ -304,10 +359,16 @@ function safeRemoveInstalled(root: string, name: string): void {
       fs.rmSync(realInstalled, { recursive: true, force: true });
     } catch (e) {
       if (e instanceof InstallError) throw e;
-      // Fall back to lexical remove if realpath fails (broken link, etc.).
-      fs.rmSync(installed, { recursive: true, force: true });
+      throw new InstallError(
+        `Failed to remove package "${name}": ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
+    return;
   }
+
+  throw new InstallError(
+    `Refusing to remove unsupported entry for package "${name}"`,
+  );
 }
 
 function requireRoot(cwd?: string): string {

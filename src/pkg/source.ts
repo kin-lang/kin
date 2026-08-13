@@ -17,15 +17,15 @@ const ALLOWED_GIT_PREFIXES = [
   'git@',
 ];
 
+// Host: DNS labels, IPv4, or bracketed IPv6. Must not start with '-'.
+const HOST_RE =
+  /^(?:(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)(?:\.(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?))*|localhost|\d{1,3}(?:\.\d{1,3}){3}|\[[0-9A-Fa-f:.]+\])$/;
+
+// Ref: branch/tag/sha-like; no spaces, no leading dash, no path traversal.
+const REF_RE = /^[A-Za-z0-9][A-Za-z0-9._/+\-]*$/;
+
 /**
  * Parse a dependency source string into a PackageSource.
- *
- * Supported forms:
- * - path:./relative  |  path:/absolute
- * - ./relative       |  ../relative  |  /absolute  (implicit path)
- * - git+https://...  |  git+ssh://...  |  git+file://...
- * - https://...git   |  http://...git  |  git@host:repo.git  (implicit git)
- * - any of the above with #ref for git
  */
 export function parseSource(raw: string, projectRoot?: string): PackageSource {
   const trimmed = raw.trim();
@@ -49,8 +49,7 @@ export function parseSource(raw: string, projectRoot?: string): PackageSource {
     return parseGitSource(trimmed.slice('git+'.length), trimmed);
   }
 
-  // Filesystem paths take precedence over the ".git" suffix heuristic so that
-  // ./vendor/helpers.git and /abs/pkg.git install as path deps, not git clones.
+  // Filesystem paths take precedence over URL heuristics.
   if (isFilesystemPathForm(trimmed)) {
     return {
       type: 'path',
@@ -59,7 +58,6 @@ export function parseSource(raw: string, projectRoot?: string): PackageSource {
     };
   }
 
-  // URL-like git forms (scheme or git@ host syntax).
   if (looksLikeGitUrl(trimmed)) {
     return parseGitSource(trimmed, trimmed);
   }
@@ -87,8 +85,6 @@ function looksLikeGitUrl(value: string): boolean {
   if (ALLOWED_GIT_PREFIXES.some((p) => withoutRef.startsWith(p))) {
     return true;
   }
-  // Bare host/path ending in .git only when it does not look like a local path
-  // (already handled above). Reject ambiguous registry-style names.
   if (
     withoutRef.endsWith('.git') &&
     (withoutRef.includes('://') || withoutRef.startsWith('git@'))
@@ -138,7 +134,7 @@ function parseGitSource(urlWithMaybeRef: string, raw: string): PackageSource {
   };
 }
 
-/** Reject dashed args, ext::, and other non-URL git locations. */
+/** Reject dashed args, ext::, bad hosts, and other non-URL git locations. */
 export function validateGitLocation(location: string): void {
   if (!location || location.startsWith('-')) {
     throw new SourceError(
@@ -156,6 +152,103 @@ export function validateGitLocation(location: string): void {
       `Unsupported git location "${location}". Allowed prefixes: ${ALLOWED_GIT_PREFIXES.join(', ')}`,
     );
   }
+
+  if (location.startsWith('git@')) {
+    // scp-like: git@host:path
+    const rest = location.slice('git@'.length);
+    const colon = rest.indexOf(':');
+    if (colon <= 0) {
+      throw new SourceError(
+        `Invalid git@ location "${location}": expected git@host:path`,
+      );
+    }
+    const host = rest.slice(0, colon);
+    validateGitHost(host, location);
+    const repoPath = rest.slice(colon + 1);
+    if (!repoPath || repoPath.startsWith('-')) {
+      throw new SourceError(`Invalid git@ path in "${location}"`);
+    }
+    return;
+  }
+
+  if (location.startsWith('file://')) {
+    // file:// URLs have no remote host to inject; reject path forms starting with -
+    const filePath = location.slice('file://'.length);
+    // file:///abs or file://localhost/abs or file://host/path
+    if (filePath.startsWith('-')) {
+      throw new SourceError(`Invalid file:// location "${location}"`);
+    }
+    // If authority present as host before path: file://host/path
+    if (!filePath.startsWith('/') && filePath.includes('/')) {
+      const host = filePath.slice(0, filePath.indexOf('/'));
+      if (host && host !== 'localhost') {
+        validateGitHost(host, location);
+      }
+    }
+    return;
+  }
+
+  // scheme://[userinfo@]host[:port][/path]
+  const schemeMatch = location.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//);
+  if (!schemeMatch) {
+    throw new SourceError(`Invalid git location "${location}"`);
+  }
+  const afterScheme = location.slice(schemeMatch[0].length);
+  // Split authority and path
+  const slash = afterScheme.indexOf('/');
+  const authority = slash === -1 ? afterScheme : afterScheme.slice(0, slash);
+  if (!authority) {
+    throw new SourceError(
+      `Invalid git location "${location}": missing host`,
+    );
+  }
+  // userinfo@host:port
+  let hostPort = authority;
+  const at = authority.lastIndexOf('@');
+  if (at !== -1) {
+    const userinfo = authority.slice(0, at);
+    if (!userinfo || userinfo.startsWith('-')) {
+      throw new SourceError(`Invalid userinfo in git location "${location}"`);
+    }
+    hostPort = authority.slice(at + 1);
+  }
+  if (!hostPort || hostPort.startsWith('-')) {
+    throw new SourceError(
+      `Invalid host in git location "${location}": host must not be empty or start with "-"`,
+    );
+  }
+  // Strip port
+  let host = hostPort;
+  if (hostPort.startsWith('[')) {
+    const end = hostPort.indexOf(']');
+    if (end === -1) {
+      throw new SourceError(`Invalid IPv6 host in "${location}"`);
+    }
+    host = hostPort.slice(0, end + 1);
+  } else {
+    const colon = hostPort.indexOf(':');
+    if (colon !== -1) {
+      host = hostPort.slice(0, colon);
+      const port = hostPort.slice(colon + 1);
+      if (port && !/^\d+$/.test(port)) {
+        throw new SourceError(`Invalid port in git location "${location}"`);
+      }
+    }
+  }
+  validateGitHost(host, location);
+}
+
+function validateGitHost(host: string, location: string): void {
+  if (!host || host.startsWith('-')) {
+    throw new SourceError(
+      `Invalid host "${host}" in git location "${location}"`,
+    );
+  }
+  if (!HOST_RE.test(host)) {
+    throw new SourceError(
+      `Invalid host "${host}" in git location "${location}"`,
+    );
+  }
 }
 
 export function validateGitRef(ref: string): void {
@@ -164,9 +257,13 @@ export function validateGitRef(ref: string): void {
       `Invalid git ref "${ref}": must not be empty or start with "-"`,
     );
   }
-  // Conservative: reject shell metacharacters and path traversal in refs.
-  if (/[\0\n\r]/.test(ref) || ref.includes('..')) {
+  if (ref.includes('..') || /[\0\n\r]/.test(ref)) {
     throw new SourceError(`Invalid git ref "${ref}"`);
+  }
+  if (!REF_RE.test(ref)) {
+    throw new SourceError(
+      `Invalid git ref "${ref}": use letters, digits, and . _ / + - only`,
+    );
   }
 }
 
@@ -179,7 +276,6 @@ export function formatPathSource(
   if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
     return `path:./${rel.split(path.sep).join('/')}`;
   }
-  // Outside the project: absolute path: is stored (not portable across machines).
   return `path:${absolutePath}`;
 }
 

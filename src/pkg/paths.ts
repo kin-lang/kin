@@ -54,45 +54,6 @@ export function isInsideDirectory(parent: string, child: string): boolean {
   return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
 }
 
-/**
- * Ensure kin_modules is a real directory under the project (not a symlink
- * that could redirect installs/removes outside the project tree).
- * Creates the directory if missing. Returns the real absolute path.
- */
-export function ensureModulesDir(root: string): string {
-  const modules = path.resolve(modulesDir(root));
-  const rootReal = safeRealpath(root);
-
-  if (fs.existsSync(modules)) {
-    let lstat: fs.Stats;
-    try {
-      lstat = fs.lstatSync(modules);
-    } catch (e) {
-      throw new PathError(
-        `Cannot stat ${MODULES_DIR}: ${e instanceof Error ? e.message : String(e)}`,
-      );
-    }
-    if (lstat.isSymbolicLink()) {
-      throw new PathError(
-        `${MODULES_DIR} must be a real directory under the project, not a symlink`,
-      );
-    }
-    if (!lstat.isDirectory()) {
-      throw new PathError(`${MODULES_DIR} exists but is not a directory`);
-    }
-  } else {
-    fs.mkdirSync(modules, { recursive: true });
-  }
-
-  const modulesReal = safeRealpath(modules);
-  if (!isInsideDirectory(rootReal, modulesReal)) {
-    throw new PathError(
-      `${MODULES_DIR} resolves outside the project root (refusing to use it)`,
-    );
-  }
-  return modulesReal;
-}
-
 function safeRealpath(p: string): string {
   try {
     return fs.realpathSync(p);
@@ -104,27 +65,89 @@ function safeRealpath(p: string): string {
 }
 
 /**
- * Absolute install path for a package under kin_modules/<name>.
- * Rejects invalid names and any path that would escape kin_modules.
- * Ensures kin_modules is not a symlink out of the project.
+ * Inspect kin_modules without creating it.
+ * Returns null if missing. Throws if present but unsafe (symlink/file/outside).
  */
-export function packageInstallPath(root: string, name: string): string {
+export function inspectModulesDir(root: string): string | null {
+  const modules = path.resolve(modulesDir(root));
+  if (!fs.existsSync(modules)) {
+    return null;
+  }
+  let lstat: fs.Stats;
+  try {
+    lstat = fs.lstatSync(modules);
+  } catch (e) {
+    throw new PathError(
+      `Cannot stat ${MODULES_DIR}: ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
+  if (lstat.isSymbolicLink()) {
+    throw new PathError(
+      `${MODULES_DIR} must be a real directory under the project, not a symlink`,
+    );
+  }
+  if (!lstat.isDirectory()) {
+    throw new PathError(`${MODULES_DIR} exists but is not a directory`);
+  }
+  const rootReal = safeRealpath(root);
+  const modulesReal = safeRealpath(modules);
+  if (!isInsideDirectory(rootReal, modulesReal)) {
+    throw new PathError(
+      `${MODULES_DIR} resolves outside the project root (refusing to use it)`,
+    );
+  }
+  return modulesReal;
+}
+
+/**
+ * Ensure kin_modules is a real directory under the project (not a symlink
+ * that could redirect installs/removes outside the project tree).
+ * Creates the directory if missing. Returns the real absolute path.
+ */
+export function ensureModulesDir(root: string): string {
+  const existing = inspectModulesDir(root);
+  if (existing) {
+    return existing;
+  }
+  const modules = path.resolve(modulesDir(root));
+  fs.mkdirSync(modules, { recursive: true });
+  // Re-inspect after create to catch races / unexpected types.
+  const created = inspectModulesDir(root);
+  if (!created) {
+    throw new PathError(`Failed to create ${MODULES_DIR}`);
+  }
+  return created;
+}
+
+/**
+ * Lexical install path for a package under kin_modules/<name>.
+ * Does not create directories. Throws on invalid names.
+ */
+export function packageInstallPathLexical(root: string, name: string): string {
   if (!isValidPackageName(name)) {
     throw new PathError(
       `Invalid package name "${name}". Names must be lowercase letters, digits, hyphens, or underscores (no path segments).`,
     );
   }
-  const modulesReal = ensureModulesDir(root);
-  // Join against the lexical modules path under root, then realpath-check.
-  const destLexical = path.resolve(modulesDir(root), name);
-  if (!isInsideDirectory(path.resolve(modulesDir(root)), destLexical)) {
+  const modules = path.resolve(modulesDir(root));
+  const dest = path.resolve(modules, name);
+  if (!isInsideDirectory(modules, dest) || dest === modules) {
     throw new PathError(
       `Package install path escapes ${MODULES_DIR}/: "${name}"`,
     );
   }
-  // Dest may not exist yet; validate parent is modulesReal and name is single segment.
-  const destRealParent = modulesReal;
-  const dest = path.join(destRealParent, name);
+  return dest;
+}
+
+/**
+ * Absolute install path for a package under kin_modules/<name>.
+ * Ensures modules dir exists and is safe. Returns path under the real modules dir.
+ */
+export function packageInstallPath(root: string, name: string): string {
+  const modulesReal = ensureModulesDir(root);
+  // Validate name via lexical helper.
+  packageInstallPathLexical(root, name);
+  const dest = path.join(modulesReal, name);
   if (!isInsideDirectory(modulesReal, dest) || dest === modulesReal) {
     throw new PathError(
       `Package install path escapes ${MODULES_DIR}/: "${name}"`,
@@ -134,9 +157,67 @@ export function packageInstallPath(root: string, name: string): string {
 }
 
 /**
+ * Re-verify that kin_modules is still a real directory at the expected realpath,
+ * and that dest is still contained. Call immediately before/after install IO.
+ */
+export function assertSafeInstallTarget(
+  root: string,
+  name: string,
+  expectedModulesReal: string,
+  dest: string,
+): void {
+  const currentModules = inspectModulesDir(root);
+  if (!currentModules) {
+    throw new PathError(`${MODULES_DIR} disappeared during install`);
+  }
+  if (currentModules !== expectedModulesReal) {
+    throw new PathError(
+      `${MODULES_DIR} changed during install (possible symlink swap); refusing to continue`,
+    );
+  }
+  packageInstallPathLexical(root, name);
+  if (!isInsideDirectory(currentModules, dest) || dest === currentModules) {
+    throw new PathError(
+      `Package install path escapes ${MODULES_DIR}/: "${name}"`,
+    );
+  }
+  // If dest already exists, its realpath must stay inside modules.
+  if (fs.existsSync(dest)) {
+    let lstat: fs.Stats;
+    try {
+      lstat = fs.lstatSync(dest);
+    } catch (e) {
+      throw new PathError(
+        `Cannot stat install target: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+    if (lstat.isSymbolicLink()) {
+      // Lexical path is under modules; caller may replace/unlink the link.
+      return;
+    }
+    try {
+      const realDest = fs.realpathSync(dest);
+      if (
+        !isInsideDirectory(currentModules, realDest) ||
+        realDest === currentModules
+      ) {
+        throw new PathError(
+          `Install target resolves outside ${MODULES_DIR}/: "${name}"`,
+        );
+      }
+    } catch (e) {
+      if (e instanceof PathError) throw e;
+      throw new PathError(
+        `Cannot resolve install target: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  }
+}
+
+/**
  * Resolve the on-disk location of an installed package by name.
  * Returns null if the name is invalid, the project is missing, or the package
- * is not present under kin_modules.
+ * is not present under kin_modules. Does not create kin_modules.
  */
 export function resolveInstalledPackage(
   name: string,
@@ -149,9 +230,19 @@ export function resolveInstalledPackage(
   if (!root) {
     return null;
   }
+  let modulesReal: string | null;
+  try {
+    modulesReal = inspectModulesDir(root);
+  } catch {
+    return null;
+  }
+  if (!modulesReal) {
+    return null;
+  }
   let dest: string;
   try {
-    dest = packageInstallPath(root, name);
+    dest = path.join(modulesReal, name);
+    packageInstallPathLexical(root, name);
   } catch {
     return null;
   }
@@ -181,10 +272,6 @@ export function containProjectRelativePath(
   const segments = relativePath.split(/[/\\]/);
   if (segments.some((s) => s === '..')) {
     throw new PathError(`${label} must not contain "..": ${relativePath}`);
-  }
-  if (segments.some((s) => s === '' || s === '.')) {
-    // Allow "src/main.kin" but reject empty segments from leading/trailing slash-only weirdness
-    // except we allow nested paths; filter only empty segments from double slashes
   }
   const cleaned = segments.filter((s) => s !== '' && s !== '.');
   if (cleaned.length === 0) {
