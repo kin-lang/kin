@@ -1,4 +1,4 @@
-reka input = injiza_amakuru("Write something : ") # Input
+reka input: ijambo = injiza_amakuru("Write something : ") # Input
 tangaza_amakuru(input) # Output
 
 # This will also work

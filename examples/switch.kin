@@ -1,9 +1,9 @@
-reka iletere = injiza_amakuru("shyiramo letere nyamuneka:")
+reka iletere: ijambo = injiza_amakuru("shyiramo letere nyamuneka:")
 
 gereranya(iletere){
     usanze "a":
-       reka a = 1
-       reka b = 2
+       reka a: umubare = 1
+       reka b: umubare = 2
        tangaza_amakuru(a+b)
        tangaza_amakuru("Iyi letere ni a")
     usanze "b":

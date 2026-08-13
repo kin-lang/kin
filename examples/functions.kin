@@ -5,15 +5,15 @@ porogaramu_ntoya printTime() {
 
 printTime() # This will print current time in this format: HH:MM:SS
 
-# function that return something
-porogaramu_ntoya add(a, b) {
+# function with typed parameters and return type
+porogaramu_ntoya add(a: umubare, b: umubare): umubare {
     tanga a + b
 }
 
 tangaza_amakuru(add(1, 2)) # This will print 3
 
 # function being a member of an object
-reka obj = {
+reka obj: ubwoko_imiterere = {
     addNumbers: add
 }
 

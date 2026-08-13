@@ -152,17 +152,14 @@ describe('Lexer throws KinSyntaxError', () => {
     expect(err.code).toBe('K003');
   });
 
-  test('lone pipe', () => {
-    const err = expectThrownKinError(
-      () => new Lexer('a | b').tokenize(),
-      KinSyntaxError,
-      {
-        code: 'K004',
-        ERRNAME: 'SyntaxError',
-        ERRCODE: 'E_SYNTAX',
-      },
-    );
-    expect(err).toBeInstanceOf(KinSyntaxError);
+  test('lone pipe is tokenized for type unions (not a lexer error)', () => {
+    const tokens = new Lexer('string | number').tokenize();
+    expect(tokens.map((t) => t.lexeme)).toEqual([
+      'string',
+      '|',
+      'number',
+      'EOF',
+    ]);
   });
 });
 

@@ -579,13 +579,13 @@ describe('createGlobalEnv', () => {
 
   describe('ubwoko', () => {
     test('returns the runtime type name', () => {
-      expect(asString(evaluate('ubwoko(1)').result)).toBe('number');
-      expect(asString(evaluate('ubwoko("kin")').result)).toBe('string');
-      expect(asString(evaluate('ubwoko(nibyo)').result)).toBe('boolean');
-      expect(asString(evaluate('ubwoko(ubusa)').result)).toBe('null');
+      expect(asString(evaluate('ubwoko(1)').result)).toBe('umubare');
+      expect(asString(evaluate('ubwoko("kin")').result)).toBe('ijambo');
+      expect(asString(evaluate('ubwoko(nibyo)').result)).toBe('ukuri');
+      expect(asString(evaluate('ubwoko(ubusa)').result)).toBe('ubusa');
       expect(asString(evaluate('ubwoko([1])').result)).toBe('urutonde');
       expect(asString(evaluate('ubwoko(tangaza_amakuru)').result)).toBe(
-        'native-fn',
+        '_porogaramu_ntoya',
       );
       expect(
         asString(
@@ -594,7 +594,7 @@ describe('createGlobalEnv', () => {
             ubwoko(f)
           `).result,
         ),
-      ).toBe('fn');
+      ).toBe('porogaramu_ntoya');
     });
 
     test('requires an argument', () => {

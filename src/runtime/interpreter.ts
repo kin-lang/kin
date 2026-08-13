@@ -21,6 +21,7 @@ import {
   Stmt,
   StringLiteral,
   ConditionalStmt,
+  TypeAliasDeclaration,
   VariableDeclaration,
   UnaryExpr,
   ReturnExpr,
@@ -87,6 +88,11 @@ export class Interpreter {
         case 'VariableDeclaration':
           return EvalStmt.eval_val_declaration(
             astNode as VariableDeclaration,
+            env,
+          );
+        case 'TypeAliasDeclaration':
+          return EvalStmt.eval_type_alias(
+            astNode as TypeAliasDeclaration,
             env,
           );
         case 'FunctionDeclaration':

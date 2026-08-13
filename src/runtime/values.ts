@@ -5,6 +5,7 @@
 
 import { Stmt } from '../parser/ast';
 import Environment from './environment';
+import type { ResolvedType } from './types';
 
 export type ValueType =
   | 'null'
@@ -55,6 +56,10 @@ export interface FunctionValue extends RuntimeVal {
   type: 'fn';
   name: string;
   parameters: string[];
+  /** Resolved parameter types (aligned with parameters; undefined = untyped). */
+  parameterTypes?: (ResolvedType | undefined)[];
+  /** Resolved return type when annotated. */
+  returnType?: ResolvedType;
   declarationEnv: Environment;
   body: Stmt[];
 }
@@ -95,12 +100,29 @@ export function MK_ARRAY(elements: RuntimeVal[] = []) {
 }
 
 /**
- * Human-facing type name for ubwoko and error messages.
- * Arrays report as "urutonde"; other types keep their internal name.
+ * Human-facing Kinyarwanda type name for `ubwoko()` and error messages.
  */
 export function typeName(value: RuntimeVal): string {
-  if (value.type === 'array') return 'urutonde';
-  return value.type;
+  switch (value.type) {
+    case 'number':
+      return 'umubare';
+    case 'string':
+      return 'ijambo';
+    case 'boolean':
+      return 'ukuri';
+    case 'object':
+      return 'ubwoko_imiterere';
+    case 'array':
+      return 'urutonde';
+    case 'fn':
+      return 'porogaramu_ntoya';
+    case 'native-fn':
+      return '_porogaramu_ntoya';
+    case 'null':
+      return 'ubusa';
+    default:
+      return value.type;
+  }
 }
 
 /** Deep-ish structural equality used by == / != and array.contains. */

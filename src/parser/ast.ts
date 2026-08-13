@@ -10,6 +10,7 @@ export type NodeType =
   | 'Program'
   | 'VariableDeclaration'
   | 'FunctionDeclaration'
+  | 'TypeAliasDeclaration'
   | 'LoopStatement'
   | 'BreakStatement'
   | 'ContinueStatement'
@@ -29,7 +30,14 @@ export type NodeType =
   | 'NumericLiteral'
   | 'StringLiteral'
   | 'Identifier'
-  | 'Property';
+  | 'Property'
+
+  // Type AST (kept through parse → runtime; not erased)
+  | 'NamedType'
+  | 'ObjectType'
+  | 'UnionType'
+  | 'PickType'
+  | 'TypeAnnotation';
 
 /**
  * Statements do not result in a value at runtime.
@@ -54,6 +62,73 @@ export interface Program extends Stmt {
   body: Stmt[];
 }
 
+// ---------------------------------------------------------------------------
+// Type AST
+// Types are tokenized and parsed into these nodes, then checked at runtime.
+// ---------------------------------------------------------------------------
+
+/** Named type reference: `number`, `string`, `Person`, … */
+export interface NamedType {
+  kind: 'NamedType';
+  name: string;
+  span: Span;
+}
+
+/** One property inside an object type: `name: string` */
+export interface ObjectTypeProperty {
+  key: string;
+  type: TypeNode;
+  span: Span;
+}
+
+/** Object type literal: `{ name: string, age: number }` */
+export interface ObjectType {
+  kind: 'ObjectType';
+  properties: ObjectTypeProperty[];
+  span: Span;
+}
+
+/** Union: `string | number` */
+export interface UnionType {
+  kind: 'UnionType';
+  members: TypeNode[];
+  span: Span;
+}
+
+/**
+ * Select keys from an object type: `Fata<Person, "name" | "age">`
+ * (TypeScript Pick). `target` is the source type; `keys` are kept.
+ */
+export interface PickType {
+  kind: 'PickType';
+  target: TypeNode;
+  keys: string[];
+  span: Span;
+}
+
+/** Any type expression node (before optional `?` wrapping). */
+export type TypeNode = NamedType | ObjectType | UnionType | PickType;
+
+/**
+ * Full annotation as written after `:` — may be optional (`number?`).
+ */
+export interface TypeAnnotation {
+  kind: 'TypeAnnotation';
+  type: TypeNode;
+  /** When true, `ubusa` is also accepted. */
+  optional: boolean;
+  span: Span;
+}
+
+/**
+ * Function parameter with optional type annotation.
+ */
+export interface FunctionParameter {
+  name: string;
+  typeAnnotation?: TypeAnnotation;
+  span: Span;
+}
+
 /**
  * Defines a variable declaration
  */
@@ -61,7 +136,17 @@ export interface VariableDeclaration extends Stmt {
   kind: 'VariableDeclaration';
   constant: boolean;
   identifier: string;
+  typeAnnotation?: TypeAnnotation;
   value?: Expr;
+}
+
+/**
+ * Named type alias: `ubwoko Person = { name: ijambo }`
+ */
+export interface TypeAliasDeclaration extends Stmt {
+  kind: 'TypeAliasDeclaration';
+  name: string;
+  type: TypeNode;
 }
 
 /**
@@ -105,7 +190,8 @@ export interface ContinueStatement extends Stmt {
 export interface FunctionDeclaration extends Stmt {
   kind: 'FunctionDeclaration';
   name: string;
-  parameters: string[];
+  parameters: FunctionParameter[];
+  returnType?: TypeAnnotation;
   body: Stmt[];
 }
 
@@ -207,8 +293,63 @@ export function mkVarDecl(
   constant: boolean,
   value: Expr | undefined,
   span: Span,
+  typeAnnotation?: TypeAnnotation,
 ): VariableDeclaration {
-  return { kind: 'VariableDeclaration', identifier, constant, value, span };
+  return {
+    kind: 'VariableDeclaration',
+    identifier,
+    constant,
+    value,
+    typeAnnotation,
+    span,
+  };
+}
+
+export function mkTypeAlias(
+  name: string,
+  type: TypeNode,
+  span: Span,
+): TypeAliasDeclaration {
+  return { kind: 'TypeAliasDeclaration', name, type, span };
+}
+
+export function mkNamedType(name: string, span: Span): NamedType {
+  return { kind: 'NamedType', name, span };
+}
+
+export function mkObjectType(
+  properties: ObjectTypeProperty[],
+  span: Span,
+): ObjectType {
+  return { kind: 'ObjectType', properties, span };
+}
+
+export function mkUnionType(members: TypeNode[], span: Span): UnionType {
+  return { kind: 'UnionType', members, span };
+}
+
+export function mkPickType(
+  target: TypeNode,
+  keys: string[],
+  span: Span,
+): PickType {
+  return { kind: 'PickType', target, keys, span };
+}
+
+export function mkTypeAnnotation(
+  type: TypeNode,
+  optional: boolean,
+  span: Span,
+): TypeAnnotation {
+  return { kind: 'TypeAnnotation', type, optional, span };
+}
+
+export function mkFunctionParam(
+  name: string,
+  span: Span,
+  typeAnnotation?: TypeAnnotation,
+): FunctionParameter {
+  return { name, typeAnnotation, span };
 }
 
 export function mkConditional(
@@ -244,11 +385,19 @@ export function mkContinue(span: Span): ContinueStatement {
 
 export function mkFunction(
   name: string,
-  parameters: string[],
+  parameters: FunctionParameter[],
   body: Stmt[],
   span: Span,
+  returnType?: TypeAnnotation,
 ): FunctionDeclaration {
-  return { kind: 'FunctionDeclaration', name, parameters, body, span };
+  return {
+    kind: 'FunctionDeclaration',
+    name,
+    parameters,
+    returnType,
+    body,
+    span,
+  };
 }
 
 export function mkReturn(value: Expr | undefined, span: Span): ReturnExpr {

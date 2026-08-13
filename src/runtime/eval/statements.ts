@@ -11,6 +11,7 @@ import {
   LoopStatement,
   Program,
   Stmt,
+  TypeAliasDeclaration,
   VariableDeclaration,
 } from '../../parser/ast';
 import { createKinError } from '../../lib/errors';
@@ -25,6 +26,7 @@ import {
   isContinueSignal,
   isReturnSignal,
 } from '../signals';
+import { resolveAnnotation, resolveTypeNode } from '../types';
 
 export default class EvalStmt {
   public static eval_program(program: Program, env: Environment): RuntimeVal {
@@ -56,14 +58,33 @@ export default class EvalStmt {
     return lastEvaluated;
   }
 
+  public static eval_type_alias(
+    declaration: TypeAliasDeclaration,
+    env: Environment,
+  ): RuntimeVal {
+    const resolved = resolveTypeNode(declaration.type, env);
+    env.declareType(declaration.name, resolved);
+    return MK_NULL();
+  }
+
   public static eval_function_declaration(
     declaration: FunctionDeclaration,
     env: Environment,
   ): RuntimeVal {
+    const parameters = declaration.parameters.map((p) => p.name);
+    const parameterTypes = declaration.parameters.map((p) =>
+      p.typeAnnotation ? resolveAnnotation(p.typeAnnotation, env) : undefined,
+    );
+    const returnType = declaration.returnType
+      ? resolveAnnotation(declaration.returnType, env)
+      : undefined;
+
     const fn = {
       type: 'fn',
       name: declaration.name,
-      parameters: declaration.parameters,
+      parameters,
+      parameterTypes,
+      returnType,
       declarationEnv: env,
       body: declaration.body,
     } as FunctionValue;
@@ -79,7 +100,17 @@ export default class EvalStmt {
       ? Interpreter.evaluate(declaration.value, env)
       : MK_NULL();
 
-    return env.declareVar(declaration.identifier, value, declaration.constant);
+    const type = declaration.typeAnnotation
+      ? resolveAnnotation(declaration.typeAnnotation, env)
+      : undefined;
+
+    return env.declareVar(
+      declaration.identifier,
+      value,
+      declaration.constant,
+      type,
+      declaration.span,
+    );
   }
 
   public static eval_conditional_statement(

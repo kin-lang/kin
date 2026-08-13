@@ -47,7 +47,11 @@ describe('Parser', () => {
         {
           kind: 'FunctionDeclaration',
           name: 'add',
-          parameters: ['a', 'b'],
+          parameters: [
+            { name: 'a', typeAnnotation: undefined },
+            { name: 'b', typeAnnotation: undefined },
+          ],
+          returnType: undefined,
           body: [
             {
               kind: 'ReturnExpr',
@@ -59,6 +63,156 @@ describe('Parser', () => {
               },
             },
           ],
+        },
+      ],
+    });
+  });
+
+  test('should parse typed function parameters and return type', () => {
+    expect(
+      parse(
+        'porogaramu_ntoya add(a: umubare, b: umubare): umubare { tanga a + b }',
+      ),
+    ).toEqual({
+      kind: 'Program',
+      body: [
+        {
+          kind: 'FunctionDeclaration',
+          name: 'add',
+          parameters: [
+            {
+              name: 'a',
+              typeAnnotation: {
+                kind: 'TypeAnnotation',
+                optional: false,
+                type: { kind: 'NamedType', name: 'umubare' },
+              },
+            },
+            {
+              name: 'b',
+              typeAnnotation: {
+                kind: 'TypeAnnotation',
+                optional: false,
+                type: { kind: 'NamedType', name: 'umubare' },
+              },
+            },
+          ],
+          returnType: {
+            kind: 'TypeAnnotation',
+            optional: false,
+            type: { kind: 'NamedType', name: 'umubare' },
+          },
+          body: [
+            {
+              kind: 'ReturnExpr',
+              value: {
+                kind: 'BinaryExpr',
+                operator: '+',
+                left: { kind: 'Identifier', symbol: 'a' },
+                right: { kind: 'Identifier', symbol: 'b' },
+              },
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  test('should parse ubwoko alias, union, Fata, and nested object types', () => {
+    expect(
+      parse(`
+        ubwoko Address = { city: ijambo }
+        ubwoko Person = { name: ijambo, address: Address }
+        ubwoko Id = ijambo | umubare
+        ubwoko NameOnly = Fata<Person, "name">
+        reka p: Person = { name: "Keza", address: { city: "Kigali" } }
+      `),
+    ).toEqual({
+      kind: 'Program',
+      body: [
+        {
+          kind: 'TypeAliasDeclaration',
+          name: 'Address',
+          type: {
+            kind: 'ObjectType',
+            properties: [
+              {
+                key: 'city',
+                type: { kind: 'NamedType', name: 'ijambo' },
+              },
+            ],
+          },
+        },
+        {
+          kind: 'TypeAliasDeclaration',
+          name: 'Person',
+          type: {
+            kind: 'ObjectType',
+            properties: [
+              {
+                key: 'name',
+                type: { kind: 'NamedType', name: 'ijambo' },
+              },
+              {
+                key: 'address',
+                type: { kind: 'NamedType', name: 'Address' },
+              },
+            ],
+          },
+        },
+        {
+          kind: 'TypeAliasDeclaration',
+          name: 'Id',
+          type: {
+            kind: 'UnionType',
+            members: [
+              { kind: 'NamedType', name: 'ijambo' },
+              { kind: 'NamedType', name: 'umubare' },
+            ],
+          },
+        },
+        {
+          kind: 'TypeAliasDeclaration',
+          name: 'NameOnly',
+          type: {
+            kind: 'PickType',
+            target: { kind: 'NamedType', name: 'Person' },
+            keys: ['name'],
+          },
+        },
+        {
+          kind: 'VariableDeclaration',
+          constant: false,
+          identifier: 'p',
+          typeAnnotation: {
+            kind: 'TypeAnnotation',
+            optional: false,
+            type: { kind: 'NamedType', name: 'Person' },
+          },
+          value: {
+            kind: 'ObjectLiteral',
+            properties: [
+              {
+                kind: 'Property',
+                key: 'name',
+                value: { kind: 'StringLiteral', value: 'Keza' },
+              },
+              {
+                kind: 'Property',
+                key: 'address',
+                value: {
+                  kind: 'ObjectLiteral',
+                  properties: [
+                    {
+                      kind: 'Property',
+                      key: 'city',
+                      value: { kind: 'StringLiteral', value: 'Kigali' },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
         },
       ],
     });
