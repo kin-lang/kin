@@ -290,22 +290,8 @@ reka a = 1
 reka b = 2
 `,
     );
-    writeFileSync(
-      path.join(tmpDir, 'main.kin'),
-      `
-porogaramu_ntoya try_bad() {
-  injiza("partial.kin")
-}
-# first import fails mid-file
-reka failed = sibyo
-niba (sibyo) {
-}
-# call via a path that surfaces the error then continues is hard in Kin;
-# assert rollback via direct evaluate in this test helper below.
-`,
-    );
 
-    // Direct: first injiza fails, second with fixed file works, `a` not polluted from partial.
+    // First injiza fails, second with fixed file works; partial `a` not left behind.
     const entry = path.join(tmpDir, 'driver.kin');
     writeFileSync(entry, `reka ok = 0`);
     const env = createGlobalEnv(entry);
