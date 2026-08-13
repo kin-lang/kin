@@ -34,5 +34,12 @@
   "K033": "Unknown type '{name}'",
   "K034": "Invalid Pick type: {message}",
   "K035": "Cannot assign a {got} to a {expected}, expected a {expected} instead",
-  "K036": "Type '{name}' is already defined"
+  "K036": "Type '{name}' is already defined",
+  "K037": "Class already has a tegura constructor",
+  "K038": "Field initialization must use _.<name> inside tegura",
+  "K039": "Cannot assign to method '{name}'",
+  "K040": "Field '{name}' does not exist on {klass}; fields are created only in tegura",
+  "K041": "Cannot access private member '{name}'",
+  "K042": "'{name}' is not a class (imiterere)",
+  "K043": "Field '{name}' is already defined"
 }

@@ -5,6 +5,7 @@
 
 import {
   BooleanVal,
+  BoundMethodVal,
   FunctionValue,
   MK_ARRAY,
   MK_BOOL,
@@ -17,6 +18,7 @@ import {
   RuntimeVal,
   StringVal,
   typeName,
+  ubwokoOf,
   valuesEqual,
 } from '../values';
 import {
@@ -29,6 +31,7 @@ import {
   CallExpr,
   UnaryExpr,
   ReturnExpr,
+  RemaExpr,
 } from '../../parser/ast';
 
 import Environment from '../environment';
@@ -37,6 +40,7 @@ import { createKinError } from '../../lib/errors';
 import { BreakSignal, ContinueSignal, ReturnSignal } from '../signals';
 import { Span } from '../../lib/span';
 import { assertValueMatchesType } from '../types';
+import { call_bound_method, eval_rema } from '../oop';
 
 type BinOp = (lhs: RuntimeVal, rhs: RuntimeVal, span?: Span) => RuntimeVal;
 
@@ -116,6 +120,9 @@ export default class EvalExpr {
           });
         }
         return MK_NUMBER(-(operand as NumberVal).value);
+      case 'ubwoko':
+        // Prefix typeof: returns TypeVal or ClassVal (for instances).
+        return ubwokoOf(operand);
       default:
         throw createKinError('K024', {
           span: node.span,
@@ -123,6 +130,10 @@ export default class EvalExpr {
           message: `Unsupported unary operator ${node.operator}`,
         });
     }
+  }
+
+  public static eval_rema_expr(node: RemaExpr, env: Environment): RuntimeVal {
+    return eval_rema(node, env);
   }
 
   public static eval_assignment(
@@ -177,6 +188,10 @@ export default class EvalExpr {
       return (fn as NativeFnValue).call(args, env);
     }
 
+    if (fn.type == 'bound-method') {
+      return call_bound_method(fn as BoundMethodVal, args, expr.span);
+    }
+
     if (fn.type == 'fn') {
       const func = fn as FunctionValue;
       const scope = new Environment(func.declarationEnv);
@@ -204,32 +219,38 @@ export default class EvalExpr {
         );
       }
 
+      // Freestanding functions must not inherit caller's private privileges.
+      const savedContexts = Interpreter.suspendMethodContexts();
       try {
-        for (const stmt of func.body) {
-          Interpreter.evaluate(stmt, scope);
-        }
-      } catch (e) {
-        if (e instanceof ReturnSignal) {
-          if (func.returnType) {
-            assertValueMatchesType(e.value, func.returnType, expr.span);
+        try {
+          for (const stmt of func.body) {
+            Interpreter.evaluate(stmt, scope);
           }
-          return e.value;
+        } catch (e) {
+          if (e instanceof ReturnSignal) {
+            if (func.returnType) {
+              assertValueMatchesType(e.value, func.returnType, expr.span);
+            }
+            return e.value;
+          }
+          if (e instanceof BreakSignal) {
+            throw createKinError('K019', {
+              span: expr.span,
+              params: { name: 'hagarara' },
+              message: 'hagarara cannot be used across a function boundary',
+            });
+          }
+          if (e instanceof ContinueSignal) {
+            throw createKinError('K019', {
+              span: expr.span,
+              params: { name: 'komeza' },
+              message: 'komeza cannot be used across a function boundary',
+            });
+          }
+          throw e;
         }
-        if (e instanceof BreakSignal) {
-          throw createKinError('K019', {
-            span: expr.span,
-            params: { name: 'hagarara' },
-            message: 'hagarara cannot be used across a function boundary',
-          });
-        }
-        if (e instanceof ContinueSignal) {
-          throw createKinError('K019', {
-            span: expr.span,
-            params: { name: 'komeza' },
-            message: 'komeza cannot be used across a function boundary',
-          });
-        }
-        throw e;
+      } finally {
+        Interpreter.restoreMethodContexts(savedContexts);
       }
 
       // Implicit null return when function has a return type annotation.

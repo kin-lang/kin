@@ -8,19 +8,24 @@ import TokenType from '../lexer/tokens';
 import { KinError, createKinError } from '../lib/errors';
 import { Span, emptySpan, mergeSpans } from '../lib/span';
 import {
+  ClassConstructor,
+  ClassMethod,
   Expr,
   FunctionParameter,
   Program,
   Stmt,
   TypeAnnotation,
   TypeNode,
+  Visibility,
   mkArray,
   mkAssign,
   mkBinary,
   mkBreak,
   mkCall,
+  mkClassDecl,
   mkConditional,
   mkContinue,
+  mkFieldInit,
   mkFunction,
   mkFunctionParam,
   mkIdent,
@@ -33,6 +38,7 @@ import {
   mkPickType,
   mkProgram,
   mkProperty,
+  mkRema,
   mkReturn,
   mkString,
   mkTypeAlias,
@@ -204,6 +210,7 @@ export default class Parser {
         t === TokenType.GERERANYA ||
         t === TokenType.TANGA ||
         t === TokenType.UBWOKO ||
+        t === TokenType.IMITERERE ||
         t === TokenType.CLOSE_CURLY_BRACES ||
         t === TokenType.HAGARARA ||
         t === TokenType.KOMEZA
@@ -220,7 +227,7 @@ export default class Parser {
       case TokenType.NTAHINDUKA:
         return this.parse_var_declaration();
       case TokenType.UBWOKO:
-        // `ubwoko Name = Type` is a type alias. `ubwoko(x)` / bare use is an expression.
+        // `ubwoko Name = Type` is a type alias. Otherwise typeof prefix expression.
         if (
           this.peek(1).type === TokenType.IDENTIFIER &&
           this.peek(2).type === TokenType.EQUAL
@@ -228,6 +235,8 @@ export default class Parser {
           return this.parse_type_alias_declaration();
         }
         return this.parse_expr();
+      case TokenType.IMITERERE:
+        return this.parse_class_declaration();
       case TokenType.NIBA:
         return this.parse_if_statement();
       case TokenType.GERERANYA:
@@ -242,6 +251,16 @@ export default class Parser {
         return this.parse_function_declaration();
       case TokenType.TANGA:
         return this.parse_return_expr();
+      // Field init statements only appear inside tegura; handled by parse_class.
+      // Visibility at top level is a syntax error.
+      case TokenType.RUSANGE:
+      case TokenType.BWITE:
+        return this.fail(
+          'K001',
+          tokenSpan(this.at()),
+          { lexeme: this.at().lexeme },
+          `Unexpected token ${this.at().lexeme}`,
+        );
       default:
         return this.parse_expr();
     }
@@ -583,7 +602,7 @@ export default class Parser {
   }
 
   /**
-   * Primary atoms: identifiers, literals, grouping, unary ! / -.
+   * Primary atoms: identifiers, literals, grouping, unary ! / - / ubwoko.
    * Array and object literals also live here so they can take postfix
    * member / call chains: [1,2,3][0], {a:1}.a
    */
@@ -593,12 +612,6 @@ export default class Parser {
       case TokenType.IDENTIFIER: {
         const tok = this.eat();
         return mkIdent(tok.lexeme, tokenSpan(tok));
-      }
-      // `ubwoko` is a keyword for type aliases, but remains a call-able name
-      // in expressions: ubwoko(x) / ubwoko x (if used as bare identifier).
-      case TokenType.UBWOKO: {
-        const tok = this.eat();
-        return mkIdent('ubwoko', tokenSpan(tok));
       }
       case TokenType.INTEGER:
       case TokenType.FLOAT: {
@@ -620,9 +633,11 @@ export default class Parser {
       case TokenType.OPEN_CURLY_BRACES:
         return this.parse_object_literal();
       case TokenType.NEGATION:
-        return this.parse_unary_expr();
       case TokenType.MINUS:
         return this.parse_unary_expr();
+      // Prefix typeof: ubwoko x / ubwoko(x) — tighter than every binary op.
+      case TokenType.UBWOKO:
+        return this.parse_ubwoko_expr();
       default:
         return this.fail(
           'K001',
@@ -638,6 +653,20 @@ export default class Parser {
     const operand = this.parse_primary_expr();
     return mkUnary(
       opTok.lexeme,
+      operand,
+      mergeSpans(tokenSpan(opTok), operand.span),
+    );
+  }
+
+  /**
+   * `ubwoko` prefix operator. Operand is a call/member expression so that
+   * `ubwoko x == y` is `(ubwoko x) == y` and `ubwoko(x)` works via grouping.
+   */
+  private parse_ubwoko_expr(): Expr {
+    const opTok = this.eat(); // ubwoko
+    const operand = this.parse_call_member_expr();
+    return mkUnary(
+      'ubwoko',
       operand,
       mergeSpans(tokenSpan(opTok), operand.span),
     );
@@ -707,7 +736,16 @@ export default class Parser {
     return left;
   }
 
+  /**
+   * `rema Class(args)` then optional member/call chain:
+   * `rema Umuntu("K", 20).kwibwira()`  =>  ((rema …).kwibwira)()
+   * rema is tighter than binary ops and produces a value that accepts members.
+   */
   private parse_call_member_expr(): Expr {
+    if (this.at().type == TokenType.REMA) {
+      return this.parse_rema_expr();
+    }
+
     const member = this.parse_member_expr();
 
     if (this.at().type == TokenType.OPEN_PARANTHESES) {
@@ -715,6 +753,70 @@ export default class Parser {
     }
 
     return member;
+  }
+
+  private parse_rema_expr(): Expr {
+    const startTok = this.eat(); // rema
+    // Class expression is a member chain (usually a bare identifier).
+    const classExpr = this.parse_member_expr();
+    if (this.at().type != TokenType.OPEN_PARANTHESES) {
+      this.fail(
+        'K002',
+        tokenSpan(this.at()),
+        { expected: '(', lexeme: this.at().lexeme },
+        `Expected '(' after rema class expression, found ${this.at().lexeme}`,
+      );
+    }
+    const args = this.parse_args();
+    const endTok = this.tokens[this.pos - 1];
+    let expr: Expr = mkRema(
+      classExpr,
+      args,
+      mergeSpans(tokenSpan(startTok), tokenSpan(endTok)),
+    );
+
+    // Postfix: .method / [index] / ()
+    while (
+      this.at().type == TokenType.DOT ||
+      this.at().type == TokenType.OPEN_BRACKET ||
+      this.at().type == TokenType.OPEN_PARANTHESES
+    ) {
+      if (this.at().type == TokenType.OPEN_PARANTHESES) {
+        expr = this.parse_call_expr(expr);
+      } else {
+        // One member suffix then loop.
+        const operator = this.eat();
+        let property: Expr;
+        let computed: boolean;
+        let endSpan: Span;
+        if (operator.type == TokenType.DOT) {
+          computed = false;
+          property = this.parse_primary_expr();
+          if (property.kind !== 'Identifier') {
+            this.fail(
+              'K021',
+              property.span,
+              {},
+              'Dot operator requires an identifier on the right-hand side',
+            );
+          }
+          endSpan = property.span;
+        } else {
+          computed = true;
+          property = this.parse_expr();
+          const close = this.expect(TokenType.CLOSE_BRACKET, ']');
+          endSpan = tokenSpan(close);
+        }
+        expr = mkMember(
+          expr,
+          property,
+          computed,
+          mergeSpans(expr.span, endSpan),
+        );
+      }
+    }
+
+    return expr;
   }
 
   private parse_call_expr(caller: Expr): Expr {
@@ -882,7 +984,7 @@ export default class Parser {
 
     const params = this.parse_function_params();
 
-    // Optional return type: ): number {
+    // Optional return type: ): umubare {
     let returnType: TypeAnnotation | undefined;
     if (this.at().type == TokenType.COLON) {
       returnType = this.parse_type_annotation();
@@ -907,6 +1009,154 @@ export default class Parser {
       mergeSpans(tokenSpan(startTok), endSpan),
       returnType,
     );
+  }
+
+  /**
+   * `imiterere Name ikomoka Parent? { tegura… methods… }`
+   */
+  private parse_class_declaration(): Stmt {
+    const startTok = this.eat(); // imiterere
+    const nameTok = this.expect(TokenType.IDENTIFIER, 'class name');
+    const name = nameTok.lexeme;
+
+    let parentName: string | undefined;
+    if (this.at().type == TokenType.IKOMOKA) {
+      this.eat();
+      const parentTok = this.expect(TokenType.IDENTIFIER, 'parent class name');
+      parentName = parentTok.lexeme;
+    }
+
+    this.expect(TokenType.OPEN_CURLY_BRACES, '{');
+
+    let ctor: ClassConstructor | undefined;
+    const methods: ClassMethod[] = [];
+
+    while (this.not_eof() && this.at().type != TokenType.CLOSE_CURLY_BRACES) {
+      if (this.at().type == TokenType.TEGURA) {
+        if (ctor) {
+          this.fail(
+            'K037',
+            tokenSpan(this.at()),
+            {},
+            'Class already has a tegura constructor',
+          );
+        }
+        ctor = this.parse_class_constructor();
+        continue;
+      }
+
+      if (
+        this.at().type == TokenType.RUSANGE ||
+        this.at().type == TokenType.BWITE
+      ) {
+        const visTok = this.eat();
+        const visibility: Visibility =
+          visTok.type == TokenType.RUSANGE ? 'rusange' : 'bwite';
+        methods.push(this.parse_class_method(visibility, tokenSpan(visTok)));
+        continue;
+      }
+
+      this.fail(
+        'K001',
+        tokenSpan(this.at()),
+        { lexeme: this.at().lexeme },
+        `Unexpected token ${this.at().lexeme} in class body`,
+      );
+    }
+
+    const endTok = this.expect(TokenType.CLOSE_CURLY_BRACES, '}');
+    return mkClassDecl(
+      name,
+      parentName,
+      ctor,
+      methods,
+      mergeSpans(tokenSpan(startTok), tokenSpan(endTok)),
+    );
+  }
+
+  private parse_class_constructor(): ClassConstructor {
+    const startTok = this.eat(); // tegura
+    const params = this.parse_function_params();
+    this.expect(TokenType.OPEN_CURLY_BRACES, '{');
+    const body: Stmt[] = [];
+    while (this.not_eof() && this.at().type != TokenType.CLOSE_CURLY_BRACES) {
+      body.push(this.parse_constructor_stmt());
+    }
+    const endTok = this.expect(TokenType.CLOSE_CURLY_BRACES, '}');
+    return {
+      parameters: params,
+      body,
+      span: mergeSpans(tokenSpan(startTok), tokenSpan(endTok)),
+    };
+  }
+
+  /**
+   * Inside tegura: field inits `rusange _.name = expr` / `bwite _.name = expr`,
+   * or ordinary statements.
+   */
+  private parse_constructor_stmt(): Stmt {
+    if (
+      this.at().type == TokenType.RUSANGE ||
+      this.at().type == TokenType.BWITE
+    ) {
+      const visTok = this.eat();
+      const visibility: Visibility =
+        visTok.type == TokenType.RUSANGE ? 'rusange' : 'bwite';
+
+      // Expect _.fieldName = expr
+      this.expect(TokenType.IDENTIFIER, '_');
+      const under = this.tokens[this.pos - 1];
+      if (under.lexeme !== '_') {
+        this.fail(
+          'K038',
+          tokenSpan(under),
+          {},
+          'Field initialization must use _.<name>',
+        );
+      }
+      this.expect(TokenType.DOT, '.');
+      const nameTok = this.expect(TokenType.IDENTIFIER, 'field name');
+      this.expect(TokenType.EQUAL, '=');
+      const value = this.parse_expr();
+      return mkFieldInit(
+        visibility,
+        nameTok.lexeme,
+        value,
+        mergeSpans(tokenSpan(visTok), value.span),
+      );
+    }
+    return this.parse_stmt();
+  }
+
+  private parse_class_method(
+    visibility: Visibility,
+    visSpan: Span,
+  ): ClassMethod {
+    this.expect(TokenType.POROGARAMU_NTOYA, 'porogaramu_ntoya');
+    const nameTok = this.expect(TokenType.IDENTIFIER, 'method name');
+    const params = this.parse_function_params();
+    let returnType: TypeAnnotation | undefined;
+    if (this.at().type == TokenType.COLON) {
+      returnType = this.parse_type_annotation();
+    }
+    const savedLoopDepth = this.loopDepth;
+    this.loopDepth = 0;
+    let body: Stmt[];
+    try {
+      body = this.parse_block_statement();
+    } finally {
+      this.loopDepth = savedLoopDepth;
+    }
+    const endSpan =
+      body.length > 0 ? body[body.length - 1].span : tokenSpan(nameTok);
+    return {
+      visibility,
+      name: nameTok.lexeme,
+      parameters: params,
+      returnType,
+      body,
+      span: mergeSpans(visSpan, endSpan),
+    };
   }
 
   /**

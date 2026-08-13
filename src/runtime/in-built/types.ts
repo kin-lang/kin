@@ -1,9 +1,13 @@
-import { MK_STRING, NativeFnValue, typeName } from '../values';
+import { NativeFnValue, ubwokoOf } from '../values';
 import { defineNative } from '../native';
 
-/** ubwoko — runtime type name of a value (urutonde for arrays). */
+/**
+ * ubwoko — returns a type value (TypeVal / ClassVal for instances).
+ * Source code usually uses the keyword form: `ubwoko x` / `ubwoko(x)`.
+ * This native remains for the env API and identity comparisons.
+ */
 export const ubwoko: NativeFnValue = defineNative({
   name: 'ubwoko',
   minArgs: 1,
-  fn: (args) => MK_STRING(typeName(args[0])),
+  fn: (args) => ubwokoOf(args[0]),
 });

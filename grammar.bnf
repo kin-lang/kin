@@ -26,6 +26,7 @@ program ::= statement*
 
 statement ::= variableDeclaration
             | typeAliasDeclaration
+            | classDeclaration
             | functionDeclaration
             | loopStatement
             | breakStatement
@@ -43,8 +44,30 @@ variableDeclaration ::= "reka" identifier typeAnnotation? (";" | "=" expression)
                       | "ntahinduka" identifier typeAnnotation? "=" expression
 
 ; Named type alias (not erased). Supports object types, unions, Fata, nesting.
-; `ubwoko` is also the typeof function in expressions: ubwoko(x).
+; `ubwoko` is also a prefix typeof operator: ubwoko x / ubwoko(x).
 typeAliasDeclaration ::= "ubwoko" identifier "=" typeExpression
+
+; OOP: class declaration. Fields are created only inside tegura with
+; visibility _.name = expr. Methods require rusange or bwite.
+classDeclaration ::= "imiterere" identifier ("ikomoka" identifier)? "{"
+                       classMember*
+                     "}"
+
+classMember ::= constructorDecl | methodDecl
+
+constructorDecl ::= "tegura" "(" parameterList? ")" "{"
+                      (fieldInit | statement)*
+                    "}"
+
+fieldInit ::= ("rusange" | "bwite") "_" "." identifier "=" expression
+
+methodDecl ::= ("rusange" | "bwite") "porogaramu_ntoya" identifier
+               "(" parameterList? ")" typeAnnotation? block
+
+; Instantiate: rema Class(args) then optional member/call chain.
+; rema binds tighter than binary ops; (rema C(…)).method() is valid.
+remaExpression ::= "rema" memberExpression "(" argumentList? ")"
+                   (memberSuffix | "(" argumentList? ")")*
 
 functionDeclaration ::= "porogaramu_ntoya" identifier "(" parameterList? ")"
                         typeAnnotation? block
@@ -161,7 +184,9 @@ primaryExpression ::= identifier
                     | unaryExpression
 
 ; ! and unary - apply to a primary expression.
+; ubwoko is a prefix typeof (tighter than every binary operator).
 unaryExpression ::= ("!" | "-") primaryExpression
+                  | "ubwoko" callMemberExpression
 
 ; Keys are identifiers only (not string literals).
 ; Shorthand { key } looks up `key` in the current environment at runtime.
@@ -220,7 +245,8 @@ stringLiteral ::= '"' { anyCharacterExceptQuoteOrNewline } '"'
 ; subiramo_niba  hagarara  komeza
 ; niba  nanone_niba  niba_byanze
 ; gereranya  usanze  ibindi
-; ubwoko   (type alias keyword; also typeof function name)
+; ubwoko     (type alias keyword + typeof prefix operator)
+; imiterere  tegura  rema  rusange  bwite  ikomoka
 
 ; Built-in type names:
 ; umubare  ijambo  ukuri  ubwoko_imiterere  urutonde

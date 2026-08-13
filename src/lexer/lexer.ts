@@ -211,6 +211,18 @@ class Lexer {
         return TokenType.IBINDI;
       case 'ubwoko':
         return TokenType.UBWOKO;
+      case 'imiterere':
+        return TokenType.IMITERERE;
+      case 'tegura':
+        return TokenType.TEGURA;
+      case 'rema':
+        return TokenType.REMA;
+      case 'rusange':
+        return TokenType.RUSANGE;
+      case 'bwite':
+        return TokenType.BWITE;
+      case 'ikomoka':
+        return TokenType.IKOMOKA;
       default:
         return undefined;
     }

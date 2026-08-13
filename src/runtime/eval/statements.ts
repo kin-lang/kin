@@ -5,8 +5,10 @@
 
 import {
   BreakStatement,
+  ClassDeclaration,
   ConditionalStmt,
   ContinueStatement,
+  FieldInitStatement,
   FunctionDeclaration,
   LoopStatement,
   Program,
@@ -27,6 +29,7 @@ import {
   isReturnSignal,
 } from '../signals';
 import { resolveAnnotation, resolveTypeNode } from '../types';
+import { eval_class_declaration, eval_field_init } from '../oop';
 
 export default class EvalStmt {
   public static eval_program(program: Program, env: Environment): RuntimeVal {
@@ -65,6 +68,20 @@ export default class EvalStmt {
     const resolved = resolveTypeNode(declaration.type, env);
     env.declareType(declaration.name, resolved);
     return MK_NULL();
+  }
+
+  public static eval_class_declaration(
+    declaration: ClassDeclaration,
+    env: Environment,
+  ): RuntimeVal {
+    return eval_class_declaration(declaration, env);
+  }
+
+  public static eval_field_init(
+    declaration: FieldInitStatement,
+    env: Environment,
+  ): RuntimeVal {
+    return eval_field_init(declaration, env);
   }
 
   public static eval_function_declaration(

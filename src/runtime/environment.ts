@@ -4,12 +4,16 @@
  *    in current scope and other questions like this are solved by Kin's Environment       *
  *******************************************************************************************/
 
-import { Interpreter } from '..';
 import { Identifier, MemberExpr } from '../parser/ast';
 import { createKinError } from '../lib/errors';
 import { Span } from '../lib/span';
+import { Interpreter } from './interpreter';
 import {
   ArrayVal,
+  BoundMethodVal,
+  ClassMethodDef,
+  ClassVal,
+  InstanceVal,
   MK_NATIVE_FN,
   MK_NULL,
   NumberVal,
@@ -18,11 +22,21 @@ import {
   StringVal,
   typeName,
 } from './values';
-import { lookupMethod } from './methods';
+import { lookupMethod as lookupBuiltinMethod } from './methods';
 import {
   assertValueMatchesType,
   ResolvedType,
 } from './types';
+
+/**
+ * Active method / constructor frame. Stored on Interpreter's call stack
+ * (not Environment), so freestanding callbacks cannot retain private access.
+ */
+export interface MethodContext {
+  declaringClass: ClassVal;
+  instance: InstanceVal;
+  isConstructor: boolean;
+}
 
 export default class Environment {
   private parent?: Environment;
@@ -39,6 +53,10 @@ export default class Environment {
     this.constants = new Set();
     this.variableTypes = new Map();
     this.typeAliases = new Map();
+  }
+
+  public getMethodContext(): MethodContext | undefined {
+    return Interpreter.getMethodContext();
   }
 
   public declareVar(
@@ -104,7 +122,6 @@ export default class Environment {
         message: `Type '${name}' is already defined`,
       });
     }
-    // Shadowing a value name is fine; types live in a separate namespace.
     this.typeAliases.set(name, type);
   }
 
@@ -116,18 +133,27 @@ export default class Environment {
     return undefined;
   }
 
-  public lookupMember(expr: MemberExpr): RuntimeVal {
-    const { container, key, isArray } = this.resolveMemberTarget(expr);
+  /**
+   * Resolve a class type by name from values (imiterere bindings).
+   * Used so `reka x: Umuntu = …` can check instance class.
+   */
+  public lookupClass(name: string): ClassVal | undefined {
+    try {
+      const v = this.lookupVar(name);
+      if (v.type === 'class') return v as ClassVal;
+    } catch {
+      // not found
+    }
+    return undefined;
+  }
 
-    if (isArray) {
+  public lookupMember(expr: MemberExpr): RuntimeVal {
+    const { container, key, kind } = this.resolveMemberTarget(expr);
+
+    if (kind === 'array') {
       const arr = container as ArrayVal;
-      // Method name via dot: arr.ingano -> native method wrapper is handled
-      // by eval_member_expr when the next node is a call. For bare property
-      // read of a method name we return a bound-style native later; for
-      // numeric index we index the array.
       if (!expr.computed) {
-        // Dot access on array: only methods make sense; missing -> null.
-        const method = lookupMethod(arr, key);
+        const method = lookupBuiltinMethod(arr, key);
         if (method) {
           return MK_NATIVE_FN((args) => method(arr, args, expr.span));
         }
@@ -148,14 +174,18 @@ export default class Environment {
       return arr.elements[index];
     }
 
+    if (kind === 'instance') {
+      return this.lookupInstanceMember(container as InstanceVal, key, expr);
+    }
+
     const obj = container as ObjectVal;
     return obj.properties.get(key) ?? MK_NULL();
   }
 
   public assignMember(expr: MemberExpr, value: RuntimeVal): RuntimeVal {
-    const { container, key, isArray } = this.resolveMemberTarget(expr);
+    const { container, key, kind } = this.resolveMemberTarget(expr);
 
-    if (isArray) {
+    if (kind === 'array') {
       const arr = container as ArrayVal;
       const index = Number(key);
       if (!Number.isInteger(index) || index < 0) {
@@ -165,7 +195,6 @@ export default class Environment {
           message: `Array index ${key} is out of range (length ${arr.elements.length})`,
         });
       }
-      // Allow extending by exactly one past the end (like push via index).
       if (index > arr.elements.length) {
         throw createKinError('K016', {
           span: expr.span,
@@ -181,6 +210,15 @@ export default class Environment {
       return value;
     }
 
+    if (kind === 'instance') {
+      return this.assignInstanceMember(
+        container as InstanceVal,
+        key,
+        value,
+        expr,
+      );
+    }
+
     const obj = container as ObjectVal;
     obj.properties.set(key, value);
     return value;
@@ -194,14 +232,99 @@ export default class Environment {
       : this.assignMember(expr, value);
   }
 
+  private lookupInstanceMember(
+    inst: InstanceVal,
+    key: string,
+    expr: MemberExpr,
+  ): RuntimeVal {
+    // Methods shadow fields of the same name.
+    const method = findMethod(inst.klass, key);
+    if (method) {
+      this.assertMethodAccess(method, expr.span);
+      return {
+        type: 'bound-method',
+        receiver: inst,
+        method,
+      } as BoundMethodVal;
+    }
+
+    if (inst.fields.has(key)) {
+      this.assertFieldAccess(inst, key, expr.span);
+      return inst.fields.get(key)!;
+    }
+
+    return MK_NULL();
+  }
+
+  private assignInstanceMember(
+    inst: InstanceVal,
+    key: string,
+    value: RuntimeVal,
+    expr: MemberExpr,
+  ): RuntimeVal {
+    // Cannot assign to methods.
+    if (findMethod(inst.klass, key)) {
+      throw createKinError('K039', {
+        span: expr.span,
+        params: { name: key },
+        message: `Cannot assign to method '${key}'`,
+      });
+    }
+
+    if (!inst.fields.has(key)) {
+      throw createKinError('K040', {
+        span: expr.span,
+        params: { name: key, klass: inst.klass.name },
+        message: `Field '${key}' does not exist on ${inst.klass.name}; fields are created only in tegura`,
+      });
+    }
+
+    this.assertFieldAccess(inst, key, expr.span);
+    inst.fields.set(key, value);
+    return value;
+  }
+
+  private canAccessPrivate(owner: ClassVal): boolean {
+    const ctx = this.getMethodContext();
+    return ctx !== undefined && ctx.declaringClass === owner;
+  }
+
+  private assertFieldAccess(
+    inst: InstanceVal,
+    key: string,
+    span?: Span,
+  ): void {
+    const vis = inst.fieldVisibility.get(key);
+    if (vis !== 'bwite') return;
+    const owner = inst.fieldOwner.get(key);
+    if (!owner || !this.canAccessPrivate(owner)) {
+      throw createKinError('K041', {
+        span,
+        params: { name: key },
+        message: `Cannot access private field '${key}'`,
+      });
+    }
+  }
+
+  private assertMethodAccess(method: ClassMethodDef, span?: Span): void {
+    if (method.visibility !== 'bwite') return;
+    if (!this.canAccessPrivate(method.ownerClass)) {
+      throw createKinError('K041', {
+        span,
+        params: { name: method.name },
+        message: `Cannot access private method '${method.name}'`,
+      });
+    }
+  }
+
   /**
    * Walks a member expression (e.g. `arr[0][1]` or `obj.a.b.c`) down to the
    * container the leaf property belongs to.
    */
   private resolveMemberTarget(expr: MemberExpr): {
-    container: ObjectVal | ArrayVal;
+    container: ObjectVal | ArrayVal | InstanceVal;
     key: string;
-    isArray: boolean;
+    kind: 'object' | 'array' | 'instance';
   } {
     let obj: RuntimeVal;
 
@@ -216,25 +339,24 @@ export default class Environment {
 
     const key = this.resolveMemberKey(expr);
 
-    // Method lookup on string / array is handled for computed=false by
-    // returning a bound native; still need a container for indexing.
     if (obj && obj.type === 'array') {
-      return { container: obj as ArrayVal, key, isArray: true };
+      return { container: obj as ArrayVal, key, kind: 'array' };
+    }
+
+    if (obj && obj.type === 'instance') {
+      return { container: obj as InstanceVal, key, kind: 'instance' };
     }
 
     if (obj && obj.type === 'string' && !expr.computed) {
-      // String methods: return a synthetic object path via lookupMember.
-      // Handled specially: treat as array-like method table.
-      const method = lookupMethod(obj, key);
+      const method = lookupBuiltinMethod(obj, key);
       if (method) {
-        // Surface the method via a temporary object so lookupMember works.
         const fake: ObjectVal = {
           type: 'object',
           properties: new Map([
             [key, MK_NATIVE_FN((args) => method(obj, args, expr.span))],
           ]),
         };
-        return { container: fake, key, isArray: false };
+        return { container: fake, key, kind: 'object' };
       }
     }
 
@@ -249,7 +371,7 @@ export default class Environment {
       });
     }
 
-    return { container: obj as ObjectVal, key, isArray: false };
+    return { container: obj as ObjectVal, key, kind: 'object' };
   }
 
   private resolveMemberKey(expr: MemberExpr): string {
@@ -285,4 +407,33 @@ export default class Environment {
 
     return this.parent.resolve(varname);
   }
+}
+
+/** Method lookup: own class first, then walk parents. */
+export function findMethod(
+  klass: ClassVal,
+  name: string,
+): ClassMethodDef | undefined {
+  if (klass.methods.has(name)) return klass.methods.get(name);
+  if (klass.parent) return findMethod(klass.parent, name);
+  return undefined;
+}
+
+/** Resolve constructor: own tegura, else inherited, else empty. */
+export function findConstructor(klass: ClassVal): {
+  params: string[];
+  paramTypes?: (import('./types').ResolvedType | undefined)[];
+  body: import('../parser/ast').Stmt[];
+  owner: ClassVal;
+} {
+  if (klass.hasConstructor) {
+    return {
+      params: klass.constructorParams,
+      paramTypes: klass.constructorParamTypes,
+      body: klass.constructorBody,
+      owner: klass,
+    };
+  }
+  if (klass.parent) return findConstructor(klass.parent);
+  return { params: [], body: [], owner: klass };
 }

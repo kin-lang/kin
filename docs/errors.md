@@ -54,5 +54,12 @@ Host programs can branch on `instanceof`, `ERRNAME`, or `ERRCODE`.
 | K034 | TypeError | Invalid Fata type | `Fata<umubare, "a">` | Fata only works on object types with existing keys. |
 | K035 | TypeError | Cannot assign a {got} to a {expected} | `reka x: ijambo = 1` | Assign a value that matches the annotation. |
 | K036 | TypeError | Type '{name}' is already defined | two `ubwoko Person = ...` | Use a unique type name. |
+| K037 | SyntaxError | Class already has a tegura constructor | two tegura in one class | Only one constructor per class. |
+| K038 | SyntaxError | Field init must use _.<name> | bad field form in tegura | Write `rusange _.field = …`. |
+| K039 | TypeError | Cannot assign to method | `obj.method = …` | Methods are not assignable. |
+| K040 | TypeError | Field does not exist | assign unknown field | Create fields only in tegura. |
+| K041 | TypeError | Cannot access private member | read `bwite` from outside | Use a public method wrapper. |
+| K042 | TypeError | Not a class (imiterere) | `rema 5()` | Pass a class value to rema. |
+| K043 | TypeError | Field already defined | duplicate field in tegura | Assign each field once in tegura. |
 
 Messages are loaded from `src/messages/rw.json` (default) and `src/messages/en.json` (`KIN_LANG=en`).

@@ -3,7 +3,7 @@
  *              Kin's runtime values, responsible of defining Runtime values types             *
  ***********************************************************************************************/
 
-import { Stmt } from '../parser/ast';
+import { Stmt, Visibility } from '../parser/ast';
 import Environment from './environment';
 import type { ResolvedType } from './types';
 
@@ -15,7 +15,11 @@ export type ValueType =
   | 'array'
   | 'native-fn'
   | 'fn'
-  | 'string';
+  | 'string'
+  | 'class'
+  | 'instance'
+  | 'type-val'
+  | 'bound-method';
 
 export interface RuntimeVal {
   type: ValueType;
@@ -71,6 +75,84 @@ export interface NativeFnValue extends RuntimeVal {
   call: FunctionCall;
 }
 
+/** Method definition stored on a class (not a first-class value by itself). */
+export interface ClassMethodDef {
+  visibility: Visibility;
+  name: string;
+  parameters: string[];
+  parameterTypes?: (ResolvedType | undefined)[];
+  returnType?: ResolvedType;
+  body: Stmt[];
+  /** Class that declared this method (for private access). */
+  ownerClass: ClassVal;
+}
+
+/**
+ * Class value bound by `imiterere Name { … }`.
+ * First-class: can be passed around and used with `rema`.
+ */
+export interface ClassVal extends RuntimeVal {
+  type: 'class';
+  name: string;
+  parent?: ClassVal;
+  hasConstructor: boolean;
+  constructorParams: string[];
+  constructorParamTypes?: (ResolvedType | undefined)[];
+  constructorBody: Stmt[];
+  methods: Map<string, ClassMethodDef>;
+  declarationEnv: Environment;
+}
+
+export interface InstanceVal extends RuntimeVal {
+  type: 'instance';
+  klass: ClassVal;
+  fields: Map<string, RuntimeVal>;
+  fieldVisibility: Map<string, Visibility>;
+  /** Which class introduced each field (private checks). */
+  fieldOwner: Map<string, ClassVal>;
+}
+
+/**
+ * Built-in type tag used by the `ubwoko` operator for identity comparisons.
+ * e.g. ubwoko(5) == ubwoko(10)  (same TypeVal singleton).
+ * For instances, ubwoko returns the ClassVal itself instead.
+ */
+export interface TypeVal extends RuntimeVal {
+  type: 'type-val';
+  name: string;
+}
+
+/** Method closed over its receiver: `reka f = keza.kwibwira; f()`. */
+export interface BoundMethodVal extends RuntimeVal {
+  type: 'bound-method';
+  receiver: InstanceVal;
+  method: ClassMethodDef;
+}
+
+// ---------------------------------------------------------------------------
+// Built-in type-value singletons (identity equality for ubwoko)
+// ---------------------------------------------------------------------------
+
+export const TYPE_UMUBARE: TypeVal = { type: 'type-val', name: 'umubare' };
+export const TYPE_IJAMBO: TypeVal = { type: 'type-val', name: 'ijambo' };
+export const TYPE_UKURI: TypeVal = { type: 'type-val', name: 'ukuri' };
+export const TYPE_UBUSA: TypeVal = { type: 'type-val', name: 'ubusa' };
+export const TYPE_URUTONDE: TypeVal = { type: 'type-val', name: 'urutonde' };
+export const TYPE_UBWOKO_IMITERERE: TypeVal = {
+  type: 'type-val',
+  name: 'ubwoko_imiterere',
+};
+/** Shared by user functions and native functions for ubwoko identity. */
+export const TYPE_POROGARAMU_NTOYA: TypeVal = {
+  type: 'type-val',
+  name: 'porogaramu_ntoya',
+};
+/** Shared by all class values: ubwoko Umuntu == ubwoko Umwarimu. */
+export const TYPE_IMITERERE: TypeVal = {
+  type: 'type-val',
+  name: 'imiterere',
+};
+
 export function MK_NATIVE_FN(call: FunctionCall) {
   return { type: 'native-fn', call } as NativeFnValue;
 }
@@ -100,7 +182,40 @@ export function MK_ARRAY(elements: RuntimeVal[] = []) {
 }
 
 /**
- * Human-facing Kinyarwanda type name for `ubwoko()` and error messages.
+ * Type value returned by the `ubwoko` operator (not a string).
+ * Instances return their ClassVal; classes return TYPE_IMITERERE.
+ */
+export function ubwokoOf(value: RuntimeVal): RuntimeVal {
+  switch (value.type) {
+    case 'number':
+      return TYPE_UMUBARE;
+    case 'string':
+      return TYPE_IJAMBO;
+    case 'boolean':
+      return TYPE_UKURI;
+    case 'null':
+      return TYPE_UBUSA;
+    case 'array':
+      return TYPE_URUTONDE;
+    case 'object':
+      return TYPE_UBWOKO_IMITERERE;
+    case 'fn':
+    case 'native-fn':
+    case 'bound-method':
+      return TYPE_POROGARAMU_NTOYA;
+    case 'class':
+      return TYPE_IMITERERE;
+    case 'instance':
+      return (value as InstanceVal).klass;
+    case 'type-val':
+      return value;
+    default:
+      return TYPE_UBUSA;
+  }
+}
+
+/**
+ * Human-facing Kinyarwanda type name for error messages and printing.
  */
 export function typeName(value: RuntimeVal): string {
   switch (value.type) {
@@ -115,11 +230,18 @@ export function typeName(value: RuntimeVal): string {
     case 'array':
       return 'urutonde';
     case 'fn':
+    case 'bound-method':
       return 'porogaramu_ntoya';
     case 'native-fn':
       return '_porogaramu_ntoya';
     case 'null':
       return 'ubusa';
+    case 'class':
+      return 'imiterere';
+    case 'instance':
+      return (value as InstanceVal).klass.name;
+    case 'type-val':
+      return (value as TypeVal).name;
     default:
       return value.type;
   }
@@ -152,7 +274,14 @@ export function valuesEqual(a: RuntimeVal, b: RuntimeVal): boolean {
       return (a as FunctionValue).body === (b as FunctionValue).body;
     case 'native-fn':
       return (a as NativeFnValue).call === (b as NativeFnValue).call;
+    case 'class':
+    case 'instance':
+    case 'type-val':
+    case 'bound-method':
+      // Identity equality (reference).
+      return a === b;
     default:
       return false;
   }
 }
+

@@ -16,6 +16,8 @@ import { createKinError } from '../lib/errors';
 import { Span } from '../lib/span';
 import {
   ArrayVal,
+  ClassVal,
+  InstanceVal,
   ObjectVal,
   RuntimeVal,
   typeName as runtimeValueTypeName,
@@ -44,7 +46,9 @@ const PRIMITIVE_NAMES = new Set([
 export type ResolvedType =
   | { kind: 'primitive'; name: string }
   | { kind: 'object'; properties: Map<string, ResolvedType> }
-  | { kind: 'union'; members: ResolvedType[] };
+  | { kind: 'union'; members: ResolvedType[] }
+  /** Exact class instance type (no inheritance widening). */
+  | { kind: 'class'; className: string; classRef: ClassVal };
 
 // ---------------------------------------------------------------------------
 // Resolution
@@ -111,6 +115,12 @@ function resolveNamedType(node: NamedType, env: Environment): ResolvedType {
   // User-defined type alias
   const alias = env.lookupType(name);
   if (alias) return alias;
+
+  // Class name used as a type (exact instance match).
+  const klass = env.lookupClass(name);
+  if (klass) {
+    return { kind: 'class', className: klass.name, classRef: klass };
+  }
 
   throw createKinError('K033', {
     span: node.span,
@@ -191,8 +201,17 @@ export function valueMatchesType(
     return valueMatchesPrimitive(value, expected.name);
   }
 
+  if (expected.kind === 'class') {
+    // Exact class match only — inheritance does not widen (see types-and-ubwoko).
+    return (
+      value.type === 'instance' &&
+      (value as InstanceVal).klass === expected.classRef
+    );
+  }
+
   // Object type — structural: value must be object and every required
   // property must match. Extra properties are allowed (open structural).
+  // Class instances are NOT plain objects.
   if (value.type !== 'object') return false;
   const obj = value as ObjectVal;
   for (const [key, propType] of expected.properties) {
@@ -242,6 +261,8 @@ export function formatResolvedType(type: ResolvedType): string {
       return primitiveSurfaceName(type.name);
     case 'union':
       return type.members.map(formatResolvedType).join(' | ');
+    case 'class':
+      return type.className;
     case 'object': {
       const parts: string[] = [];
       for (const [key, propType] of type.properties) {
