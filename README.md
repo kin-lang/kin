@@ -156,6 +156,22 @@ In `niba`, `nanone_niba`, and `subiramo_niba`, values are tested for truthiness:
 
 `+` on two strings concatenates them. A string and a number also concatenate (the number is coerced), so beginners can write `"Ufite imyaka " + imyaka`.
 
+### Classes (OOP)
+
+Kin supports classes via `imiterere`, constructors (`tegura`), instances (`rema`), visibility (`rusange` / `bwite`), and single inheritance (`ikomoka`). See `examples/oop/` for runnable samples.
+
+### `ubwoko` (breaking change)
+
+`ubwoko` is a **prefix operator** that returns a **type value**, not a string:
+
+```Kin
+ubwoko 5 == ubwoko 10          # nibyo (same type value)
+ubwoko keza == Umuntu          # nibyo when keza is rema Umuntu(...)
+tangaza_amakuru(ubwoko 5)     # prints: number
+```
+
+**Migration:** code that treated `ubwoko(x)` as a string (e.g. `ubwoko(x) == "number"`) must switch to type-value comparison (`ubwoko x == ubwoko 0`) or print and inspect. Parenthesized `ubwoko(x)` still works.
+
 ### Arrays
 
 Array literals produce a real array value (`urutonde`). Index out of range raises an error.

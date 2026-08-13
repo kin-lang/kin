@@ -29,7 +29,7 @@ import {
   ReturnExpr,
 } from '../parser/ast';
 
-import Environment from './environment';
+import Environment, { MethodContext } from './environment';
 import EvalExpr from './eval/expressions';
 import EvalStmt from './eval/statements';
 import { KinError, createKinError } from '../lib/errors';
@@ -38,6 +38,25 @@ import { Span } from '../lib/span';
 export class Interpreter {
   /** Span of the node currently being evaluated (for runtime errors). */
   public static currentSpan: Span | undefined;
+
+  /**
+   * Active tegura / method frames. Push on enter, pop on exit — never sticky
+   * on Environment, so nested functions cannot keep constructor privileges.
+   */
+  private static methodContextStack: MethodContext[] = [];
+
+  public static pushMethodContext(ctx: MethodContext): void {
+    this.methodContextStack.push(ctx);
+  }
+
+  public static popMethodContext(): void {
+    this.methodContextStack.pop();
+  }
+
+  public static getMethodContext(): MethodContext | undefined {
+    if (this.methodContextStack.length === 0) return undefined;
+    return this.methodContextStack[this.methodContextStack.length - 1];
+  }
 
   public static evaluate(astNode: Stmt, env: Environment): RuntimeVal {
     const previous = this.currentSpan;

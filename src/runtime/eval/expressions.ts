@@ -177,41 +177,45 @@ export default class EvalExpr {
     }
 
     const scope = new Environment(klass.declarationEnv);
-    scope.methodContext = {
-      declaringClass: ctor.declaringClass,
-      instance,
-      isConstructor: true,
-    };
     // `_` is the instance; constant so it cannot be rebound.
     scope.declareVar('_', instance, true);
     for (let i = 0; i < ctor.parameters.length; i++) {
       scope.declareVar(ctor.parameters[i], args[i], false);
     }
 
+    Interpreter.pushMethodContext({
+      declaringClass: ctor.declaringClass,
+      instance,
+      isConstructor: true,
+    });
     try {
-      for (const stmt of ctor.body) {
-        Interpreter.evaluate(stmt, scope);
+      try {
+        for (const stmt of ctor.body) {
+          Interpreter.evaluate(stmt, scope);
+        }
+      } catch (e) {
+        if (e instanceof ReturnSignal) {
+          // Ignore return value from constructor; instance is the result.
+          return instance;
+        }
+        if (e instanceof BreakSignal) {
+          throw createKinError('K019', {
+            span: node.span,
+            params: { name: 'hagarara' },
+            message: 'hagarara cannot be used across a function boundary',
+          });
+        }
+        if (e instanceof ContinueSignal) {
+          throw createKinError('K019', {
+            span: node.span,
+            params: { name: 'komeza' },
+            message: 'komeza cannot be used across a function boundary',
+          });
+        }
+        throw e;
       }
-    } catch (e) {
-      if (e instanceof ReturnSignal) {
-        // Ignore return value from constructor; instance is the result.
-        return instance;
-      }
-      if (e instanceof BreakSignal) {
-        throw createKinError('K019', {
-          span: node.span,
-          params: { name: 'hagarara' },
-          message: 'hagarara cannot be used across a function boundary',
-        });
-      }
-      if (e instanceof ContinueSignal) {
-        throw createKinError('K019', {
-          span: node.span,
-          params: { name: 'komeza' },
-          message: 'komeza cannot be used across a function boundary',
-        });
-      }
-      throw e;
+    } finally {
+      Interpreter.popMethodContext();
     }
 
     return instance;
@@ -224,6 +228,21 @@ export default class EvalExpr {
     span?: Span,
   ): RuntimeVal {
     const method = bound.method;
+
+    // Private methods may only run while code of the declaring class is active.
+    // Lookup already checks this; re-check here so a leaked bound method cannot
+    // be invoked from outside.
+    if (method.visibility === 'bwite') {
+      const ctx = Interpreter.getMethodContext();
+      if (!ctx || ctx.declaringClass !== method.declaringClass) {
+        throw createKinError('K036', {
+          span,
+          params: { name: method.name },
+          message: `Cannot access private method '${method.name}'`,
+        });
+      }
+    }
+
     if (args.length !== method.parameters.length) {
       throw createKinError('K011', {
         span,
@@ -236,39 +255,43 @@ export default class EvalExpr {
     }
 
     const scope = new Environment(method.declaringClass.declarationEnv);
-    scope.methodContext = {
-      declaringClass: method.declaringClass,
-      instance: bound.instance,
-      isConstructor: false,
-    };
     scope.declareVar('_', bound.instance, true);
     for (let i = 0; i < method.parameters.length; i++) {
       scope.declareVar(method.parameters[i], args[i], false);
     }
 
+    Interpreter.pushMethodContext({
+      declaringClass: method.declaringClass,
+      instance: bound.instance,
+      isConstructor: false,
+    });
     try {
-      for (const stmt of method.body) {
-        Interpreter.evaluate(stmt, scope);
+      try {
+        for (const stmt of method.body) {
+          Interpreter.evaluate(stmt, scope);
+        }
+      } catch (e) {
+        if (e instanceof ReturnSignal) {
+          return e.value;
+        }
+        if (e instanceof BreakSignal) {
+          throw createKinError('K019', {
+            span,
+            params: { name: 'hagarara' },
+            message: 'hagarara cannot be used across a function boundary',
+          });
+        }
+        if (e instanceof ContinueSignal) {
+          throw createKinError('K019', {
+            span,
+            params: { name: 'komeza' },
+            message: 'komeza cannot be used across a function boundary',
+          });
+        }
+        throw e;
       }
-    } catch (e) {
-      if (e instanceof ReturnSignal) {
-        return e.value;
-      }
-      if (e instanceof BreakSignal) {
-        throw createKinError('K019', {
-          span,
-          params: { name: 'hagarara' },
-          message: 'hagarara cannot be used across a function boundary',
-        });
-      }
-      if (e instanceof ContinueSignal) {
-        throw createKinError('K019', {
-          span,
-          params: { name: 'komeza' },
-          message: 'komeza cannot be used across a function boundary',
-        });
-      }
-      throw e;
+    } finally {
+      Interpreter.popMethodContext();
     }
 
     return MK_NULL();
@@ -379,8 +402,8 @@ export default class EvalExpr {
 
     throw createKinError('K010', {
       span: expr.span,
-      message:
-        'Cannot call value that is not a function: ' + JSON.stringify(fn),
+      params: { type: typeName(fn) },
+      message: `Cannot call a value that is not a function (${typeName(fn)})`,
     });
   }
 

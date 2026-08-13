@@ -37,5 +37,7 @@
   "K036": "Cannot access private member '{name}'",
   "K037": "Cannot assign to unknown field '{name}' (fields are created only in tegura)",
   "K038": "Parent '{name}' is not a class",
-  "K039": "rema expects a class, got {type}"
+  "K039": "rema expects a class, got {type}",
+  "K040": "Duplicate method '{name}' in class",
+  "K041": "Class methods with rusange/bwite are only allowed inside imiterere"
 }

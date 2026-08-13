@@ -49,5 +49,15 @@ Host programs can branch on `instanceof`, `ERRNAME`, or `ERRCODE`.
 | K029 | RuntimeError | Unhandled type in equality | internal | Report to Kin developers. |
 | K030 | SyntaxError | Expected function name following porogaramu_ntoya | `porogaramu_ntoya (){}` | Name the function. |
 | K031 | SyntaxError | Variable name expected following reka or ntahinduka | `reka = 1` | Write `reka name = ...`. |
+| K032 | SyntaxError | Visibility-prefixed field init is only allowed inside tegura | `rusange _.x = 1` at top level | Create fields only in `tegura` with `rusange/bwite _.name = expr`. |
+| K033 | SyntaxError | Class may only declare one tegura | two `tegura` in one class | Keep a single constructor. |
+| K034 | SyntaxError | Unexpected token in class body: {lexeme} | bare statement in `imiterere` | Only `tegura` and visibility-prefixed methods. |
+| K035 | SyntaxError | rema requires a call: rema ClassName(args) | `rema Umuntu` | Write `rema ClassName(...)`. |
+| K036 | TypeError | Cannot access private member '{name}' | `obj.secret` when private | Use a public method, or access only inside the declaring class. |
+| K037 | TypeError | Cannot assign to unknown field '{name}' | `_.newField = 1` in a method | Declare fields in `tegura` first. |
+| K038 | TypeError | Parent '{name}' is not a class | `imiterere C ikomoka 1` | Parent must be a class value. |
+| K039 | TypeError | rema expects a class, got {type} | `rema 5()` | Instantiate only class values. |
+| K040 | TypeError | Duplicate method '{name}' in class | two methods named `jya` | Rename one of the methods. |
+| K041 | SyntaxError | Class methods with rusange/bwite are only allowed inside imiterere | top-level `rusange porogaramu_ntoya` | Move the method into a class body. |
 
 Messages are loaded from `src/messages/rw.json` (default) and `src/messages/en.json` (`KIN_LANG=en`).

@@ -120,6 +120,13 @@ export default class EvalStmt {
     }
 
     for (const m of declaration.methods) {
+      if (klass.methods.has(m.name)) {
+        throw createKinError('K040', {
+          span: m.span,
+          params: { name: m.name },
+          message: `Duplicate method '${m.name}' in class '${declaration.name}'`,
+        });
+      }
       const method: ClassMethodValue = {
         visibility: m.visibility,
         name: m.name,

@@ -4,9 +4,9 @@
  *    in current scope and other questions like this are solved by Kin's Environment       *
  *******************************************************************************************/
 
-import { Interpreter } from '..';
 import { Identifier, MemberExpr } from '../parser/ast';
 import { createKinError } from '../lib/errors';
+import { Interpreter } from './interpreter';
 import {
   ArrayVal,
   BoundMethodVal,
@@ -26,7 +26,8 @@ import { lookupMethod } from './methods';
 
 /**
  * Active method / constructor frame. Used to enforce bwite visibility and
- * to allow field init only inside tegura.
+ * to allow field init only inside tegura. Stored on Interpreter's call stack,
+ * not on Environment (so closures cannot retain constructor privileges).
  */
 export interface MethodContext {
   declaringClass: ClassVal;
@@ -38,8 +39,6 @@ export default class Environment {
   private parent?: Environment;
   private variables: Map<string, RuntimeVal>;
   private constants: Set<string>;
-  /** Set on scopes created for tegura / method bodies. */
-  public methodContext?: MethodContext;
 
   constructor(parentENV?: Environment) {
     this.parent = parentENV;
@@ -47,10 +46,9 @@ export default class Environment {
     this.constants = new Set();
   }
 
-  /** Nearest method/constructor context walking parents. */
+  /** Active tegura / method frame from the interpreter call stack. */
   public getMethodContext(): MethodContext | undefined {
-    if (this.methodContext) return this.methodContext;
-    return this.parent?.getMethodContext();
+    return Interpreter.getMethodContext();
   }
 
   public declareVar(
@@ -264,7 +262,7 @@ export default class Environment {
     }
     const existing = ctx.instance.fields.get(name);
     if (existing) {
-      // Re-init in the same constructor overwrites value but keeps owner.
+      // Re-init in the same constructor overwrites value, visibility, owner.
       existing.value = value;
       existing.visibility = visibility;
       existing.owner = ctx.declaringClass;

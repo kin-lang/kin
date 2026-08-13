@@ -77,10 +77,8 @@ export function matchType(arg: RuntimeVal): unknown {
     case 'instance': {
       const inst = arg as InstanceVal;
       const fields: { [key: string]: unknown } = {};
+      // Public fields only — private state stays hidden in output.
       inst.fields.forEach((field, key) => {
-        // Only surface public fields when printing from outside; still
-        // show all when printing (simpler debugging). Visibility is not
-        // re-checked here — print is a trusted host path.
         if (field.visibility === 'rusange') {
           fields[key] = matchType(field.value);
         }

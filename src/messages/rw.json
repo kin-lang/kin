@@ -37,5 +37,7 @@
   "K036": "Ntushobora kugera ku gice cya bwite '{name}'",
   "K037": "Ntushobora guhindura umwanya utazwi '{name}' (imyanya itangizwa muri tegura gusa)",
   "K038": "Umubyeyi '{name}' si imiterere",
-  "K039": "rema isaba imiterere, habonetse {type}"
+  "K039": "rema isaba imiterere, habonetse {type}",
+  "K040": "Umurimo '{name}' wasubiyemo muri imiterere",
+  "K041": "Imirimo ifite rusange/bwite yemerewe gusa muri imiterere"
 }

@@ -174,7 +174,6 @@ export const TYPE_STRING: TypeVal = { type: 'type', name: 'string' };
 export const TYPE_OBJECT: TypeVal = { type: 'type', name: 'object' };
 export const TYPE_ARRAY: TypeVal = { type: 'type', name: 'urutonde' };
 export const TYPE_FN: TypeVal = { type: 'type', name: 'fn' };
-export const TYPE_NATIVE_FN: TypeVal = { type: 'type', name: 'fn' };
 export const TYPE_CLASS: TypeVal = { type: 'type', name: 'class' };
 export const TYPE_TYPE: TypeVal = { type: 'type', name: 'type' };
 

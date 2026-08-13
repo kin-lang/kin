@@ -339,4 +339,163 @@ describe('OOP (imiterere / rema / methods)', () => {
       'K011',
     );
   });
+
+  test('private method call from outside is rejected', () => {
+    expectKinError(
+      `
+      imiterere A {
+        tegura() {}
+        bwite porogaramu_ntoya secret() { tanga 1 }
+      }
+      reka a = rema A()
+      a.secret()
+      `,
+      'K036',
+    );
+  });
+
+  test('private field assign from outside is rejected', () => {
+    expectKinError(
+      `
+      imiterere A {
+        tegura() { bwite _.x = 1 }
+      }
+      reka a = rema A()
+      a.x = 2
+      `,
+      'K036',
+    );
+  });
+
+  test('child method cannot read parent private field', () => {
+    expectKinError(
+      `
+      imiterere P {
+        tegura() { bwite _.s = 9 }
+      }
+      imiterere C ikomoka P {
+        rusange porogaramu_ntoya bad() { tanga _.s }
+      }
+      reka c = rema C()
+      c.bad()
+      `,
+      'K036',
+    );
+  });
+
+  test('parent public wrapper on child instance can read parent private', () => {
+    const { result } = evaluate(`
+      imiterere P {
+        tegura() { bwite _.s = 9 }
+        rusange porogaramu_ntoya g() { tanga _.s }
+      }
+      imiterere C ikomoka P {}
+      reka c = rema C()
+      c.g()
+    `);
+    expect(asNumber(result)).toBe(9);
+  });
+
+  test('double tegura is a syntax error', () => {
+    expectKinError(
+      `
+      imiterere A {
+        tegura() {}
+        tegura() {}
+      }
+      `,
+      'K033',
+    );
+  });
+
+  test('nested instance field access _.abana[0].izina', () => {
+    const { result } = evaluate(`
+      imiterere Umuntu {
+        tegura(izina) {
+          rusange _.izina = izina
+          rusange _.abana = []
+        }
+        rusange porogaramu_ntoya set(u) { _.abana = [u] }
+        rusange porogaramu_ntoya first() { tanga _.abana[0].izina }
+      }
+      reka p = rema Umuntu("p")
+      reka c = rema Umuntu("c")
+      p.set(c)
+      p.first()
+    `);
+    expect(asString(result)).toBe('c');
+  });
+
+  test('calling an instance is a type error (not a host crash)', () => {
+    expectKinError(
+      `
+      imiterere A { tegura() {} }
+      reka a = rema A()
+      a()
+      `,
+      'K010',
+    );
+  });
+
+  test('leaked private bound method cannot be called outside', () => {
+    expectKinError(
+      `
+      imiterere C {
+        tegura() {}
+        bwite porogaramu_ntoya secret() { tanga 42 }
+        rusange porogaramu_ntoya leak() { tanga _.secret }
+      }
+      reka f = rema C().leak()
+      f()
+      `,
+      'K036',
+    );
+  });
+
+  test('nested function cannot invent fields after tegura returns', () => {
+    expectKinError(
+      `
+      imiterere Box {
+        tegura() {
+          porogaramu_ntoya add_field() {
+            rusange _.extra = 1
+          }
+          rusange _.add = add_field
+        }
+      }
+      reka b = rema Box()
+      b.add()
+      `,
+      'K032',
+    );
+  });
+
+  test('duplicate method name is rejected', () => {
+    expectKinError(
+      `
+      imiterere A {
+        tegura() {}
+        rusange porogaramu_ntoya jya() { tanga 1 }
+        rusange porogaramu_ntoya jya() { tanga 2 }
+      }
+      `,
+      'K040',
+    );
+  });
+
+  test('ubwoko of a class is the class type value', () => {
+    const { result } = evaluate(`
+      imiterere A { tegura() {} }
+      imiterere B { tegura() {} }
+      ubwoko A == ubwoko B
+    `);
+    expect(asBool(result)).toBe(true);
+  });
+
+  test('top-level rusange method is a syntax error', () => {
+    expectKinError(
+      `rusange porogaramu_ntoya f() { tanga 1 }`,
+      'K041',
+    );
+  });
 });

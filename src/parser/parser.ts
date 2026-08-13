@@ -67,9 +67,15 @@ export default class Parser {
   private source = '';
   /**
    * > 0 while parsing a tegura body. Enables `rusange/bwite _.field = expr`
-   * field-init statements.
+   * field-init statements only when nestedFunctionDepth is also 0.
    */
   private constructorDepth = 0;
+  /**
+   * > 0 inside any porogaramu_ntoya body (including nested functions and
+   * class methods). Field init is rejected when this is > 0 so nested
+   * functions inside tegura cannot invent fields.
+   */
+  private nestedFunctionDepth = 0;
 
   private not_eof(): boolean {
     return this.at().type != TokenType.EOF;
@@ -162,6 +168,7 @@ export default class Parser {
     this.pos = 0;
     this.loopDepth = 0;
     this.constructorDepth = 0;
+    this.nestedFunctionDepth = 0;
 
     const lexer = new Lexer(sourceCodes);
     this.tokens = lexer.tokenize();
@@ -248,8 +255,9 @@ export default class Parser {
   }
 
   /**
-   * Visibility-prefixed statement outside a class body can only be a
-   * field init inside tegura: rusange _.name = expr
+   * Visibility-prefixed statement: either a class method (only legal inside
+   * imiterere — handled in parse_class_declaration) or field init in tegura:
+   * rusange _.name = expr
    */
   private parse_visibility_stmt(): Stmt {
     const visTok = this.at();
@@ -257,12 +265,22 @@ export default class Parser {
       visTok.type === TokenType.RUSANGE ? 'rusange' : 'bwite';
     this.eat();
 
-    if (this.constructorDepth === 0) {
+    // Top-level / non-class `rusange porogaramu_ntoya` is never valid.
+    if (this.at().type === TokenType.POROGARAMU_NTOYA) {
+      this.fail(
+        'K041',
+        tokenSpan(visTok),
+        {},
+        'Class methods with rusange/bwite are only allowed inside imiterere',
+      );
+    }
+
+    if (this.constructorDepth === 0 || this.nestedFunctionDepth > 0) {
       this.fail(
         'K032',
         tokenSpan(visTok),
         { name: visTok.lexeme },
-        `${visTok.lexeme} field init is only allowed inside tegura`,
+        `${visTok.lexeme} field init is only allowed directly inside tegura`,
       );
     }
 
@@ -371,10 +389,12 @@ export default class Parser {
 
     const savedLoopDepth = this.loopDepth;
     this.loopDepth = 0;
+    this.nestedFunctionDepth++;
     let body: Stmt[];
     try {
       body = this.parse_block_statement();
     } finally {
+      this.nestedFunctionDepth--;
       this.loopDepth = savedLoopDepth;
     }
 
@@ -920,10 +940,12 @@ export default class Parser {
     // continue/break inside a function are not tied to an enclosing loop
     const savedLoopDepth = this.loopDepth;
     this.loopDepth = 0;
+    this.nestedFunctionDepth++;
     let body: Stmt[];
     try {
       body = this.parse_block_statement();
     } finally {
+      this.nestedFunctionDepth--;
       this.loopDepth = savedLoopDepth;
     }
 
