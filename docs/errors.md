@@ -49,7 +49,7 @@ Host programs can branch on `instanceof`, `ERRNAME`, or `ERRCODE`.
 | K029 | RuntimeError | Unhandled type in equality | internal | Report to Kin developers. |
 | K030 | SyntaxError | Expected function name following porogaramu_ntoya | `porogaramu_ntoya (){}` | Name the function. |
 | K031 | SyntaxError | Variable name expected following reka or ntahinduka | `reka = 1` | Write `reka name = ...`. |
-| K032 | SyntaxError | Unknown type name '{name}' | `reka x: foo = 1` | Use a built-in type: number, string, boolean, object, urutonde, fn. |
+| K032 | SyntaxError | Unknown type name '{name}' | `reka x: foo = 1` | Use a built-in type: number, string, boolean, object, urutonde, fn, native-fn. |
 | K033 | TypeError | Variable '{name}' expects type {expected}, got {got} | `reka x: number = "a"` | Assign a value of the annotated type. |
 | K034 | TypeError | Variable '{name}' has required type {expected} and cannot be ubusa | `reka x: number;` | Provide a non-null value, or use an optional type (`number?`). |
 | K035 | SyntaxError | Strict type safety requires a type annotation on '{name}' | `reka x = 1` under `# kin-types: strict` | Write `reka x: type = ...` or leave strict mode. |

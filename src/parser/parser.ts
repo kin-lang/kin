@@ -407,7 +407,8 @@ export default class Parser {
    * Optional type annotation after a binding name:
    *   : number
    *   : string?
-   * Names must be built-in type names (same vocabulary as ubwoko).
+   * Built-in names: number string boolean object urutonde fn native-fn.
+   * (ubwoko still prints raw tags; annotations treat fn and native-fn alike.)
    */
   private parse_type_annotation(): TypeAnnotation | undefined {
     if (this.at().type !== TokenType.COLON) return undefined;

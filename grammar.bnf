@@ -217,4 +217,5 @@ stringLiteral ::= '"' { anyCharacterExceptQuoteOrNewline } '"'
 ; &          tokenized (AMPERSAND), never parsed  (&& is AND and is used)
 ; |          lexer error unless it is part of ||
 ; '          not recognized; strings use " only
-; ?          used only as optional-type marker after a type name
+;
+; ? is used: optional-type marker after a type name (see typeAnnotation)

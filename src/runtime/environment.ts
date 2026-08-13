@@ -31,8 +31,8 @@ export default class Environment {
   /** Type annotations for variables declared with `: type` / `: type?`. */
   private types: Map<string, TypeAnnotation>;
   /**
-   * Type-safety mode for this program. Child scopes inherit the root mode.
-   * Only meaningful on the global env; nested envs read through the root.
+   * Type-safety mode for this program. Nested scopes **copy** the parent's
+   * mode at construction time (not a live root lookup).
    */
   private typeSafety: TypeSafetyMode;
 

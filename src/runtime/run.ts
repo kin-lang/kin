@@ -9,7 +9,6 @@ import { createGlobalEnv } from './globals';
 import Environment from './environment';
 import { RuntimeVal } from './values';
 import { TypeSafetyMode } from './types';
-import { createKinError } from '../lib/errors';
 
 export interface RunSourceOptions {
   filename?: string;
@@ -80,16 +79,4 @@ export function applyTypeSafetyToEnv(
   typeSafety: TypeSafetyMode,
 ): void {
   env.setTypeSafety(typeSafety);
-}
-
-/** Guard for hosts that forget to pass typeSafety into createGlobalEnv. */
-export function assertTypeSafetyAligned(
-  parserMode: TypeSafetyMode,
-  env: Environment,
-): void {
-  if (parserMode !== env.getTypeSafety()) {
-    throw createKinError('K026', {
-      message: `Type-safety mode mismatch: parser=${parserMode}, env=${env.getTypeSafety()}`,
-    });
-  }
 }
