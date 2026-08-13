@@ -3,7 +3,7 @@
  *              Kin's runtime values, responsible of defining Runtime values types             *
  ***********************************************************************************************/
 
-import { Stmt } from '../parser/ast';
+import { Stmt, Visibility } from '../parser/ast';
 import Environment from './environment';
 
 export type ValueType =
@@ -14,7 +14,11 @@ export type ValueType =
   | 'array'
   | 'native-fn'
   | 'fn'
-  | 'string';
+  | 'string'
+  | 'class'
+  | 'instance'
+  | 'bound-method'
+  | 'type';
 
 export interface RuntimeVal {
   type: ValueType;
@@ -59,6 +63,74 @@ export interface FunctionValue extends RuntimeVal {
   body: Stmt[];
 }
 
+/**
+ * Built-in type tag returned by `ubwoko` for non-instance values.
+ * Singletons are shared so `ubwoko 5 == ubwoko 10` is identity-true.
+ */
+export interface TypeVal extends RuntimeVal {
+  type: 'type';
+  /** Display / compare name: number, string, fn, urutonde, class, ... */
+  name: string;
+}
+
+/** Method stored on a ClassVal. */
+export interface ClassMethodValue {
+  visibility: Visibility;
+  name: string;
+  parameters: string[];
+  body: Stmt[];
+  /** Class that declared this method (for bwite access checks). */
+  declaringClass: ClassVal;
+}
+
+export interface ClassConstructorValue {
+  parameters: string[];
+  body: Stmt[];
+  declaringClass: ClassVal;
+}
+
+/**
+ * First-class class value created by `imiterere`.
+ * Parent is set for `ikomoka` inheritance.
+ */
+export interface ClassVal extends RuntimeVal {
+  type: 'class';
+  name: string;
+  parent?: ClassVal;
+  constructorDef?: ClassConstructorValue;
+  /** Methods declared on this class only (not inherited). */
+  methods: Map<string, ClassMethodValue>;
+  declarationEnv: Environment;
+}
+
+/** Field metadata fixed when the field is first assigned in tegura. */
+export interface InstanceField {
+  value: RuntimeVal;
+  visibility: Visibility;
+  /** Class whose tegura created the field. */
+  owner: ClassVal;
+}
+
+/**
+ * Instance created by `rema Class(...)`.
+ * Fields exist only after visibility-prefixed assignments in tegura.
+ */
+export interface InstanceVal extends RuntimeVal {
+  type: 'instance';
+  classOf: ClassVal;
+  fields: Map<string, InstanceField>;
+}
+
+/**
+ * Method accessed via instance.method — retains the receiver so a later
+ * call still binds `_` correctly.
+ */
+export interface BoundMethodVal extends RuntimeVal {
+  type: 'bound-method';
+  instance: InstanceVal;
+  method: ClassMethodValue;
+}
+
 export type FunctionCall = (args: RuntimeVal[], env: Environment) => RuntimeVal;
 
 export interface NativeFnValue extends RuntimeVal {
@@ -94,13 +166,75 @@ export function MK_ARRAY(elements: RuntimeVal[] = []) {
   return { type: 'array', elements } as ArrayVal;
 }
 
+// Singleton type values so ubwoko comparisons are identity-based.
+export const TYPE_NULL: TypeVal = { type: 'type', name: 'null' };
+export const TYPE_NUMBER: TypeVal = { type: 'type', name: 'number' };
+export const TYPE_BOOLEAN: TypeVal = { type: 'type', name: 'boolean' };
+export const TYPE_STRING: TypeVal = { type: 'type', name: 'string' };
+export const TYPE_OBJECT: TypeVal = { type: 'type', name: 'object' };
+export const TYPE_ARRAY: TypeVal = { type: 'type', name: 'urutonde' };
+export const TYPE_FN: TypeVal = { type: 'type', name: 'fn' };
+export const TYPE_NATIVE_FN: TypeVal = { type: 'type', name: 'fn' };
+export const TYPE_CLASS: TypeVal = { type: 'type', name: 'class' };
+export const TYPE_TYPE: TypeVal = { type: 'type', name: 'type' };
+
 /**
- * Human-facing type name for ubwoko and error messages.
- * Arrays report as "urutonde"; other types keep their internal name.
+ * Human-facing type name for error messages and legacy string display.
+ * Arrays report as "urutonde"; class instances report the class name.
  */
 export function typeName(value: RuntimeVal): string {
-  if (value.type === 'array') return 'urutonde';
-  return value.type;
+  switch (value.type) {
+    case 'array':
+      return 'urutonde';
+    case 'instance':
+      return (value as InstanceVal).classOf.name;
+    case 'class':
+      return 'class';
+    case 'bound-method':
+      return 'fn';
+    case 'type':
+      return (value as TypeVal).name;
+    case 'native-fn':
+      return 'fn';
+    default:
+      return value.type;
+  }
+}
+
+/**
+ * Value of `ubwoko x`:
+ * - instance → its ClassVal (exact class, no ancestor walk)
+ * - everything else → singleton TypeVal for that kind
+ */
+export function typeOfValue(value: RuntimeVal): RuntimeVal {
+  switch (value.type) {
+    case 'null':
+      return TYPE_NULL;
+    case 'number':
+      return TYPE_NUMBER;
+    case 'boolean':
+      return TYPE_BOOLEAN;
+    case 'string':
+      return TYPE_STRING;
+    case 'object':
+      return TYPE_OBJECT;
+    case 'array':
+      return TYPE_ARRAY;
+    case 'fn':
+    case 'bound-method':
+      return TYPE_FN;
+    case 'native-fn':
+      // User functions and builtins share one function type value.
+      return TYPE_FN;
+    case 'class':
+      return TYPE_CLASS;
+    case 'instance':
+      return (value as InstanceVal).classOf;
+    case 'type':
+      return TYPE_TYPE;
+    default:
+      return TYPE_NULL;
+  }
 }
 
 /** Deep-ish structural equality used by == / != and array.contains. */
@@ -130,7 +264,45 @@ export function valuesEqual(a: RuntimeVal, b: RuntimeVal): boolean {
       return (a as FunctionValue).body === (b as FunctionValue).body;
     case 'native-fn':
       return (a as NativeFnValue).call === (b as NativeFnValue).call;
+    case 'type':
+      // Singletons: same reference, or same name if somehow duplicated.
+      return a === b || (a as TypeVal).name === (b as TypeVal).name;
+    case 'class':
+      return a === b;
+    case 'instance':
+      return a === b;
+    case 'bound-method': {
+      const ba = a as BoundMethodVal;
+      const bb = b as BoundMethodVal;
+      return ba.instance === bb.instance && ba.method === bb.method;
+    }
     default:
       return false;
   }
+}
+
+/** Walk parent chain to find the nearest tegura (own or inherited). */
+export function resolveConstructor(
+  klass: ClassVal,
+): ClassConstructorValue | undefined {
+  let current: ClassVal | undefined = klass;
+  while (current) {
+    if (current.constructorDef) return current.constructorDef;
+    current = current.parent;
+  }
+  return undefined;
+}
+
+/** Method lookup: start on klass, walk parents upward. */
+export function resolveMethod(
+  klass: ClassVal,
+  name: string,
+): ClassMethodValue | undefined {
+  let current: ClassVal | undefined = klass;
+  while (current) {
+    const m = current.methods.get(name);
+    if (m) return m;
+    current = current.parent;
+  }
+  return undefined;
 }

@@ -578,29 +578,40 @@ describe('createGlobalEnv', () => {
   });
 
   describe('ubwoko', () => {
-    test('returns the runtime type name', () => {
-      expect(asString(evaluate('ubwoko(1)').result)).toBe('number');
-      expect(asString(evaluate('ubwoko("kin")').result)).toBe('string');
-      expect(asString(evaluate('ubwoko(nibyo)').result)).toBe('boolean');
-      expect(asString(evaluate('ubwoko(ubusa)').result)).toBe('null');
-      expect(asString(evaluate('ubwoko([1])').result)).toBe('urutonde');
-      expect(asString(evaluate('ubwoko(tangaza_amakuru)').result)).toBe(
-        'native-fn',
+    test('returns singleton type values (prefix operator)', () => {
+      const numberType = evaluate('ubwoko(1)').result;
+      expect(numberType.type).toBe('type');
+      expect((numberType as { name: string }).name).toBe('number');
+
+      expect((evaluate('ubwoko("kin")').result as { name: string }).name).toBe(
+        'string',
       );
+      expect((evaluate('ubwoko(nibyo)').result as { name: string }).name).toBe(
+        'boolean',
+      );
+      expect((evaluate('ubwoko(ubusa)').result as { name: string }).name).toBe(
+        'null',
+      );
+      expect((evaluate('ubwoko([1])').result as { name: string }).name).toBe(
+        'urutonde',
+      );
+      // Builtins and user functions share one function type value.
       expect(
-        asString(
+        (evaluate('ubwoko(tangaza_amakuru)').result as { name: string }).name,
+      ).toBe('fn');
+      expect(
+        (
           evaluate(`
             porogaramu_ntoya f() { tanga 1 }
             ubwoko(f)
-          `).result,
-        ),
+          `).result as { name: string }
+        ).name,
       ).toBe('fn');
     });
 
-    test('requires an argument', () => {
-      expect(() => evaluate('ubwoko()')).toThrow(
-        'ubwoko expects at least one argument',
-      );
+    test('identity equality for the same runtime type', () => {
+      expect(asBool(evaluate('ubwoko 5 == ubwoko 10').result)).toBe(true);
+      expect(asBool(evaluate('ubwoko 5 == ubwoko "x"').result)).toBe(false);
     });
   });
 
@@ -723,7 +734,6 @@ describe('createGlobalEnv', () => {
         'KIN_AMAGAMBO',
         'KIN_IGIHE',
         'KIN_URUTONDE',
-        'ubwoko',
         'KIN_INYANDIKO',
       ];
 
@@ -793,7 +803,6 @@ describe('createGlobalEnv', () => {
         'sisitemu',
         'injiza_amakuru',
         'hagarara',
-        'ubwoko',
       ]) {
         expect((env.lookupVar(name) as NativeFnValue).type).toBe('native-fn');
       }

@@ -9,25 +9,48 @@ import { Identifier, MemberExpr } from '../parser/ast';
 import { createKinError } from '../lib/errors';
 import {
   ArrayVal,
+  BoundMethodVal,
+  ClassVal,
+  InstanceField,
+  InstanceVal,
   MK_NATIVE_FN,
   MK_NULL,
   NumberVal,
   ObjectVal,
   RuntimeVal,
   StringVal,
+  resolveMethod,
   typeName,
 } from './values';
 import { lookupMethod } from './methods';
+
+/**
+ * Active method / constructor frame. Used to enforce bwite visibility and
+ * to allow field init only inside tegura.
+ */
+export interface MethodContext {
+  declaringClass: ClassVal;
+  instance: InstanceVal;
+  isConstructor: boolean;
+}
 
 export default class Environment {
   private parent?: Environment;
   private variables: Map<string, RuntimeVal>;
   private constants: Set<string>;
+  /** Set on scopes created for tegura / method bodies. */
+  public methodContext?: MethodContext;
 
   constructor(parentENV?: Environment) {
     this.parent = parentENV;
     this.variables = new Map();
     this.constants = new Set();
+  }
+
+  /** Nearest method/constructor context walking parents. */
+  public getMethodContext(): MethodContext | undefined {
+    if (this.methodContext) return this.methodContext;
+    return this.parent?.getMethodContext();
   }
 
   public declareVar(
@@ -65,7 +88,8 @@ export default class Environment {
   }
 
   public lookupMember(expr: MemberExpr): RuntimeVal {
-    const { container, key, isArray } = this.resolveMemberTarget(expr);
+    const { container, key, isArray, isInstance } =
+      this.resolveMemberTarget(expr);
 
     if (isArray) {
       const arr = container as ArrayVal;
@@ -96,12 +120,17 @@ export default class Environment {
       return arr.elements[index];
     }
 
+    if (isInstance) {
+      return this.lookupInstanceMember(container as InstanceVal, key, expr);
+    }
+
     const obj = container as ObjectVal;
     return obj.properties.get(key) ?? MK_NULL();
   }
 
   public assignMember(expr: MemberExpr, value: RuntimeVal): RuntimeVal {
-    const { container, key, isArray } = this.resolveMemberTarget(expr);
+    const { container, key, isArray, isInstance } =
+      this.resolveMemberTarget(expr);
 
     if (isArray) {
       const arr = container as ArrayVal;
@@ -129,8 +158,124 @@ export default class Environment {
       return value;
     }
 
+    if (isInstance) {
+      return this.assignInstanceMember(
+        container as InstanceVal,
+        key,
+        value,
+        expr,
+      );
+    }
+
     const obj = container as ObjectVal;
     obj.properties.set(key, value);
+    return value;
+  }
+
+  private canAccessPrivate(owner: ClassVal): boolean {
+    const ctx = this.getMethodContext();
+    return ctx !== undefined && ctx.declaringClass === owner;
+  }
+
+  private lookupInstanceMember(
+    instance: InstanceVal,
+    key: string,
+    expr: MemberExpr,
+  ): RuntimeVal {
+    const field = instance.fields.get(key);
+    if (field) {
+      if (
+        field.visibility === 'bwite' &&
+        !this.canAccessPrivate(field.owner)
+      ) {
+        throw createKinError('K036', {
+          span: expr.span,
+          params: { name: key },
+          message: `Cannot access private field '${key}'`,
+        });
+      }
+      return field.value;
+    }
+
+    const method = resolveMethod(instance.classOf, key);
+    if (method) {
+      if (
+        method.visibility === 'bwite' &&
+        !this.canAccessPrivate(method.declaringClass)
+      ) {
+        throw createKinError('K036', {
+          span: expr.span,
+          params: { name: key },
+          message: `Cannot access private method '${key}'`,
+        });
+      }
+      return {
+        type: 'bound-method',
+        instance,
+        method,
+      } as BoundMethodVal;
+    }
+
+    return MK_NULL();
+  }
+
+  private assignInstanceMember(
+    instance: InstanceVal,
+    key: string,
+    value: RuntimeVal,
+    expr: MemberExpr,
+  ): RuntimeVal {
+    const field = instance.fields.get(key);
+    if (!field) {
+      throw createKinError('K037', {
+        span: expr.span,
+        params: { name: key },
+        message: `Cannot assign to unknown field '${key}' (fields are created only in tegura)`,
+      });
+    }
+    if (field.visibility === 'bwite' && !this.canAccessPrivate(field.owner)) {
+      throw createKinError('K036', {
+        span: expr.span,
+        params: { name: key },
+        message: `Cannot access private field '${key}'`,
+      });
+    }
+    field.value = value;
+    return value;
+  }
+
+  /**
+   * Create a field on the current instance from inside tegura.
+   * Visibility is fixed at creation time.
+   */
+  public initInstanceField(
+    name: string,
+    visibility: 'rusange' | 'bwite',
+    value: RuntimeVal,
+    span?: import('../lib/span').Span,
+  ): RuntimeVal {
+    const ctx = this.getMethodContext();
+    if (!ctx || !ctx.isConstructor) {
+      throw createKinError('K032', {
+        span,
+        params: { name: visibility },
+        message: 'Field init with visibility is only allowed inside tegura',
+      });
+    }
+    const existing = ctx.instance.fields.get(name);
+    if (existing) {
+      // Re-init in the same constructor overwrites value but keeps owner.
+      existing.value = value;
+      existing.visibility = visibility;
+      existing.owner = ctx.declaringClass;
+      return value;
+    }
+    const field: InstanceField = {
+      value,
+      visibility,
+      owner: ctx.declaringClass,
+    };
+    ctx.instance.fields.set(name, field);
     return value;
   }
 
@@ -147,9 +292,10 @@ export default class Environment {
    * container the leaf property belongs to.
    */
   private resolveMemberTarget(expr: MemberExpr): {
-    container: ObjectVal | ArrayVal;
+    container: ObjectVal | ArrayVal | InstanceVal;
     key: string;
     isArray: boolean;
+    isInstance: boolean;
   } {
     let obj: RuntimeVal;
 
@@ -167,7 +313,21 @@ export default class Environment {
     // Method lookup on string / array is handled for computed=false by
     // returning a bound native; still need a container for indexing.
     if (obj && obj.type === 'array') {
-      return { container: obj as ArrayVal, key, isArray: true };
+      return {
+        container: obj as ArrayVal,
+        key,
+        isArray: true,
+        isInstance: false,
+      };
+    }
+
+    if (obj && obj.type === 'instance') {
+      return {
+        container: obj as InstanceVal,
+        key,
+        isArray: false,
+        isInstance: true,
+      };
     }
 
     if (obj && obj.type === 'string' && !expr.computed) {
@@ -182,7 +342,12 @@ export default class Environment {
             [key, MK_NATIVE_FN((args) => method(obj, args, expr.span))],
           ]),
         };
-        return { container: fake, key, isArray: false };
+        return {
+          container: fake,
+          key,
+          isArray: false,
+          isInstance: false,
+        };
       }
     }
 
@@ -197,7 +362,12 @@ export default class Environment {
       });
     }
 
-    return { container: obj as ObjectVal, key, isArray: false };
+    return {
+      container: obj as ObjectVal,
+      key,
+      isArray: false,
+      isInstance: false,
+    };
   }
 
   private resolveMemberKey(expr: MemberExpr): string {

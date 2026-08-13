@@ -11,6 +11,10 @@ import {
   ObjectVal,
   ArrayVal,
   FunctionValue,
+  ClassVal,
+  InstanceVal,
+  TypeVal,
+  BoundMethodVal,
   MK_STRING,
 } from './values';
 
@@ -63,6 +67,31 @@ export function matchType(arg: RuntimeVal): unknown {
       return {
         name: fn.name,
         body: fn.body,
+        internal: false,
+      };
+    }
+    case 'class':
+      return (arg as ClassVal).name;
+    case 'type':
+      return (arg as TypeVal).name;
+    case 'instance': {
+      const inst = arg as InstanceVal;
+      const fields: { [key: string]: unknown } = {};
+      inst.fields.forEach((field, key) => {
+        // Only surface public fields when printing from outside; still
+        // show all when printing (simpler debugging). Visibility is not
+        // re-checked here — print is a trusted host path.
+        if (field.visibility === 'rusange') {
+          fields[key] = matchType(field.value);
+        }
+      });
+      return `${inst.classOf.name} ${JSON.stringify(fields)}`;
+    }
+    case 'bound-method': {
+      const bm = arg as BoundMethodVal;
+      return {
+        name: bm.method.name,
+        receiver: bm.instance.classOf.name,
         internal: false,
       };
     }

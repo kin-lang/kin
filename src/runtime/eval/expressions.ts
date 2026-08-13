@@ -5,7 +5,10 @@
 
 import {
   BooleanVal,
+  BoundMethodVal,
+  ClassVal,
   FunctionValue,
+  InstanceVal,
   MK_ARRAY,
   MK_BOOL,
   MK_NULL,
@@ -16,7 +19,9 @@ import {
   ObjectVal,
   RuntimeVal,
   StringVal,
+  resolveConstructor,
   typeName,
+  typeOfValue,
   valuesEqual,
 } from '../values';
 import {
@@ -29,6 +34,7 @@ import {
   CallExpr,
   UnaryExpr,
   ReturnExpr,
+  NewExpr,
 } from '../../parser/ast';
 
 import Environment from '../environment';
@@ -115,6 +121,8 @@ export default class EvalExpr {
           });
         }
         return MK_NUMBER(-(operand as NumberVal).value);
+      case 'ubwoko':
+        return typeOfValue(operand);
       default:
         throw createKinError('K024', {
           span: node.span,
@@ -122,6 +130,148 @@ export default class EvalExpr {
           message: `Unsupported unary operator ${node.operator}`,
         });
     }
+  }
+
+  /**
+   * rema Class(args) — allocate instance, run tegura (own or inherited).
+   */
+  public static eval_new_expr(node: NewExpr, env: Environment): RuntimeVal {
+    const callee = Interpreter.evaluate(node.callee, env);
+    if (callee.type !== 'class') {
+      throw createKinError('K039', {
+        span: node.span,
+        params: { type: typeName(callee) },
+        message: `rema expects a class, got ${typeName(callee)}`,
+      });
+    }
+    const klass = callee as ClassVal;
+    const instance: InstanceVal = {
+      type: 'instance',
+      classOf: klass,
+      fields: new Map(),
+    };
+
+    const ctor = resolveConstructor(klass);
+    const args = node.args.map((arg) => Interpreter.evaluate(arg, env));
+
+    if (!ctor) {
+      if (args.length !== 0) {
+        throw createKinError('K011', {
+          span: node.span,
+          params: { expected: 0, got: args.length },
+          message: `Wrong number of arguments: expected 0, got ${args.length}`,
+        });
+      }
+      return instance;
+    }
+
+    if (args.length !== ctor.parameters.length) {
+      throw createKinError('K011', {
+        span: node.span,
+        params: {
+          expected: ctor.parameters.length,
+          got: args.length,
+        },
+        message: `Wrong number of arguments: expected ${ctor.parameters.length}, got ${args.length}`,
+      });
+    }
+
+    const scope = new Environment(klass.declarationEnv);
+    scope.methodContext = {
+      declaringClass: ctor.declaringClass,
+      instance,
+      isConstructor: true,
+    };
+    // `_` is the instance; constant so it cannot be rebound.
+    scope.declareVar('_', instance, true);
+    for (let i = 0; i < ctor.parameters.length; i++) {
+      scope.declareVar(ctor.parameters[i], args[i], false);
+    }
+
+    try {
+      for (const stmt of ctor.body) {
+        Interpreter.evaluate(stmt, scope);
+      }
+    } catch (e) {
+      if (e instanceof ReturnSignal) {
+        // Ignore return value from constructor; instance is the result.
+        return instance;
+      }
+      if (e instanceof BreakSignal) {
+        throw createKinError('K019', {
+          span: node.span,
+          params: { name: 'hagarara' },
+          message: 'hagarara cannot be used across a function boundary',
+        });
+      }
+      if (e instanceof ContinueSignal) {
+        throw createKinError('K019', {
+          span: node.span,
+          params: { name: 'komeza' },
+          message: 'komeza cannot be used across a function boundary',
+        });
+      }
+      throw e;
+    }
+
+    return instance;
+  }
+
+  /** Invoke a bound method with `_` bound to the receiver. */
+  public static call_bound_method(
+    bound: BoundMethodVal,
+    args: RuntimeVal[],
+    span?: Span,
+  ): RuntimeVal {
+    const method = bound.method;
+    if (args.length !== method.parameters.length) {
+      throw createKinError('K011', {
+        span,
+        params: {
+          expected: method.parameters.length,
+          got: args.length,
+        },
+        message: `Wrong number of arguments: expected ${method.parameters.length}, got ${args.length}`,
+      });
+    }
+
+    const scope = new Environment(method.declaringClass.declarationEnv);
+    scope.methodContext = {
+      declaringClass: method.declaringClass,
+      instance: bound.instance,
+      isConstructor: false,
+    };
+    scope.declareVar('_', bound.instance, true);
+    for (let i = 0; i < method.parameters.length; i++) {
+      scope.declareVar(method.parameters[i], args[i], false);
+    }
+
+    try {
+      for (const stmt of method.body) {
+        Interpreter.evaluate(stmt, scope);
+      }
+    } catch (e) {
+      if (e instanceof ReturnSignal) {
+        return e.value;
+      }
+      if (e instanceof BreakSignal) {
+        throw createKinError('K019', {
+          span,
+          params: { name: 'hagarara' },
+          message: 'hagarara cannot be used across a function boundary',
+        });
+      }
+      if (e instanceof ContinueSignal) {
+        throw createKinError('K019', {
+          span,
+          params: { name: 'komeza' },
+          message: 'komeza cannot be used across a function boundary',
+        });
+      }
+      throw e;
+    }
+
+    return MK_NULL();
   }
 
   public static eval_assignment(
@@ -173,6 +323,10 @@ export default class EvalExpr {
 
     if (fn.type == 'native-fn') {
       return (fn as NativeFnValue).call(args, env);
+    }
+
+    if (fn.type == 'bound-method') {
+      return this.call_bound_method(fn as BoundMethodVal, args, expr.span);
     }
 
     if (fn.type == 'fn') {

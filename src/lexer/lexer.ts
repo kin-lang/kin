@@ -209,6 +209,23 @@ class Lexer {
         return TokenType.USANZE;
       case 'ibindi':
         return TokenType.IBINDI;
+      case 'imiterere':
+        return TokenType.IMITERERE;
+      case 'tegura':
+        return TokenType.TEGURA;
+      case 'rema':
+        return TokenType.REMA;
+      case 'ikomoka':
+        return TokenType.IKOMOKA;
+      case 'rusange':
+        return TokenType.RUSANGE;
+      case 'bwite':
+        return TokenType.BWITE;
+      case 'ubwoko':
+        return TokenType.UBWOKO;
+      // Bare `_` is the current instance; `_izina` stays an identifier.
+      case '_':
+        return TokenType.THIS;
       default:
         return undefined;
     }

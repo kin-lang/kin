@@ -59,6 +59,22 @@ enum TokenType {
   GERERANYA,
   USANZE,
   IBINDI,
+  /** Class declaration: imiterere Name { ... } */
+  IMITERERE,
+  /** Constructor inside a class: tegura(params) { ... } */
+  TEGURA,
+  /** Instantiate: rema ClassName(args) */
+  REMA,
+  /** Single inheritance: imiterere Child ikomoka Parent */
+  IKOMOKA,
+  /** Public visibility on class fields/methods */
+  RUSANGE,
+  /** Private visibility on class fields/methods */
+  BWITE,
+  /** Prefix type operator: ubwoko value */
+  UBWOKO,
+  /** Current instance inside tegura / methods (bare `_`) */
+  THIS,
   EOF,
 }
 

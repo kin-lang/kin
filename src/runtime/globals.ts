@@ -16,7 +16,6 @@ import { createKinAmagambo } from './in-built/strings';
 import { createKinIgihe } from './in-built/time';
 import { createKinUrutonde } from './in-built/arrays';
 import { createKinInyandiko } from './in-built/files';
-import { ubwoko } from './in-built/types';
 
 export function createGlobalEnv(filename: string): Environment {
   const env = new Environment();
@@ -37,7 +36,7 @@ export function createGlobalEnv(filename: string): Environment {
   env.declareVar('KIN_AMAGAMBO', createKinAmagambo(), true);
   env.declareVar('KIN_IGIHE', createKinIgihe(), true);
   env.declareVar('KIN_URUTONDE', createKinUrutonde(), true);
-  env.declareVar('ubwoko', ubwoko, true);
+  // ubwoko is a prefix operator (keyword), not a global function.
   env.declareVar('KIN_INYANDIKO', createKinInyandiko(), true);
 
   return env;

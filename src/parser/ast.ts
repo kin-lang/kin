@@ -5,11 +5,14 @@
 
 import { Span, emptySpan, mergeSpans } from '../lib/span';
 
+export type Visibility = 'rusange' | 'bwite';
+
 export type NodeType =
   // Statements
   | 'Program'
   | 'VariableDeclaration'
   | 'FunctionDeclaration'
+  | 'ClassDeclaration'
   | 'LoopStatement'
   | 'BreakStatement'
   | 'ContinueStatement'
@@ -22,6 +25,8 @@ export type NodeType =
   | 'BinaryExpr'
   | 'UnaryExpr'
   | 'ReturnExpr'
+  | 'NewExpression'
+  | 'FieldInitExpression'
 
   // Literals
   | 'ObjectLiteral'
@@ -107,6 +112,58 @@ export interface FunctionDeclaration extends Stmt {
   name: string;
   parameters: string[];
   body: Stmt[];
+}
+
+/**
+ * Method declared on a class (always has rusange or bwite).
+ */
+export interface ClassMethod {
+  visibility: Visibility;
+  name: string;
+  parameters: string[];
+  body: Stmt[];
+  span: Span;
+}
+
+/**
+ * Constructor (tegura) declared on a class.
+ */
+export interface ClassConstructor {
+  parameters: string[];
+  body: Stmt[];
+  span: Span;
+}
+
+/**
+ * Class declaration: imiterere Name [ikomoka Parent] { ... }
+ * Bound as a constant class value in the enclosing environment.
+ */
+export interface ClassDeclaration extends Stmt {
+  kind: 'ClassDeclaration';
+  name: string;
+  /** Parent class name when `ikomoka` is present. */
+  parent?: string;
+  constructorDef?: ClassConstructor;
+  methods: ClassMethod[];
+}
+
+/**
+ * Instantiate a class: rema ClassExpr(args)
+ */
+export interface NewExpr extends Expr {
+  kind: 'NewExpression';
+  callee: Expr;
+  args: Expr[];
+}
+
+/**
+ * Field creation inside tegura: rusange _.name = expr / bwite _.name = expr
+ */
+export interface FieldInitExpr extends Expr {
+  kind: 'FieldInitExpression';
+  visibility: Visibility;
+  name: string;
+  value: Expr;
 }
 
 /**
@@ -249,6 +306,54 @@ export function mkFunction(
   span: Span,
 ): FunctionDeclaration {
   return { kind: 'FunctionDeclaration', name, parameters, body, span };
+}
+
+export function mkClass(
+  name: string,
+  parent: string | undefined,
+  constructorDef: ClassConstructor | undefined,
+  methods: ClassMethod[],
+  span: Span,
+): ClassDeclaration {
+  return {
+    kind: 'ClassDeclaration',
+    name,
+    parent,
+    constructorDef,
+    methods,
+    span,
+  };
+}
+
+export function mkClassMethod(
+  visibility: Visibility,
+  name: string,
+  parameters: string[],
+  body: Stmt[],
+  span: Span,
+): ClassMethod {
+  return { visibility, name, parameters, body, span };
+}
+
+export function mkClassConstructor(
+  parameters: string[],
+  body: Stmt[],
+  span: Span,
+): ClassConstructor {
+  return { parameters, body, span };
+}
+
+export function mkNew(callee: Expr, args: Expr[], span: Span): NewExpr {
+  return { kind: 'NewExpression', callee, args, span };
+}
+
+export function mkFieldInit(
+  visibility: Visibility,
+  name: string,
+  value: Expr,
+  span: Span,
+): FieldInitExpr {
+  return { kind: 'FieldInitExpression', visibility, name, value, span };
 }
 
 export function mkReturn(value: Expr | undefined, span: Span): ReturnExpr {

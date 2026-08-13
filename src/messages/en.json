@@ -29,5 +29,13 @@
   "K028": "Unknown operator '{op}'",
   "K029": "Unhandled type in equality: {type}",
   "K030": "Expected function name following porogaramu_ntoya",
-  "K031": "Variable name expected following reka or ntahinduka"
+  "K031": "Variable name expected following reka or ntahinduka",
+  "K032": "Visibility-prefixed field init is only allowed inside tegura",
+  "K033": "Class may only declare one tegura",
+  "K034": "Unexpected token in class body: {lexeme}",
+  "K035": "rema requires a call: rema ClassName(args)",
+  "K036": "Cannot access private member '{name}'",
+  "K037": "Cannot assign to unknown field '{name}' (fields are created only in tegura)",
+  "K038": "Parent '{name}' is not a class",
+  "K039": "rema expects a class, got {type}"
 }

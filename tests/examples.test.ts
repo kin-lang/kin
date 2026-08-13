@@ -27,6 +27,21 @@ const EXAMPLE_INPUTS: Record<string, string[]> = {
   'switch.kin': ['a'],
 };
 
+/** Recursively collect .kin files under examples/ (relative paths). */
+function collectKinFiles(dir: string, prefix = ''): string[] {
+  const entries = readdirSync(dir, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      files.push(...collectKinFiles(path.join(dir, entry.name), rel));
+    } else if (entry.isFile() && entry.name.endsWith('.kin')) {
+      files.push(rel);
+    }
+  }
+  return files.sort();
+}
+
 function runExample(filename: string): void {
   const filePath = path.join(EXAMPLES_DIR, filename);
   const source = readFileSync(filePath, 'utf-8');
@@ -46,9 +61,7 @@ describe('Example programs (current language implementation)', () => {
     vi.restoreAllMocks();
   });
 
-  const examples = readdirSync(EXAMPLES_DIR)
-    .filter((file) => file.endsWith('.kin'))
-    .sort();
+  const examples = collectKinFiles(EXAMPLES_DIR);
 
   test('discovers at least the shipped example programs', () => {
     expect(examples.length).toBeGreaterThan(0);
@@ -61,6 +74,11 @@ describe('Example programs (current language implementation)', () => {
         'loops.kin',
         'objects.kin',
         'switch.kin',
+        'oop/class-basics.kin',
+        'oop/inheritance.kin',
+        'oop/instances-and-binding.kin',
+        'oop/types-and-ubwoko.kin',
+        'oop/visibility.kin',
       ]),
     );
   });

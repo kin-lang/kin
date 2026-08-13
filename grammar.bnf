@@ -26,6 +26,8 @@ program ::= statement*
 
 statement ::= variableDeclaration
             | functionDeclaration
+            | classDeclaration
+            | fieldInitStatement
             | loopStatement
             | breakStatement
             | continueStatement
@@ -41,6 +43,24 @@ variableDeclaration ::= "reka" identifier (";" | "=" expression)
                       | "ntahinduka" identifier "=" expression
 
 functionDeclaration ::= "porogaramu_ntoya" identifier "(" parameterList? ")" block
+
+; Class declaration. Bound as a constant. Optional single parent via ikomoka.
+; Body may contain one tegura and any number of visibility-prefixed methods.
+classDeclaration ::= "imiterere" identifier ("ikomoka" identifier)? "{"
+                       classMember*
+                     "}"
+
+classMember ::= constructorDeclaration
+              | methodDeclaration
+
+constructorDeclaration ::= "tegura" "(" parameterList? ")" block
+
+; Methods on a class always require rusange or bwite.
+methodDeclaration ::= ("rusange" | "bwite") "porogaramu_ntoya" identifier
+                      "(" parameterList? ")" block
+
+; Field creation only inside tegura. Visibility is required and fixed here.
+fieldInitStatement ::= ("rusange" | "bwite") "_" "." identifier "=" expression
 
 parameterList ::= identifier ("," identifier)*
 
@@ -121,16 +141,23 @@ memberSuffix ::= "." identifier
 
 ; Array and object literals are primaries so they accept postfix
 ; member / call chains: [1, 2, 3][0], {izina: "K"}.izina
+; rema Class(args) is also a primary so rema C("x").method() works.
 primaryExpression ::= identifier
+                    | "_"
                     | numericLiteral
                     | stringLiteral
                     | arrayLiteral
                     | objectLiteral
+                    | newExpression
                     | "(" expression ")"
                     | unaryExpression
 
+; rema binds tighter than binary ops, looser than member access.
+newExpression ::= "rema" primaryExpression "(" argumentList? ")"
+
 ; ! and unary - apply to a primary expression.
-unaryExpression ::= ("!" | "-") primaryExpression
+; ubwoko is a prefix type operator (tighter than every binary operator).
+unaryExpression ::= ("!" | "-" | "ubwoko") primaryExpression
 
 ; Keys are identifiers only (not string literals).
 ; Shorthand { key } looks up `key` in the current environment at runtime.
@@ -189,6 +216,9 @@ stringLiteral ::= '"' { anyCharacterExceptQuoteOrNewline } '"'
 ; subiramo_niba  hagarara  komeza
 ; niba  nanone_niba  niba_byanze
 ; gereranya  usanze  ibindi
+; imiterere  tegura  rema  ikomoka
+; rusange  bwite  ubwoko
+; _  (bare underscore: current instance in tegura / methods)
 
 ; ========================================
 ; Unused tokens  (lexer only — not in this grammar)

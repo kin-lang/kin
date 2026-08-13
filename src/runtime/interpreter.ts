@@ -9,12 +9,15 @@ import {
   AssignmentExpr,
   BinaryExpr,
   BreakStatement,
+  ClassDeclaration,
   ContinueStatement,
   CallExpr,
+  FieldInitExpr,
   LoopStatement,
   FunctionDeclaration,
   Identifier,
   MemberExpr,
+  NewExpr,
   NumericLiteral,
   ObjectLiteral,
   Program,
@@ -67,6 +70,10 @@ export class Interpreter {
           return EvalExpr.eval_binary_expr(astNode as BinaryExpr, env);
         case 'UnaryExpr':
           return EvalExpr.eval_unary_expr(astNode as UnaryExpr, env);
+        case 'NewExpression':
+          return EvalExpr.eval_new_expr(astNode as NewExpr, env);
+        case 'FieldInitExpression':
+          return EvalStmt.eval_field_init(astNode as FieldInitExpr, env);
         case 'MemberExpression':
           return EvalExpr.eval_member_expr(
             env,
@@ -92,6 +99,11 @@ export class Interpreter {
         case 'FunctionDeclaration':
           return EvalStmt.eval_function_declaration(
             astNode as FunctionDeclaration,
+            env,
+          );
+        case 'ClassDeclaration':
+          return EvalStmt.eval_class_declaration(
+            astNode as ClassDeclaration,
             env,
           );
         case 'ReturnExpr':

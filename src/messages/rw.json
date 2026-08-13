@@ -29,5 +29,13 @@
   "K028": "Ikimenyetso kitazwi '{op}'",
   "K029": "Ubwoko butazwi mu kugereranya: {type}",
   "K030": "Byari biteganyijwe izina rya porogaramu_ntoya",
-  "K031": "Byari biteganyijwe izina ry'ihinduragaciro nyuma ya reka cyangwa ntahinduka"
+  "K031": "Byari biteganyijwe izina ry'ihinduragaciro nyuma ya reka cyangwa ntahinduka",
+  "K032": "Gutangiza umwanya hamwe na rusange/bwite bikorwa gusa muri tegura",
+  "K033": "Imiterere ishobora kugira tegura imwe gusa",
+  "K034": "Ikimenyetso kitazwi mu miterere: {lexeme}",
+  "K035": "rema isaba guhamagara: rema ClassName(args)",
+  "K036": "Ntushobora kugera ku gice cya bwite '{name}'",
+  "K037": "Ntushobora guhindura umwanya utazwi '{name}' (imyanya itangizwa muri tegura gusa)",
+  "K038": "Umubyeyi '{name}' si imiterere",
+  "K039": "rema isaba imiterere, habonetse {type}"
 }
