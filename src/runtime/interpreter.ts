@@ -12,7 +12,9 @@ import {
   ClassDeclaration,
   ContinueStatement,
   CallExpr,
+  ExportDeclaration,
   FieldInitStatement,
+  ImportDeclaration,
   LoopStatement,
   FunctionDeclaration,
   Identifier,
@@ -140,6 +142,10 @@ export class Interpreter {
             astNode as FieldInitStatement,
             env,
           );
+        case 'ImportDeclaration':
+          return EvalStmt.eval_import(astNode as ImportDeclaration, env);
+        case 'ExportDeclaration':
+          return EvalStmt.eval_export(astNode as ExportDeclaration, env);
         case 'FunctionDeclaration':
           return EvalStmt.eval_function_declaration(
             astNode as FunctionDeclaration,

@@ -1,0 +1,16 @@
+# Module exporting an imiterere class (OOP + modules).
+
+imiterere Umuntu {
+  tegura(izina: ijambo, imyaka: umubare) {
+    rusange _.izina = izina
+    rusange _.imyaka = imyaka
+  }
+
+  rusange porogaramu_ntoya kwibwira() {
+    tangaza_amakuru("Nitwa ", _.izina, ", mfite imyaka ", _.imyaka)
+  }
+}
+
+emerera_gukoresha {
+  Umuntu
+}

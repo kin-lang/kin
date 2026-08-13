@@ -25,10 +25,12 @@ import {
   mkClassDecl,
   mkConditional,
   mkContinue,
+  mkExport,
   mkFieldInit,
   mkFunction,
   mkFunctionParam,
   mkIdent,
+  mkImport,
   mkLoop,
   mkMember,
   mkNamedType,
@@ -211,6 +213,8 @@ export default class Parser {
         t === TokenType.TANGA ||
         t === TokenType.UBWOKO ||
         t === TokenType.IMITERERE ||
+        t === TokenType.KORESHA ||
+        t === TokenType.EMERERA_GUKORESHA ||
         t === TokenType.CLOSE_CURLY_BRACES ||
         t === TokenType.HAGARARA ||
         t === TokenType.KOMEZA
@@ -237,6 +241,10 @@ export default class Parser {
         return this.parse_expr();
       case TokenType.IMITERERE:
         return this.parse_class_declaration();
+      case TokenType.KORESHA:
+        return this.parse_import_declaration();
+      case TokenType.EMERERA_GUKORESHA:
+        return this.parse_export_declaration();
       case TokenType.NIBA:
         return this.parse_if_statement();
       case TokenType.GERERANYA:
@@ -1126,6 +1134,50 @@ export default class Parser {
       );
     }
     return this.parse_stmt();
+  }
+
+  /**
+   * `koresha "./file.kin" nka alias`
+   * Optional trailing semicolon (as in the original samples).
+   */
+  private parse_import_declaration(): Stmt {
+    const startTok = this.eat(); // koresha
+    const pathTok = this.expect(TokenType.STRING, 'module path string');
+    this.expect(TokenType.NKA, 'nka');
+    const aliasTok = this.expect(TokenType.IDENTIFIER, 'import alias');
+    let endSpan = tokenSpan(aliasTok);
+    if (this.at().type == TokenType.SEMI_COLON) {
+      endSpan = tokenSpan(this.eat());
+    }
+    return mkImport(
+      pathTok.lexeme,
+      aliasTok.lexeme,
+      mergeSpans(tokenSpan(startTok), endSpan),
+    );
+  }
+
+  /**
+   * `emerera_gukoresha { name1, name2, ... }`
+   * Trailing comma accepted.
+   */
+  private parse_export_declaration(): Stmt {
+    const startTok = this.eat(); // emerera_gukoresha
+    this.expect(TokenType.OPEN_CURLY_BRACES, '{');
+    const names: string[] = [];
+    while (this.not_eof() && this.at().type != TokenType.CLOSE_CURLY_BRACES) {
+      const nameTok = this.expect(TokenType.IDENTIFIER, 'export name');
+      names.push(nameTok.lexeme);
+      if (this.at().type == TokenType.COMMA) {
+        this.eat();
+      } else if (this.at().type != TokenType.CLOSE_CURLY_BRACES) {
+        this.expect(TokenType.COMMA, ',');
+      }
+    }
+    const endTok = this.expect(TokenType.CLOSE_CURLY_BRACES, '}');
+    if (this.at().type == TokenType.SEMI_COLON) {
+      this.eat();
+    }
+    return mkExport(names, mergeSpans(tokenSpan(startTok), tokenSpan(endTok)));
   }
 
   private parse_class_method(

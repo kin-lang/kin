@@ -1,0 +1,24 @@
+# Shared arithmetic helpers for the multi-file import example.
+
+porogaramu_ntoya guteranya(a: umubare, b: umubare): umubare {
+  tanga a + b
+}
+
+porogaramu_ntoya gukuba(a: umubare, b: umubare): umubare {
+  tanga a * b
+}
+
+porogaramu_ntoya gukuramo(a: umubare, b: umubare): umubare {
+  tanga a - b
+}
+
+porogaramu_ntoya kugabanya(a: umubare, b: umubare): umubare {
+  tanga a / b
+}
+
+emerera_gukoresha {
+  guteranya,
+  gukuba,
+  gukuramo,
+  kugabanya
+}

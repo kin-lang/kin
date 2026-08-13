@@ -41,5 +41,8 @@
   "K040": "Field '{name}' does not exist on {klass}; fields are created only in tegura",
   "K041": "Cannot access private member '{name}'",
   "K042": "'{name}' is not a class (imiterere)",
-  "K043": "Field '{name}' is already defined"
+  "K043": "Field '{name}' is already defined",
+  "K044": "Cannot import '{path}': file not found",
+  "K045": "Circular import detected for '{path}'",
+  "K046": "Cannot export '{name}': it is not defined in this module"
 }

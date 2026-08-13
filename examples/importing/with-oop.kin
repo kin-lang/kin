@@ -1,0 +1,11 @@
+# Import a module that exports a class; construct via the namespace.
+# Run: kin run examples/importing/with-oop.kin
+#
+# Exported classes are values on the namespace (people.Umuntu) and their
+# type is also registered under the bare name (Umuntu) for annotations.
+
+koresha "./person.kin" nka people
+
+reka keza: Umuntu = rema people.Umuntu("Keza", 20)
+keza.kwibwira()
+tangaza_amakuru(ubwoko keza == people.Umuntu)

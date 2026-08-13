@@ -223,6 +223,12 @@ class Lexer {
         return TokenType.BWITE;
       case 'ikomoka':
         return TokenType.IKOMOKA;
+      case 'koresha':
+        return TokenType.KORESHA;
+      case 'nka':
+        return TokenType.NKA;
+      case 'emerera_gukoresha':
+        return TokenType.EMERERA_GUKORESHA;
       default:
         return undefined;
     }

@@ -1,0 +1,12 @@
+# Multi-file imports with namespace aliases (nka).
+# Run: kin run examples/importing/index.kin
+#
+# koresha loads another .kin file, evaluates it in its own environment,
+# and binds an object of that file's emerera_gukoresha exports under the alias.
+
+koresha "./methods.kin" nka arithmeticMethods
+koresha "./constants.kin" nka constants
+
+reka x: umubare = arithmeticMethods.guteranya(2, 3) + constants.THRESHOLD
+
+tangaza_amakuru(x)

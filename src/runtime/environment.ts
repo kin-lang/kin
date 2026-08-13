@@ -407,6 +407,11 @@ export default class Environment {
 
     return this.parent.resolve(varname);
   }
+
+  /** Root environment of this chain (shared builtins / module cache key). */
+  public getRoot(): Environment {
+    return this.parent ? this.parent.getRoot() : this;
+  }
 }
 
 /** Method lookup: own class first, then walk parents. */
