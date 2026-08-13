@@ -2,8 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
   cleanupFetched,
-  copyPackageTree,
   fetchPackage,
+  installPackageTree,
   readPackageName,
 } from './fetch';
 import { hashDirectory } from './integrity';
@@ -15,9 +15,9 @@ import {
 import { readManifest, writeManifest } from './manifest';
 import { isValidPackageName } from './names';
 import {
-  assertSafeInstallTarget,
   ensureModulesDir,
   findProjectRoot,
+  inspectModulesDir,
   isInsideDirectory,
   modulesDir,
   packageInstallPath,
@@ -186,11 +186,21 @@ function installOne(
     if (source.type === 'path') {
       // Always refresh path deps.
     } else {
-      let currentIntegrity: string | null = null;
+      // Refuse package-root symlinks (hashDirectory also rejects them).
+      let isRealDir = false;
       try {
-        currentIntegrity = hashDirectory(dest);
+        const st = fs.lstatSync(dest);
+        isRealDir = st.isDirectory() && !st.isSymbolicLink();
       } catch {
-        currentIntegrity = null;
+        isRealDir = false;
+      }
+      let currentIntegrity: string | null = null;
+      if (isRealDir) {
+        try {
+          currentIntegrity = hashDirectory(dest);
+        } catch {
+          currentIntegrity = null;
+        }
       }
       if (currentIntegrity !== null && currentIntegrity === existing.integrity) {
         return {
@@ -234,19 +244,35 @@ function materialize(
     }
   }
 
-  // Re-check containment immediately before copy (TOCTOU defense).
-  assertSafeInstallTarget(root, name, modulesReal, dest);
-  copyPackageTree(fetched.directory, dest);
-  // Re-check after copy: modules dir must still be the same real directory,
-  // and dest realpath must remain inside it.
-  assertSafeInstallTarget(root, name, modulesReal, dest);
+  // Stage outside the project, then promote only if kin_modules is still the
+  // same real directory. Avoids writing through a swapped modules symlink.
   try {
+    installPackageTree(fetched.directory, dest, modulesReal, () => {
+      const current = inspectModulesDir(root);
+      if (!current) {
+        throw new PathError('kin_modules disappeared during install');
+      }
+      return current;
+    });
+  } catch (e) {
+    throw new InstallError(
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+
+  // Confirm final dest is a real directory inside modulesReal.
+  try {
+    const st = fs.lstatSync(dest);
+    if (st.isSymbolicLink() || !st.isDirectory()) {
+      throw new InstallError(
+        `Install of "${name}" did not produce a real directory`,
+      );
+    }
     const realDest = fs.realpathSync(dest);
     if (
       !isInsideDirectory(modulesReal, realDest) ||
       realDest === modulesReal
     ) {
-      // Attempt cleanup of leaked tree is best-effort only on lexical dest.
       try {
         fs.rmSync(dest, { recursive: true, force: true });
       } catch {
@@ -300,15 +326,19 @@ function safeRemoveInstalled(root: string, name: string): void {
     return;
   }
   let lexical: string;
-  let modulesReal: string;
+  let modulesReal: string | null;
   try {
     lexical = packageInstallPathLexical(root, name);
-    modulesReal = ensureModulesDir(root);
+    modulesReal = inspectModulesDir(root);
   } catch (e) {
     if (e instanceof PathError) {
       throw new InstallError(e.message);
     }
     throw e;
+  }
+  if (!modulesReal) {
+    // Nothing to remove; do not create kin_modules as a side effect.
+    return;
   }
 
   // Prefer the path under the real modules dir.
@@ -319,7 +349,6 @@ function safeRemoveInstalled(root: string, name: string): void {
     );
   }
 
-  // Also accept lexical path if modules was just created empty.
   const candidate = fs.existsSync(installed)
     ? installed
     : fs.existsSync(lexical)

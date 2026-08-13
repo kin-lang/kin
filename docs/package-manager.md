@@ -98,9 +98,13 @@ Written/updated by `kin pkg install` and `kin pkg add`. Example entry:
   absolute `resolved` values in the lockfile — those are **not portable** across
   machines. Prefer in-tree paths like `path:./vendor/foo`.
 - Lock package names are validated like dependency names (no `..`, no path
-  separators). Install/remove never operate outside `kin_modules/<name>/`.
+  separators). Installs are **staged under the system temp dir**, then promoted
+  into `kin_modules/<name>/` only if `kin_modules` is still the same real
+  directory (not a symlink). Residual same-user races without directory FDs
+  are a known limit of this slice.
 - `kin_modules` must be a **real directory** under the project (symlinks that
-  redirect outside the project are refused).
+  redirect outside the project are refused). Package-root symlinks are refused
+  on hash and git short-circuit.
 - Git locations are allowlisted (`https://`, `http://`, `ssh://`, `git://`,
   `file://`, `git@…`). Leading-dash args, `ext::`, and dashed refs are rejected.
   Clones use `git … -- <url> <dir>` so URLs cannot be mistaken for options.

@@ -668,6 +668,98 @@ describe('resolveInstalledPackage does not mkdir', () => {
   });
 });
 
+describe('security: staged install resists modules swap', () => {
+  it('does not leave files on a victim after kin_modules is swapped mid-materialize', () => {
+    const project = makeTempDir('kin-toctou-');
+    const dep = makeTempDir('kin-toctou-dep-');
+    const victim = makeTempDir('kin-toctou-victim-');
+    try {
+      initProject({ cwd: project, name: 'toctou-app' });
+      writePackage(dep, 'leak', '1.0.0');
+      fs.writeFileSync(path.join(victim, 'ORIGINAL.txt'), 'keep\n');
+
+      // Normal install first to create modules.
+      addDependency(`path:${dep}`, { cwd: project, name: 'leak' });
+      removeDependency('leak', { cwd: project });
+
+      // Simulate the hostile window: replace modules with symlink to victim,
+      // then attempt install. Staged promote must refuse and not leave payload.
+      const modules = path.join(project, MODULES_DIR);
+      const stash = path.join(project, '.modules-stash');
+      fs.renameSync(modules, stash);
+      fs.symlinkSync(victim, modules);
+
+      expect(() =>
+        addDependency(`path:${dep}`, { cwd: project, name: 'leak' }),
+      ).toThrow();
+
+      expect(fs.existsSync(path.join(victim, 'leak'))).toBe(false);
+      expect(fs.existsSync(path.join(victim, 'ORIGINAL.txt'))).toBe(true);
+      expect(readManifest(project).dependencies?.leak).toBeUndefined();
+    } finally {
+      fs.rmSync(project, { recursive: true, force: true });
+      fs.rmSync(dep, { recursive: true, force: true });
+      fs.rmSync(victim, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('security: package-root symlink rejected on hash/short-circuit', () => {
+  it('refuses to treat a package-root symlink as unchanged git install', () => {
+    const project = makeTempDir('kin-root-sym-');
+    const repoDir = makeTempDir('kin-root-sym-repo-');
+    const remote = makeTempDir('kin-root-sym-remote-');
+    const external = makeTempDir('kin-root-sym-ext-');
+    try {
+      initProject({ cwd: project, name: 'root-sym-app' });
+      writePackage(repoDir, 'gitpkg', '2.0.0');
+      execFileSync('git', ['init'], { cwd: repoDir, stdio: 'ignore' });
+      execFileSync('git', ['config', 'user.email', 't@e.com'], {
+        cwd: repoDir,
+        stdio: 'ignore',
+      });
+      execFileSync('git', ['config', 'user.name', 'T'], {
+        cwd: repoDir,
+        stdio: 'ignore',
+      });
+      execFileSync('git', ['add', '.'], { cwd: repoDir, stdio: 'ignore' });
+      execFileSync('git', ['commit', '-m', 'i'], {
+        cwd: repoDir,
+        stdio: 'ignore',
+      });
+      execFileSync('git', ['clone', '--bare', repoDir, remote], {
+        stdio: 'ignore',
+      });
+
+      addDependency(`git+file://${remote}`, {
+        cwd: project,
+        name: 'gitpkg',
+      });
+
+      const installed = path.join(project, MODULES_DIR, 'gitpkg');
+      // Copy contents to external and replace install with symlink.
+      fs.cpSync(installed, external, { recursive: true });
+      fs.rmSync(installed, { recursive: true, force: true });
+      fs.symlinkSync(external, installed);
+
+      expect(() => hashDirectory(installed)).toThrow(IntegrityError);
+
+      const report = installAll({ cwd: project });
+      const again = report.results.find((r) => r.name === 'gitpkg');
+      // Must re-materialize (not short-circuit as unchanged symlink).
+      expect(again?.action).not.toBe('unchanged');
+      expect(fs.lstatSync(path.join(project, MODULES_DIR, 'gitpkg')).isSymbolicLink()).toBe(
+        false,
+      );
+    } finally {
+      fs.rmSync(project, { recursive: true, force: true });
+      fs.rmSync(repoDir, { recursive: true, force: true });
+      fs.rmSync(remote, { recursive: true, force: true });
+      fs.rmSync(external, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('removeDependency unlinks package symlinks without following', () => {
   it('removes a planted symlink entry and keeps victim data', () => {
     const project = makeTempDir('kin-rm-sym-');

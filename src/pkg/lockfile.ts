@@ -109,6 +109,11 @@ export function validateLockfile(
         `${fileHint}: package "${name}" missing integrity`,
       );
     }
+    if (!/^sha256-[0-9a-f]{64}$/.test(e.integrity)) {
+      throw new LockfileError(
+        `${fileHint}: package "${name}" has invalid integrity (expected sha256-<64 hex>)`,
+      );
+    }
     packages[name] = {
       version: e.version,
       source: e.source,

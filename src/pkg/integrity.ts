@@ -22,8 +22,26 @@ export class IntegrityError extends Error {
  * Compute a stable sha256 integrity hash over package files.
  * Walks the tree in sorted order, hashing relative path + content.
  * Symlinks are refused (not followed) so installs cannot pull in external files.
+ * The package root itself must be a real directory (not a symlink).
  */
 export function hashDirectory(dir: string): string {
+  let rootStat: fs.Stats;
+  try {
+    rootStat = fs.lstatSync(dir);
+  } catch (e) {
+    throw new IntegrityError(
+      `Failed to stat package directory ${dir}: ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
+  if (rootStat.isSymbolicLink()) {
+    throw new IntegrityError(
+      `Package path is a symlink (not allowed): ${dir}`,
+    );
+  }
+  if (!rootStat.isDirectory()) {
+    throw new IntegrityError(`Package path is not a directory: ${dir}`);
+  }
+
   const hash = crypto.createHash('sha256');
   const files = listFiles(dir).sort();
   for (const rel of files) {

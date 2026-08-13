@@ -217,6 +217,7 @@ export function readPackageName(dir: string): string | null {
 /**
  * Copy package files from src into dest, replacing dest if it exists.
  * Skips nested dependency and VCS directories. Refuses symlinks.
+ * Caller is responsible for ensuring dest's parent is a safe directory.
  */
 export function copyPackageTree(src: string, dest: string): void {
   try {
@@ -230,6 +231,118 @@ export function copyPackageTree(src: string, dest: string): void {
     throw new FetchError(
       `Failed to copy package into ${dest}: ${e instanceof Error ? e.message : String(e)}`,
     );
+  }
+}
+
+/**
+ * Stage a package tree under a temp directory (outside the project), then
+ * atomically move it into dest under a verified modules directory.
+ *
+ * Returns after dest is a real directory inside modulesReal. On failure,
+ * best-effort removes any partial dest and the staging tree.
+ */
+export function installPackageTree(
+  src: string,
+  dest: string,
+  modulesReal: string,
+  verifyModules: () => string,
+): void {
+  const stageParent = fs.mkdtempSync(path.join(os.tmpdir(), 'kin-pkg-stage-'));
+  const stage = path.join(stageParent, 'pkg');
+  try {
+    copyRecursive(src, stage);
+
+    // Re-verify modules dir immediately before promoting the stage.
+    const currentModules = verifyModules();
+    if (currentModules !== modulesReal) {
+      throw new FetchError(
+        `kin_modules changed during install (possible symlink swap); refusing to promote package`,
+      );
+    }
+    let modulesLstat: fs.Stats;
+    try {
+      modulesLstat = fs.lstatSync(path.dirname(dest));
+    } catch (e) {
+      throw new FetchError(
+        `Cannot stat install parent: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+    if (modulesLstat.isSymbolicLink() || !modulesLstat.isDirectory()) {
+      throw new FetchError(
+        `Install parent is not a real directory; refusing to promote package`,
+      );
+    }
+    // Parent of dest must still realpath to modulesReal.
+    const parentReal = fs.realpathSync(path.dirname(dest));
+    if (parentReal !== modulesReal) {
+      throw new FetchError(
+        `Install parent realpath drifted from kin_modules; refusing to promote package`,
+      );
+    }
+
+    // Replace dest if present (unlink symlinks without following).
+    if (fs.existsSync(dest)) {
+      const st = fs.lstatSync(dest);
+      if (st.isSymbolicLink()) {
+        fs.unlinkSync(dest);
+      } else {
+        fs.rmSync(dest, { recursive: true, force: true });
+      }
+    }
+
+    // Prefer atomic rename; fall back to copy if cross-device.
+    try {
+      fs.renameSync(stage, dest);
+    } catch {
+      copyRecursive(stage, dest);
+    }
+
+    // Final containment check.
+    const st = fs.lstatSync(dest);
+    if (st.isSymbolicLink()) {
+      try {
+        fs.unlinkSync(dest);
+      } catch {
+        // ignore
+      }
+      throw new FetchError(`Install produced a symlink at ${dest}; removed`);
+    }
+    const realDest = fs.realpathSync(dest);
+    if (
+      realDest === modulesReal ||
+      path.relative(modulesReal, realDest).startsWith('..') ||
+      path.isAbsolute(path.relative(modulesReal, realDest))
+    ) {
+      try {
+        fs.rmSync(dest, { recursive: true, force: true });
+      } catch {
+        // ignore
+      }
+      throw new FetchError(
+        `Install resolved outside kin_modules; removed partial tree`,
+      );
+    }
+  } catch (e) {
+    // Best-effort cleanup of dest if something partially promoted.
+    try {
+      if (fs.existsSync(dest)) {
+        const st = fs.lstatSync(dest);
+        if (st.isSymbolicLink()) fs.unlinkSync(dest);
+        else fs.rmSync(dest, { recursive: true, force: true });
+      }
+    } catch {
+      // ignore
+    }
+    if (e instanceof FetchError) throw e;
+    throw new FetchError(
+      `Failed to install package into ${dest}: ${e instanceof Error ? e.message : String(e)}`,
+    );
+  } finally {
+    try {
+      fs.rmSync(stageParent, { recursive: true, force: true });
+    } catch {
+      // ignore
+    }
   }
 }
 

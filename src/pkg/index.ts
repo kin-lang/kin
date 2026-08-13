@@ -56,6 +56,7 @@ export {
   readPackageName,
   readPackageVersion,
   copyPackageTree,
+  installPackageTree,
 } from './fetch';
 export {
   InstallError,
