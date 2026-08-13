@@ -20,8 +20,6 @@
 
 **Kin** is a straightforward programming language created with the purpose of aiding Rwandans to write computer programs in their native language Kinyarwanda.
 
-> :information_source: **Contributors:** Please see our [ARCHITECTURE.md](https://github.com/kin-lang/kin/blob/main/ARCHITECTURE.md) for a deep dive into Kin's architecture, design, and execution flow before contributing!
-
 ## Installation
 
 You can install Kin in one of two ways:
