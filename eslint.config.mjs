@@ -4,6 +4,9 @@ import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import vitest from '@vitest/eslint-plugin';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 export default tseslint.config(
   {
